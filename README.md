@@ -11,124 +11,120 @@
 ## Overview
 
 Init View Count lets you track and display real post views — not just page loads or fake numbers.  
-It uses JavaScript + REST API to count only when the user actually scrolls and stays, and stores data in custom meta keys like `_init_view_count`.
+It uses JavaScript + REST API to count only when the user actually scrolls and stays, storing data in meta keys like `_init_view_count`.
 
-With shortcode support, tabbed rankings, REST endpoints, and full template override capabilities, this plugin is perfect for blogs, magazines, content hubs, or anything in between.
+It supports shortcodes, REST endpoints, trending detection, and theme template overrides. Perfect for blogs, magazines, and content-focused WordPress sites.
 
-![Demo of Init View Count](https://inithtml.com/wp-content/uploads/2025/06/Init-View-Count-Ranking-Demo.gif)
+![Demo](https://inithtml.com/wp-content/uploads/2025/06/Init-View-Count-Ranking-Demo.gif)
 
 ## Highlights
 
-- Real view detection — scroll + time delay logic
-- Counts stored in `post_meta`, no custom tables
-- REST-first: works with headless and SPA setups
-- Shortcodes for view display, post lists, and tabbed rankings
-- Supports daily, weekly, monthly view tracking
-- Built-in trending score based on views per hour
-- Template override system like WooCommerce
-- Extremely lightweight: no bloat, no tracking, no jQuery
+- Real view detection with scroll + delay logic
+- Data stored in native post meta (no custom DB tables)
+- Headless + SPA-friendly via REST-first architecture
+- Multiple shortcodes for views, lists, and rankings
+- Daily, weekly, monthly view tracking built-in
+- Auto-calculated trending score (views/hour)
+- WooCommerce-style template overrides
+- Zero bloat, zero jQuery, zero nonsense
 
 ## What's New in v1.5
 
-- New **Shortcode Builder UI** under Settings → Init View Count
-- Added `[init_view_ranking]` shortcode (tabbed ranking by day/week/month/total)
-- New `range=trending` mode for fastest-growing posts
-- REST `/top` endpoint supports pagination, filters, and cache
-- Fully translatable UI strings and i18n-ready shortcode builder
-- Built-in skeleton loaders and conditional asset loading
+- New **Shortcode Builder UI** under Settings
+- `[init_view_ranking]` shortcode for tabbed view rankings
+- `range=trending` mode for viral content detection
+- Extended REST API: pagination, filters, caching
+- Full i18n support and translatable UI
+- Built-in skeleton loader and smart asset loading
 
 ## Shortcodes
 
 ### `[init_view_count]`
 
-Display view count for the current post.
+Displays the view count for the current post.
 
 **Attributes:**
 
-| Name    | Description                       | Default     |
-|---------|-----------------------------------|-------------|
-| `field` | `total`, `day`, `week`, `month`   | `total`     |
-| `format`| `formatted`, `raw`, `short`       | `formatted` |
-| `time`  | Show "Posted X ago" (true/false)  | `false`     |
+- `field`: `total`, `day`, `week`, `month` (default: `total`)
+- `format`: `formatted`, `raw`, `short` (default: `formatted`)
+- `time`: `true` or `false` – show “Posted X ago” (default: `false`)
 
 ### `[init_view_list]`
 
-Show a list of most viewed posts.
+Displays a list of the most viewed posts.
 
 **Attributes:**
 
-| Name      | Description                        |
-|-----------|------------------------------------|
-| `number`  | Number of posts                    |
-| `range`   | `total`, `day`, `week`, `month`, `trending` |
-| `post_type` | Custom post type if needed       |
-| `template` | `sidebar`, `grid`, `full`, etc. (theme overrideable) |
-| `class`   | Additional CSS class               |
-| `category`| Filter by category slug            |
-| `tag`     | Filter by tag slug                 |
-| `page`    | Pagination page number             |
-| `empty`   | Message when no posts found        |
+- `number`: Number of posts to show
+- `range`: `total`, `day`, `week`, `month`, `trending`
+- `post_type`: Specify post type (e.g., `post`, `product`)
+- `template`: Choose layout style (`sidebar`, `grid`, `full`, etc.)
+- `class`: Add custom CSS class
+- `category`: Filter by category slug
+- `tag`: Filter by tag slug
+- `page`: Page number for pagination
+- `empty`: Message if no posts found
 
 ### `[init_view_ranking]`
 
-Tabbed ranking by view count.
+Creates a tabbed ranking layout for views.
 
 **Attributes:**
 
-| Name     | Description                        |
-|----------|------------------------------------|
-| `tabs`   | Comma-separated: `day`, `week`, `month`, `total` |
-| `number` | Posts per tab                      |
-| `class`  | Custom class for outer wrapper     |
+- `tabs`: Comma-separated values: `day`, `week`, `month`, `total`
+- `number`: Posts per tab
+- `class`: Custom wrapper class
 
 ## REST API Endpoints
 
-| Method | Endpoint                            | Description             |
-|--------|-------------------------------------|-------------------------|
-| POST   | `/wp-json/initvico/v1/count`        | Record a view           |
-| GET    | `/wp-json/initvico/v1/top`          | Retrieve top viewed posts |
+- `POST /wp-json/initvico/v1/count` – Record a view  
+- `GET /wp-json/initvico/v1/top` – Get top viewed posts  
 
-Supports filters like:  
-`?range=week&post_type=post&number=5&page=1&fields=full`
+**Query Parameters (GET /top):**
 
-Trending logic is cached using `set_transient()` and auto-updated hourly
+- `range`: `day`, `week`, `month`, `total`, `trending`
+- `post_type`: e.g., `post`, `product`
+- `number`: Number of posts
+- `page`: Page number
+- `fields`: `full`, `id`, etc.
 
-## Template Override
+Trending data is cached hourly using WordPress transients.
 
-You can override default templates like this:
+## Template Overrides
 
-```
+Override plugin templates by placing files in your theme:
+
+```bash
 your-theme/init-view-count/view-list-grid.php
 your-theme/init-view-count/ranking.php
 ```
 
-Use theming to fully customize the output, structure, and styles — just like WooCommerce.
+Structure and style everything your way – just like WooCommerce.
 
 ## Installation
 
-1. Upload the plugin folder to `/wp-content/plugins/init-view-count`
-2. Activate via **Plugins → Installed Plugins**
-3. Configure under **Settings → Init View Count**
-4. Use shortcodes or REST API to display data
+1. Upload to `/wp-content/plugins/init-view-count`
+2. Activate under **Plugins → Installed Plugins**
+3. Configure settings via **Settings → Init View Count**
+4. Add shortcodes or fetch data via REST API
 
-This plugin automatically schedules daily and hourly cron jobs for:
-- Resetting day/week/month views
-- Updating trending post scores
+**Scheduled Tasks:**
 
-All data is deleted if the plugin is uninstalled.
+- Reset view counters (daily/hourly)
+- Update trending post scores
+
+*All data will be removed upon uninstall.*
 
 ## Developer Notes
 
-### Post Meta Keys
+### Meta Keys Used
 
-| Purpose           | Meta Key                     |
-|-------------------|------------------------------|
-| Total views       | `_init_view_count`           |
-| Daily views       | `_init_view_day_count`       |
-| Weekly views      | `_init_view_week_count`      |
-| Monthly views     | `_init_view_month_count`     |
+- `_init_view_count` – total views
+- `_init_view_day_count` – daily views
+- `_init_view_week_count` – weekly views
+- `_init_view_month_count` – monthly views
 
-> Meta key names are filterable via `init_plugin_suite_view_count_meta_key`.
+*Filterable via* `init_plugin_suite_view_count_meta_key`
 
 ### Filters Available
 
@@ -140,10 +136,13 @@ All data is deleted if the plugin is uninstalled.
 - `init_plugin_suite_view_count_query_args`
 - `init_plugin_suite_view_count_empty_output`
 
+Full documentation: [The Complete Guide to Init View Count](https://en.inithtml.com/series/the-complete-guide-to-init-view-count/)
+
 ## License
 
-GPLv2 or later — open, free, and developer-first.
+GPLv2 or later — free, open source, developer-first.
 
 ## Part of Init Plugin Suite
 
-Init View Count is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/), a growing set of minimalist, high-performance plugins made for WordPress developers who care about speed, simplicity, and clean architecture.
+Init View Count is a proud member of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) —  
+A growing collection of powerful, minimalist plugins made for developers who love speed, simplicity, and clean code.
