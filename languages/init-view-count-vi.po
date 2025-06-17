@@ -1,0 +1,148 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Init View Count 1.5\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
+msgstr "Plugin nhẹ để theo dõi lượt xem bài viết thực bằng cách phát hiện cuộn trang & thời gian, xếp hạng thông minh và hỗ trợ shortcode linh hoạt."
+
+msgid "Init View Count Settings"
+msgstr "Cài đặt Init View Count"
+
+msgid "Init View Count"
+msgstr "Init View Count"
+
+msgid "Settings saved."
+msgstr "Đã lưu cài đặt."
+
+msgid "Post types to track views"
+msgstr "Các loại bài viết cần theo dõi lượt xem"
+
+msgid "Enable daily views?"
+msgstr "Bật theo dõi lượt xem theo ngày?"
+
+msgid "Enable weekly views?"
+msgstr "Bật theo dõi lượt xem theo tuần?"
+
+msgid "Enable monthly views?"
+msgstr "Bật theo dõi lượt xem theo tháng?"
+
+msgid "Delay before counting (ms)"
+msgstr "Thời gian trễ trước khi tính lượt xem (ms)"
+
+msgid "Scroll percent required"
+msgstr "Phần trăm cuộn trang yêu cầu"
+
+msgid "Enable scroll check?"
+msgstr "Bật kiểm tra cuộn trang?"
+
+msgid "Storage method"
+msgstr "Phương thức lưu trữ"
+
+msgid "Session Storage"
+msgstr "Bộ nhớ phiên (Session)"
+
+msgid "Local Storage"
+msgstr "Bộ nhớ cục bộ (Local)"
+
+msgid "Disable plugin CSS?"
+msgstr "Tắt CSS của plugin?"
+
+msgid "Save Settings"
+msgstr "Lưu cài đặt"
+
+msgid "All Time"
+msgstr "Tất cả"
+
+msgid "Today"
+msgstr "Hôm nay"
+
+msgid "This Week"
+msgstr "Tuần này"
+
+msgid "This Month"
+msgstr "Tháng này"
+
+msgid "No data found."
+msgstr "Không có dữ liệu."
+
+msgid "Failed to load data."
+msgstr "Lỗi khi tải dữ liệu."
+
+msgid "Disable built-in CSS output."
+msgstr "Tắt CSS mặc định của plugin."
+
+msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
+msgstr "Chọn nếu bạn muốn tự kiểm soát hoàn toàn phần giao diện. Plugin sẽ không tự thêm bất kỳ CSS nào."
+
+msgid "Popular Posts"
+msgstr "Bài viết nổi bật"
+
+msgid "views"
+msgstr "lượt xem"
+
+msgid "Copy"
+msgstr "Sao chép"
+
+msgid "Copied!"
+msgstr "Đã sao chép!"
+
+msgid "Close"
+msgstr "Đóng"
+
+msgid "Shortcode Preview"
+msgstr "Xem trước Shortcode"
+
+msgid "Shortcode Builder"
+msgstr "Trình tạo Shortcode"
+
+msgid "Type"
+msgstr "Loại"
+
+msgid "Title"
+msgstr "Tiêu đề"
+
+msgid "Number of Posts"
+msgstr "Số lượng bài viết"
+
+msgid "Template"
+msgstr "Giao diện"
+
+msgid "View Range"
+msgstr "Khoảng thời gian"
+
+msgid "Post Type"
+msgstr "Loại bài viết"
+
+msgid "Category"
+msgstr "Chuyên mục"
+
+msgid "Tag"
+msgstr "Thẻ"
+
+msgid "Order By"
+msgstr "Sắp xếp theo"
+
+msgid "Order Direction"
+msgstr "Thứ tự sắp xếp"
+
+msgid "Custom CSS class"
+msgstr "Class CSS tùy chỉnh"
+
+msgid "Field"
+msgstr "Trường dữ liệu"
+
+msgid "Format"
+msgstr "Định dạng"
+
+msgid "Show Time Diff"
+msgstr "Hiển thị thời gian đăng"
+
+msgid "Tabs"
+msgstr "Các tab"
+
+msgid "Posted %s ago"
+msgstr "Đăng %s trước"

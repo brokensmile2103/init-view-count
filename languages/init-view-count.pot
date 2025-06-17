@@ -1,0 +1,148 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Init View Count 1.5\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
+msgstr ""
+
+msgid "Init View Count Settings"
+msgstr ""
+
+msgid "Init View Count"
+msgstr ""
+
+msgid "Settings saved."
+msgstr ""
+
+msgid "Post types to track views"
+msgstr ""
+
+msgid "Enable daily views?"
+msgstr ""
+
+msgid "Enable weekly views?"
+msgstr ""
+
+msgid "Enable monthly views?"
+msgstr ""
+
+msgid "Delay before counting (ms)"
+msgstr ""
+
+msgid "Scroll percent required"
+msgstr ""
+
+msgid "Enable scroll check?"
+msgstr ""
+
+msgid "Storage method"
+msgstr ""
+
+msgid "Session Storage"
+msgstr ""
+
+msgid "Local Storage"
+msgstr ""
+
+msgid "Disable plugin CSS?"
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "All Time"
+msgstr ""
+
+msgid "Today"
+msgstr ""
+
+msgid "This Week"
+msgstr ""
+
+msgid "This Month"
+msgstr ""
+
+msgid "No data found."
+msgstr ""
+
+msgid "Failed to load data."
+msgstr ""
+
+msgid "Disable built-in CSS output."
+msgstr ""
+
+msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
+msgstr ""
+
+msgid "Popular Posts"
+msgstr ""
+
+msgid "views"
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Copied!"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Shortcode Preview"
+msgstr ""
+
+msgid "Shortcode Builder"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Number of Posts"
+msgstr ""
+
+msgid "Template"
+msgstr ""
+
+msgid "View Range"
+msgstr ""
+
+msgid "Post Type"
+msgstr ""
+
+msgid "Category"
+msgstr ""
+
+msgid "Tag"
+msgstr ""
+
+msgid "Order By"
+msgstr ""
+
+msgid "Order Direction"
+msgstr ""
+
+msgid "Custom CSS class"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgid "Show Time Diff"
+msgstr ""
+
+msgid "Tabs"
+msgstr ""
+
+msgid "Posted %s ago"
+msgstr ""
