@@ -15,6 +15,8 @@ It uses JavaScript + REST API to count only when the user actually scrolls and s
 
 With shortcode support, tabbed rankings, REST endpoints, and full template override capabilities, this plugin is perfect for blogs, magazines, content hubs, or anything in between.
 
+![Demo of Init View Count](https://inithtml.com/wp-content/uploads/2025/06/Init-View-Count-Ranking-Demo.gif)
+
 ## Highlights
 
 - Real view detection — scroll + time delay logic
