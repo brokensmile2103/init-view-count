@@ -6,6 +6,8 @@
  * @var array $tabs
  * @var array $labels
  */
+
+if ( ! defined( 'ABSPATH' ) ) exit;
 ?>
 <div class="init-plugin-suite-view-count-ranking <?php echo esc_attr($atts['class']); ?>" data-number="<?php echo (int) $atts['number']; ?>">
     <ul class="init-plugin-suite-view-count-ranking-tabs">

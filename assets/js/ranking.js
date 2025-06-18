@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         target.innerHTML = renderLoading(number);
 
-        fetch(`/wp-json/initvico/v1/top?range=${range}&number=${number}`)
+        fetch(`/wp-json/initvico/v1/top?range=${range}&number=${number}&no_cache=1`)
             .then(res => res.json())
             .then(data => {
                 if (!Array.isArray(data)) return;

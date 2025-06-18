@@ -39,6 +39,9 @@ function init_plugin_suite_view_count_render_settings_page() {
         update_option('init_plugin_suite_view_count_enable_week', $enable_week);
         update_option('init_plugin_suite_view_count_enable_month', $enable_month);
 
+        $batch_count = max(1, absint($_POST['init_plugin_suite_view_count_batch'] ?? 1));
+        update_option('init_plugin_suite_view_count_batch', $batch_count);
+
         $disable_style = !empty($_POST['init_plugin_suite_view_count_disable_style']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_disable_style', $disable_style);
 
@@ -103,6 +106,17 @@ function init_plugin_suite_view_count_render_settings_page() {
                                 <?php esc_html_e('Local Storage', 'init-view-count'); ?>
                             </label>
                         </fieldset>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Batch view tracking', 'init-view-count'); ?></th>
+                    <td>
+                        <input type="number" name="init_plugin_suite_view_count_batch"
+                               value="<?php echo esc_attr(get_option('init_plugin_suite_view_count_batch', 1)); ?>"
+                               min="1" />
+                        <p class="description">
+                            <?php esc_html_e('Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early.', 'init-view-count'); ?>
+                        </p>
                     </td>
                 </tr>
                 <tr>

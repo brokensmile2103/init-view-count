@@ -6,14 +6,17 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "Init View Count – Minimal, Accurate, Extensible"
+msgstr "Init View Count – Tối giản, Chính xác, Mở rộng dễ dàng"
+
 msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
 msgstr "Plugin nhẹ để theo dõi lượt xem bài viết thực bằng cách phát hiện cuộn trang & thời gian, xếp hạng thông minh và hỗ trợ shortcode linh hoạt."
 
 msgid "Init View Count Settings"
 msgstr "Cài đặt Init View Count"
 
-msgid "Init View Count"
-msgstr "Init View Count"
+msgid "Settings"
+msgstr "Cài đặt"
 
 msgid "Settings saved."
 msgstr "Đã lưu cài đặt."
@@ -146,3 +149,9 @@ msgstr "Các tab"
 
 msgid "Posted %s ago"
 msgstr "Đăng %s trước"
+
+msgid "Batch view tracking"
+msgstr "Gộp lượt xem"
+
+msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
+msgstr "Số lượt xem cần gom lại trước khi gửi lên server. Đặt là 1 để theo dõi theo thời gian thực. Giá trị cao hơn sẽ giảm số lượng request, nhưng có thể mất lượt xem nếu người dùng rời khỏi trang trước khi gửi."

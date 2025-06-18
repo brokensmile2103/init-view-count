@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.5  
+Stable tag: 1.6  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -23,6 +23,7 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Lightweight. No tracking, no admin bloat.
 - Includes REST API to query most viewed posts
 - Supports pagination in `[init_view_list]` via the `page` attribute
+- New: Batch view tracking support to reduce REST requests on busy sites
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
 
@@ -36,6 +37,7 @@ This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plug
 - Optional `[init_view_ranking]` shortcode for tabbed view by day/week/month/total
 - Assets are only loaded when needed – perfect for performance-conscious themes
 - Fully compatible with headless and SPA frameworks (REST-first + lazy)
+- Supports batch mode: delay view requests and send in groups (configurable in settings)
 
 == Installation ==
 
@@ -86,10 +88,10 @@ This shortcode automatically enqueues required JS and uses skeleton loaders whil
 This plugin exposes two REST endpoints to interact with view counts: one for recording views and another for retrieving top posts.
 
 **`POST /wp-json/initvico/v1/count`**  
-Record a view for a given post ID.
+Record one or more views. Accepts a single post ID or an array of post IDs.
 
 **Parameters:**
-- `post_id` — *(int)* Required. The post ID to increment view count for.
+- `post_id` — *(int|array)* Required. One or more post IDs to increment view count for.
 
 This endpoint checks if the post is published, belongs to a supported post type, and applies delay/scroll config (via JavaScript). It updates total and optionally day/week/month view counters.
 
@@ -155,6 +157,9 @@ No. Since counting only happens after scroll and delay via JavaScript, bots like
 = Can I sort posts by views in WP_Query? =  
 Yes. Use `'meta_key' => '_init_view_count'` and `'orderby' => 'meta_value_num'` in your `WP_Query` args.
 
+= Can I reduce the number of view requests sent to the server? =
+Yes. You can enable batch view tracking in the plugin settings. Instead of sending one request per view, views will be stored in the browser and sent in a group once the threshold is reached.
+
 == Filters for Developers ==
 
 This plugin provides multiple filters to help developers customize behavior and output in both REST API and shortcode use cases.
@@ -214,6 +219,14 @@ Modify shortcode attributes before WP_Query is run.
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.6 – June 19, 2025 =
+- Added batch view tracking option to reduce server requests on high-traffic sites
+- Views can be temporarily stored in localStorage and sent in groups
+- New setting: "Batch view tracking" (default = 1 for real-time)
+- Updated JS to support batch logic with scroll + delay detection
+- REST API now accepts multiple post IDs and returns array responses
+- View count updates instantly after tracking, no reload needed
 
 = 1.5 – June 16, 2025 =
 - Added shortcode builder panel to settings screen for easier shortcode generation

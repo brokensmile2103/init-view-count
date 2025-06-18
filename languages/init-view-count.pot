@@ -6,13 +6,16 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "Init View Count – Minimal, Accurate, Extensible"
+msgstr ""
+
 msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
 msgstr ""
 
 msgid "Init View Count Settings"
 msgstr ""
 
-msgid "Init View Count"
+msgid "Settings"
 msgstr ""
 
 msgid "Settings saved."
@@ -145,4 +148,10 @@ msgid "Tabs"
 msgstr ""
 
 msgid "Posted %s ago"
+msgstr ""
+
+msgid "Batch view tracking"
+msgstr ""
+
+msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr ""

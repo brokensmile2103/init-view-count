@@ -16,58 +16,73 @@ add_action('rest_api_init', function () {
 });
 
 function init_plugin_suite_view_count_count_callback($request) {
-    $post_id = absint($request->get_param('post_id'));
+    $ids = $request->get_param('post_id');
+    $post_ids = is_array($ids) ? array_map('absint', $ids) : [absint($ids)];
+    $results = [];
 
-    if (!$post_id || get_post_status($post_id) !== 'publish') {
-        return new WP_Error('invalid_post', __('Invalid post ID.', 'init-view-count'), ['status' => 400]);
+    foreach ($post_ids as $post_id) {
+        if (!$post_id || get_post_status($post_id) !== 'publish') {
+            $results[] = [
+                'post_id' => $post_id,
+                'error'   => __('Invalid post ID.', 'init-view-count'),
+            ];
+            continue;
+        }
+
+        $post_type = get_post_type($post_id);
+        $allowed   = (array) get_option('init_plugin_suite_view_count_post_types', ['post']);
+        if (!in_array($post_type, $allowed, true)) {
+            $results[] = [
+                'post_id' => $post_id,
+                'error'   => __('Not enabled for view counting.', 'init-view-count'),
+            ];
+            continue;
+        }
+
+        if (!apply_filters('init_plugin_suite_view_count_should_count', true, $post_id, $request)) {
+            $results[] = [
+                'post_id' => $post_id,
+                'skipped' => true,
+            ];
+            continue;
+        }
+
+        $updated = ['post_id' => $post_id];
+        $meta_total = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_count', $post_id);
+        $views = (int) get_post_meta($post_id, $meta_total, true);
+        update_post_meta($post_id, $meta_total, ++$views);
+
+        $updated['total']           = $views;
+        $updated['total_formatted'] = number_format_i18n($views);
+        $updated['total_short']     = init_plugin_suite_view_count_format_thousands($views);
+
+        if (get_option('init_plugin_suite_view_count_enable_day')) {
+            $meta_day = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
+            $views_day = (int) get_post_meta($post_id, $meta_day, true);
+            update_post_meta($post_id, $meta_day, ++$views_day);
+            $updated['day'] = $views_day;
+        }
+
+        if (get_option('init_plugin_suite_view_count_enable_week')) {
+            $meta_week = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
+            $views_week = (int) get_post_meta($post_id, $meta_week, true);
+            update_post_meta($post_id, $meta_week, ++$views_week);
+            $updated['week'] = $views_week;
+        }
+
+        if (get_option('init_plugin_suite_view_count_enable_month')) {
+            $meta_month = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
+            $views_month = (int) get_post_meta($post_id, $meta_month, true);
+            update_post_meta($post_id, $meta_month, ++$views_month);
+            $updated['month'] = $views_month;
+        }
+
+        do_action('init_plugin_suite_view_count_after_counted', $post_id, $updated, $request);
+
+        $results[] = $updated;
     }
 
-    $post_type = get_post_type($post_id);
-    $allowed   = (array) get_option('init_plugin_suite_view_count_post_types', ['post']);
-    if (!in_array($post_type, $allowed, true)) {
-        return new WP_Error('invalid_post_type', __('Not enabled for view counting.', 'init-view-count'), ['status' => 403]);
-    }
-
-    if (!apply_filters('init_plugin_suite_view_count_should_count', true, $post_id, $request)) {
-        return rest_ensure_response(['skipped' => true, 'post_id' => $post_id]);
-    }
-
-    $updated = ['post_id' => $post_id];
-
-    // === Total Views ===
-    $meta_total = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_count', $post_id);
-    $views      = (int) get_post_meta($post_id, $meta_total, true);
-    update_post_meta($post_id, $meta_total, ++$views);
-
-    $updated['total']           = $views;
-    $updated['total_formatted'] = number_format_i18n($views);
-    $updated['total_short']     = init_plugin_suite_view_count_format_thousands($views);
-
-    // === Daily / Weekly / Monthly Views ===
-    if (get_option('init_plugin_suite_view_count_enable_day')) {
-        $meta_day = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
-        $views_day = (int) get_post_meta($post_id, $meta_day, true);
-        update_post_meta($post_id, $meta_day, ++$views_day);
-        $updated['day'] = $views_day;
-    }
-
-    if (get_option('init_plugin_suite_view_count_enable_week')) {
-        $meta_week = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
-        $views_week = (int) get_post_meta($post_id, $meta_week, true);
-        update_post_meta($post_id, $meta_week, ++$views_week);
-        $updated['week'] = $views_week;
-    }
-
-    if (get_option('init_plugin_suite_view_count_enable_month')) {
-        $meta_month = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
-        $views_month = (int) get_post_meta($post_id, $meta_month, true);
-        update_post_meta($post_id, $meta_month, ++$views_month);
-        $updated['month'] = $views_month;
-    }
-
-    do_action('init_plugin_suite_view_count_after_counted', $post_id, $updated, $request);
-
-    return rest_ensure_response($updated);
+    return rest_ensure_response($results);
 }
 
 function init_plugin_suite_view_count_top_callback($request) {

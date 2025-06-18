@@ -3,60 +3,103 @@
     const postId = config.post_id;
     if (!postId) return;
 
-    const key = `viewed_${postId}`;
     const storage = config.storage === 'local' ? localStorage : sessionStorage;
-    if (storage.getItem(key)) return;
+    const viewedKey = `viewed_${postId}`;
+    if (storage.getItem(viewedKey)) return;
 
-    let scrollPassed = !config.scrollEnabled;
+    const batch = Math.max(1, parseInt(config.batch || '1', 10));
+    const delay = parseInt(config.delay || '15000', 10);
+    const scrollRequired = !!config.scrollEnabled;
+    const scrollPercent = parseInt(config.scrollPercent || '75', 10);
+
+    const queueKey = 'init_view_count_queue';
+    let scrollPassed = !scrollRequired;
     let timePassed = false;
-    let alreadySent = false;
+    let alreadyTriggered = false;
 
-    // Delay check
+    // === INIT ===
     setTimeout(() => {
         timePassed = true;
-        triggerCount();
-    }, config.delay || 15000);
+        checkAndSendView();
+    }, delay);
 
-    // Scroll check
-    if (config.scrollEnabled) {
-        window.addEventListener("scroll", () => {
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const scrolled = window.scrollY;
-            if ((scrolled / docHeight) > (config.scrollPercent / 100)) {
+    if (scrollRequired) {
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrolledPercent = (scrollY / scrollHeight) * 100;
+            if (scrolledPercent >= scrollPercent) {
                 scrollPassed = true;
-                triggerCount();
+                checkAndSendView();
             }
         });
     }
 
-    function triggerCount() {
-        if (scrollPassed && timePassed && !alreadySent) {
-            alreadySent = true;
-            fetch('/wp-json/initvico/v1/count', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ post_id: postId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                storage.setItem(key, "1");
+    function checkAndSendView() {
+        if (!scrollPassed || !timePassed || alreadyTriggered) return;
+        alreadyTriggered = true;
+        storage.setItem(viewedKey, "1");
 
-                const els = document.querySelectorAll('.init-plugin-suite-view-count-number');
-                els.forEach(el => {
-                    const from = parseInt(el.dataset.view || '0', 10);
-                    const to = parseInt(data.total || 0, 10);
+        if (batch === 1) {
+            sendView([postId], postId);
+            return;
+        }
 
-                    if (!isNaN(to) && to > from) {
-                        animateViewCount(el, from, to);
-                        el.dataset.view = to;
-                    }
-                });
-            })
-            .catch(console.error);
+        let queue = [];
+        try {
+            queue = JSON.parse(localStorage.getItem(queueKey) || '[]');
+        } catch (e) {}
+
+        if (!queue.includes(postId)) {
+            queue.push(postId);
+            localStorage.setItem(queueKey, JSON.stringify(queue));
+        }
+
+        if (queue.length >= batch) {
+            localStorage.removeItem(queueKey);
+            sendView(queue, postId);
         }
     }
 
-    function animateViewCount(el, from, to) {
+    function sendView(postIds, currentPostId) {
+        fetch('/wp-json/initvico/v1/count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ post_id: postIds.length === 1 ? postIds[0] : postIds })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const entries = Array.isArray(data) ? data : [data];
+            const matched = entries.find(entry =>
+                entry && entry.post_id == currentPostId && !isNaN(parseInt(entry.total))
+            );
+
+            if (matched) {
+                updateViewUI(parseInt(matched.total));
+            } else {
+                console.warn('[InitVC] No match found in response for post:', currentPostId);
+            }
+        })
+        .catch(console.error);
+    }
+
+    function updateViewUI(total) {
+        document.querySelectorAll('.init-plugin-suite-view-count-number').forEach(el => {
+            const from = parseInt(el.textContent.replace(/\D/g, '') || '0', 10);
+            const to = parseInt(total || '0', 10);
+
+            if (!isNaN(to)) {
+                if (from !== to) {
+                    animateCount(el, from, to);
+                } else {
+                    el.textContent = formatNumber(to);
+                }
+                el.dataset.view = to;
+            }
+        });
+    }
+
+    function animateCount(el, from, to) {
         const diff = to - from;
         const stepTime = Math.min(Math.ceil(1000 / diff), 50);
         const increment = Math.ceil(diff / (1000 / stepTime));
