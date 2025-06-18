@@ -4,7 +4,7 @@
 
 **Counts real views. Stores in meta. Renders beautifully. Built for performance.**
 
-[![Version](https://img.shields.io/badge/stable-v1.5-blue.svg)](https://wordpress.org/plugins/init-view-count/)
+[![Version](https://img.shields.io/badge/stable-v1.6-blue.svg)](https://wordpress.org/plugins/init-view-count/)
 [![License](https://img.shields.io/badge/license-GPLv2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 ![Made with ❤️ in HCMC](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20in%20HCMC-blue)
 
@@ -27,15 +27,15 @@ It supports shortcodes, REST endpoints, trending detection, and theme template o
 - Auto-calculated trending score (views/hour)
 - WooCommerce-style template overrides
 - Zero bloat, zero jQuery, zero nonsense
+- Optional batch mode: store views locally, reduce REST requests
 
-## What's New in v1.5
+## What's New in v1.6
 
-- New **Shortcode Builder UI** under Settings
-- `[init_view_ranking]` shortcode for tabbed view rankings
-- `range=trending` mode for viral content detection
-- Extended REST API: pagination, filters, caching
-- Full i18n support and translatable UI
-- Built-in skeleton loader and smart asset loading
+- Added **batch view tracking** with configurable threshold
+- Views stored in localStorage and sent in groups to reduce REST load
+- View count updates instantly after trigger (no reload needed)
+- Updated REST `/count` to accept array of post IDs
+- More reliable UI updates and improved tracking logic
 
 ## Shortcodes
 
@@ -77,7 +77,7 @@ Creates a tabbed ranking layout for views.
 
 ## REST API Endpoints
 
-- `POST /wp-json/initvico/v1/count` – Record a view  
+- `POST /wp-json/initvico/v1/count` – Record one or more views
 - `GET /wp-json/initvico/v1/top` – Get top viewed posts  
 
 **Query Parameters (GET /top):**
