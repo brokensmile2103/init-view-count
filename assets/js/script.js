@@ -75,7 +75,7 @@
             );
 
             if (matched) {
-                updateViewUI(parseInt(matched.total));
+                updateViewUI(parseInt(matched.total), currentPostId);
             } else {
                 console.warn('[InitVC] No match found in response for post:', currentPostId);
             }
@@ -83,26 +83,29 @@
         .catch(console.error);
     }
 
-    function updateViewUI(total) {
-        document.querySelectorAll('.init-plugin-suite-view-count-number').forEach(el => {
-            const from = parseInt(el.textContent.replace(/\D/g, '') || '0', 10);
-            const to = parseInt(total || '0', 10);
+    function updateViewUI(total, postId) {
+        const el = document.querySelector(`.init-plugin-suite-view-count-number[data-id="${postId}"]`);
+        if (!el) return;
 
-            if (!isNaN(to)) {
-                if (from !== to) {
-                    animateCount(el, from, to);
-                } else {
-                    el.textContent = formatNumber(to);
-                }
-                el.dataset.view = to;
+        const current = parseInt(el.dataset.view || '0', 10);
+        const to = parseInt(total || '0', 10);
+
+        if (!isNaN(to)) {
+            if (current !== to) {
+                animateCount(el, current, to);
+            } else {
+                el.textContent = formatNumber(to);
             }
-        });
+            el.dataset.view = to;
+        }
     }
 
     function animateCount(el, from, to) {
         const diff = to - from;
-        const stepTime = Math.min(Math.ceil(1000 / diff), 50);
-        const increment = Math.ceil(diff / (1000 / stepTime));
+        const duration = 600;
+        const steps = Math.max(10, Math.min(60, diff));
+        const increment = Math.ceil(diff / steps);
+        const stepTime = Math.max(10, Math.floor(duration / steps));
 
         const interval = setInterval(() => {
             from += increment;

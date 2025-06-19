@@ -373,3 +373,14 @@
 .is-dark .init-plugin-suite-view-count-ranking-meta-info {
   color: #aaa;
 }
+
+/* === DARK MODE – Skeleton === */
+.is-dark .init-plugin-suite-view-count-ranking-skeleton-thumb,
+.is-dark .init-plugin-suite-view-count-ranking-thumb {
+  background-color: #444;
+}
+
+.is-dark .init-plugin-suite-view-count-ranking-skeleton-title,
+.is-dark .init-plugin-suite-view-count-ranking-skeleton-line {
+  background-color: #555;
+}

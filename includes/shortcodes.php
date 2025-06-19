@@ -126,7 +126,7 @@ add_shortcode('init_view_count', function ($atts) {
     };
 
     $output = '<span class="init-plugin-suite-view-count-views">';
-    $output .= '<span class="init-plugin-suite-view-count-number" data-view="' . esc_attr($views) . '">';
+    $output .= '<span class="init-plugin-suite-view-count-number" data-view="' . esc_attr($views) . '" data-id="' . esc_attr($id) . '">';
     $output .= esc_html($view_text) . '</span>';
 
     if ($atts['time'] === 'true' && $published) {
