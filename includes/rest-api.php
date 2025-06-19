@@ -16,9 +16,11 @@ add_action('rest_api_init', function () {
 });
 
 function init_plugin_suite_view_count_count_callback($request) {
-    $ids = $request->get_param('post_id');
-    $post_ids = is_array($ids) ? array_map('absint', $ids) : [absint($ids)];
-    $results = [];
+    $ids        = $request->get_param('post_id');
+    $post_ids   = is_array($ids) ? array_map('absint', $ids) : [absint($ids)];
+    $limit      = max(1, absint(get_option('init_plugin_suite_view_count_batch', 1)));
+    $post_ids   = array_slice($post_ids, 0, $limit);
+    $results    = [];
 
     foreach ($post_ids as $post_id) {
         if (!$post_id || get_post_status($post_id) !== 'publish') {
