@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.6  
+Stable tag: 1.7  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -23,9 +23,12 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Lightweight. No tracking, no admin bloat.
 - Includes REST API to query most viewed posts
 - Supports pagination in `[init_view_list]` via the `page` attribute
-- New: Batch view tracking support to reduce REST requests on busy sites
+- Batch view tracking support to reduce REST requests on busy sites
+- Now includes a Dashboard widget to monitor top viewed posts directly in wp-admin.
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
+
+GitHub repository: [https://github.com/brokensmile2103/init-view-count](https://github.com/brokensmile2103/init-view-count)
 
 == Highlights ==
 
@@ -38,6 +41,7 @@ This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plug
 - Assets are only loaded when needed – perfect for performance-conscious themes
 - Fully compatible with headless and SPA frameworks (REST-first + lazy)
 - Supports batch mode: delay view requests and send in groups (configurable in settings)
+- Includes optional Dashboard widget for quick admin overview of top viewed posts
 
 == Installation ==
 
@@ -94,6 +98,8 @@ Record one or more views. Accepts a single post ID or an array of post IDs.
 - `post_id` — *(int|array)* Required. One or more post IDs to increment view count for.
 
 This endpoint checks if the post is published, belongs to a supported post type, and applies delay/scroll config (via JavaScript). It updates total and optionally day/week/month view counters.
+
+Note: The number of post IDs processed per request is limited based on the batch setting in plugin options.
 
 **`GET /wp-json/initvico/v1/top`**  
 Retrieve the most viewed posts, ranked by view count.
@@ -219,6 +225,11 @@ Modify shortcode attributes before WP_Query is run.
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.7 – June 21, 2025 =
+- Added Dashboard widget with [init_view_ranking] display
+- Introduced admin-style.css optimized for clean, one-line layout
+- REST API /count now respects the batch limit setting to avoid overload
 
 = 1.6 – June 19, 2025 =
 - Added batch view tracking option to reduce server requests on high-traffic sites
