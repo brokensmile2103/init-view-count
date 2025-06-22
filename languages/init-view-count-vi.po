@@ -155,3 +155,12 @@ msgstr "Gộp lượt xem"
 
 msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr "Số lượt xem cần gom lại trước khi gửi lên server. Đặt là 1 để theo dõi theo thời gian thực. Giá trị cao hơn sẽ giảm số lượng request, nhưng có thể mất lượt xem nếu người dùng rời khỏi trang trước khi gửi."
+
+msgid "Enable strict IP check?"
+msgstr "Bật kiểm tra IP nghiêm ngặt?"
+
+msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
+msgstr "Thêm lớp bảo vệ chống bot hoặc yêu cầu giả mạo gửi thẳng đến endpoint đếm view. Hữu ích nếu bạn phát hiện lưu lượng bất thường không bị chặn bởi countdown hoặc kiểm tra cuộn trang."
+
+msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
+msgstr "Lưu danh sách IP đã mã hóa gần đây theo từng bài viết bằng transient để ngăn lượt xem lặp lại từ cùng một IP trong khoảng thời gian ngắn."

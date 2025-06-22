@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_action( 'wp_dashboard_setup', function() {
     if ( ! current_user_can( 'edit_posts' ) ) return;

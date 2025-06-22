@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.7  
+Stable tag: 1.8  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -24,6 +24,7 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Includes REST API to query most viewed posts
 - Supports pagination in `[init_view_list]` via the `page` attribute
 - Batch view tracking support to reduce REST requests on busy sites
+- Optional strict IP-based filtering to block fake view requests posted directly to the REST endpoint
 - Now includes a Dashboard widget to monitor top viewed posts directly in wp-admin.
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
@@ -225,6 +226,13 @@ Modify shortcode attributes before WP_Query is run.
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.8 – June 22, 2025 =
+- Added new "Strict IP check" option to block repeated views from the same IP in a short timeframe
+- Uses hashed IPs and transient-based FIFO cache (default: 75 recent IPs per post)
+- Designed to prevent fake views posted directly to the REST endpoint (e.g., bots, cURL scripts)
+- Fully privacy-safe: does not store raw IPs and automatically expires over time
+- New setting: "Enable strict IP check?" (disabled by default)
 
 = 1.7 – June 21, 2025 =
 - Added Dashboard widget with [init_view_ranking] display

@@ -155,3 +155,12 @@ msgstr ""
 
 msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr ""
+
+msgid "Enable strict IP check?"
+msgstr ""
+
+msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
+msgstr ""
+
+msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
+msgstr ""

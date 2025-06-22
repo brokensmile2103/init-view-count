@@ -41,6 +41,17 @@ function init_plugin_suite_view_count_count_callback($request) {
             continue;
         }
 
+        if ( get_option('init_plugin_suite_view_count_strict_ip_check', 0) ) {
+            if ( init_plugin_suite_view_count_is_ip_recent( $post_id ) ) {
+                $results[] = [
+                    'post_id' => $post_id,
+                    'skipped' => true,
+                    'reason'  => 'ip_duplicate',
+                ];
+                continue;
+            }
+        }
+
         if (!apply_filters('init_plugin_suite_view_count_should_count', true, $post_id, $request)) {
             $results[] = [
                 'post_id' => $post_id,
@@ -85,6 +96,35 @@ function init_plugin_suite_view_count_count_callback($request) {
     }
 
     return rest_ensure_response($results);
+}
+
+function init_plugin_suite_view_count_is_ip_recent( $post_id ) {
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+    $ip = filter_var( $_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP );
+    if ( ! $ip ) {
+        return false;
+    }
+
+    $hash = base_convert( sprintf('%u', crc32($ip) ), 10, 36 );
+    $key  = 'ivc_recent_ips_' . $post_id;
+
+    $list = get_transient( $key );
+    if ( ! is_array( $list ) ) {
+        $list = [];
+    }
+
+    if ( in_array( $hash, $list, true ) ) {
+        return true;
+    }
+
+    array_unshift( $list, $hash );
+    if ( count( $list ) > 75 ) {
+        array_pop( $list );
+    }
+
+    set_transient( $key, $list, WEEK_IN_SECONDS * 2 );
+
+    return false;
 }
 
 function init_plugin_suite_view_count_top_callback($request) {

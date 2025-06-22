@@ -42,6 +42,9 @@ function init_plugin_suite_view_count_render_settings_page() {
         $batch_count = max(1, absint($_POST['init_plugin_suite_view_count_batch'] ?? 1));
         update_option('init_plugin_suite_view_count_batch', $batch_count);
 
+        $strict_ip_check = !empty($_POST['init_plugin_suite_view_count_strict_ip_check']) ? 1 : 0;
+        update_option('init_plugin_suite_view_count_strict_ip_check', $strict_ip_check);
+
         $disable_style = !empty($_POST['init_plugin_suite_view_count_disable_style']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_disable_style', $disable_style);
 
@@ -116,6 +119,18 @@ function init_plugin_suite_view_count_render_settings_page() {
                                min="1" />
                         <p class="description">
                             <?php esc_html_e('Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early.', 'init-view-count'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Enable strict IP check?', 'init-view-count'); ?></th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_strict_ip_check" <?php checked(get_option('init_plugin_suite_view_count_strict_ip_check', 0)); ?> />
+                            <?php esc_html_e('Prevent repeated views from the same IP within a short time. Uses hashed IPs and transient cache. May help reduce view spam.', 'init-view-count'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check.', 'init-view-count'); ?>
                         </p>
                     </td>
                 </tr>
