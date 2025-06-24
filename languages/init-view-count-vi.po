@@ -164,3 +164,12 @@ msgstr "Thêm lớp bảo vệ chống bot hoặc yêu cầu giả mạo gửi t
 
 msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
 msgstr "Lưu danh sách IP đã mã hóa gần đây theo từng bài viết bằng transient để ngăn lượt xem lặp lại từ cùng một IP trong khoảng thời gian ngắn."
+
+msgid "Enable dashboard widget?"
+msgstr "Bật widget bảng xếp hạng?"
+
+msgid "Display top view ranking inside WordPress Dashboard."
+msgstr "Hiển thị bảng xếp hạng lượt xem trong Bảng tin WordPress."
+
+msgid "Uncheck to hide the widget for all users."
+msgstr "Bỏ chọn để ẩn widget với tất cả người dùng."

@@ -4,19 +4,27 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 add_action( 'wp_dashboard_setup', function() {
     if ( ! current_user_can( 'edit_posts' ) ) return;
 
+    // Áp dụng cài đặt bật/tắt widget
+    $enabled = get_option( 'init_plugin_suite_view_count_enable_widget', 1 );
+    if ( ! $enabled ) return;
+
     wp_add_dashboard_widget(
         'init_view_count_widget',
         __( 'Init View Count', 'init-view-count' ),
-        'init_plugin_suite_ivc_render_dashboard_widget'
+        'init_plugin_suite_view_count_render_dashboard_widget'
     );
 } );
 
-function init_plugin_suite_ivc_render_dashboard_widget() {
+function init_plugin_suite_view_count_render_dashboard_widget() {
     echo do_shortcode( '[init_view_ranking number="10"]' );
 }
 
 add_action( 'admin_enqueue_scripts', function( $hook ) {
     if ( $hook !== 'index.php' ) return;
+
+    // Áp dụng luôn logic kiểm tra để không enqueue CSS khi widget bị tắt
+    $enabled = get_option( 'init_plugin_suite_view_count_enable_widget', 1 );
+    if ( ! $enabled ) return;
 
     wp_enqueue_style(
         'init-plugin-suite-view-count-admin-style',

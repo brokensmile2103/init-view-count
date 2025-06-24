@@ -45,6 +45,9 @@ function init_plugin_suite_view_count_render_settings_page() {
         $strict_ip_check = !empty($_POST['init_plugin_suite_view_count_strict_ip_check']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_strict_ip_check', $strict_ip_check);
 
+        $dashboard_widget_enabled = !empty($_POST['init_plugin_suite_view_count_enable_widget']) ? 1 : 0;
+        update_option('init_plugin_suite_view_count_enable_widget', $dashboard_widget_enabled);
+
         $disable_style = !empty($_POST['init_plugin_suite_view_count_disable_style']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_disable_style', $disable_style);
 
@@ -131,6 +134,18 @@ function init_plugin_suite_view_count_render_settings_page() {
                         </label>
                         <p class="description">
                             <?php esc_html_e('Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check.', 'init-view-count'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Enable dashboard widget?', 'init-view-count'); ?></th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_enable_widget" <?php checked(get_option('init_plugin_suite_view_count_enable_widget', 1)); ?> />
+                            <?php esc_html_e('Display top view ranking inside WordPress Dashboard.', 'init-view-count'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('Uncheck to hide the widget for all users.', 'init-view-count'); ?>
                         </p>
                     </td>
                 </tr>

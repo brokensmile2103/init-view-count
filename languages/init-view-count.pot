@@ -164,3 +164,12 @@ msgstr ""
 
 msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
 msgstr ""
+
+msgid "Enable dashboard widget?"
+msgstr ""
+
+msgid "Display top view ranking inside WordPress Dashboard."
+msgstr ""
+
+msgid "Uncheck to hide the widget for all users."
+msgstr ""
