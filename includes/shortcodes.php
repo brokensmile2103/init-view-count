@@ -19,13 +19,14 @@ add_shortcode('init_view_list', function ($atts) {
 
     // 'trending' range uses '_init_view_count' for fallback display,
     // actual data comes from transient, not sorted by meta
-    $raw_meta_key = match ($atts['range']) {
-        'day'       => '_init_view_day_count',
-        'week'      => '_init_view_week_count',
-        'month'     => '_init_view_month_count',
-        'trending'  => '_init_view_count',
-        default     => '_init_view_count',
-    };
+    $meta_key_map = [
+        'day'      => '_init_view_day_count',
+        'week'     => '_init_view_week_count',
+        'month'    => '_init_view_month_count',
+        'trending' => '_init_view_count',
+    ];
+
+    $raw_meta_key = isset($meta_key_map[$atts['range']]) ? $meta_key_map[$atts['range']] : '_init_view_count';
     $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', $raw_meta_key, null);
 
     /**
@@ -110,20 +111,28 @@ add_shortcode('init_view_count', function ($atts) {
         'time'   => 'false',
     ], $atts, 'init_view_count');
 
-    $raw_meta_key = match ($atts['field']) {
+    $meta_key_map = [
         'day'   => '_init_view_day_count',
         'week'  => '_init_view_week_count',
         'month' => '_init_view_month_count',
-        default => '_init_view_count',
-    };
+    ];
+
+    $raw_meta_key = isset($meta_key_map[$atts['field']]) ? $meta_key_map[$atts['field']] : '_init_view_count';
     $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', $raw_meta_key, $id);
 
     $views = (int) get_post_meta($id, $meta_key, true);
-    $view_text = match ($atts['format']) {
-        'raw'     => number_format_i18n($views),
-        'short'   => init_plugin_suite_view_count_format_thousands($views),
-        default   => number_format_i18n($views),
-    };
+    
+    switch ($atts['format']) {
+        case 'raw':
+            $view_text = number_format_i18n($views);
+            break;
+        case 'short':
+            $view_text = init_plugin_suite_view_count_format_thousands($views);
+            break;
+        default:
+            $view_text = number_format_i18n($views);
+            break;
+    }
 
     $output = '<span class="init-plugin-suite-view-count-views">';
     $output .= '<span class="init-plugin-suite-view-count-number" data-view="' . esc_attr($views) . '" data-id="' . esc_attr($id) . '">';

@@ -219,12 +219,13 @@ function init_plugin_suite_view_count_top_callback($request) {
         return rest_ensure_response($results);
     }
 
-    $meta_key = match ($range) {
+    $meta_key_map = [
         'day'   => '_init_view_day_count',
         'week'  => '_init_view_week_count',
         'month' => '_init_view_month_count',
-        default => '_init_view_count',
-    };
+    ];
+
+    $meta_key = isset($meta_key_map[$range]) ? $meta_key_map[$range] : '_init_view_count';
     $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', $meta_key, null);
 
     $cache_key = 'init_plugin_suite_view_count_top_' . md5(http_build_query($request->get_query_params()));

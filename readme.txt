@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.8  
+Stable tag: 1.9  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -226,6 +226,13 @@ Modify shortcode attributes before WP_Query is run.
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.9 – June 24, 2025 =
+- Replaced all PHP 8+ `match` expressions with backwards-compatible logic using array maps and switches
+- Now fully compatible with PHP 7.4 and above – no syntax errors on legacy environments
+- All changes preserve existing filters like `init_plugin_suite_view_count_meta_key` and template behavior
+- Maintained consistent behavior across REST API endpoints, `[init_view_list]`, and `[init_view_count]` shortcodes
+- Improved code clarity and maintainability without altering plugin output or logic
 
 = 1.8 – June 22, 2025 =
 - Added new "Strict IP check" option to block repeated views from the same IP in a short timeframe

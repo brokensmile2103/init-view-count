@@ -127,7 +127,7 @@ function init_plugin_suite_view_count_render_settings_page() {
                     <td>
                         <label>
                             <input type="checkbox" name="init_plugin_suite_view_count_strict_ip_check" <?php checked(get_option('init_plugin_suite_view_count_strict_ip_check', 0)); ?> />
-                            <?php esc_html_e('Prevent repeated views from the same IP within a short time. Uses hashed IPs and transient cache. May help reduce view spam.', 'init-view-count'); ?>
+                            <?php esc_html_e('Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window.', 'init-view-count'); ?>
                         </label>
                         <p class="description">
                             <?php esc_html_e('Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check.', 'init-view-count'); ?>
