@@ -6,6 +6,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 // === Delete plugin options ===
 $option_prefix = 'init_plugin_suite_view_count_';
 $options = [
+    'auto_insert',
     'delay',
     'scroll_percent',
     'scroll_enabled',
@@ -14,6 +15,9 @@ $options = [
     'enable_day',
     'enable_week',
     'enable_month',
+    'batch',
+    'strict_ip_check',
+    'enable_widget',
     'disable_style',
 ];
 
@@ -51,4 +55,3 @@ foreach ($all_options as $key => $value) {
 // === Unschedule cron events ===
 wp_clear_scheduled_hook('init_plugin_suite_view_count_reset_counts');
 wp_clear_scheduled_hook('init_plugin_suite_view_count_cron_update_trending');
-?>

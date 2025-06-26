@@ -109,6 +109,9 @@ add_shortcode('init_view_count', function ($atts) {
         'field'  => 'total',
         'format' => 'formatted',
         'time'   => 'false',
+        'icon'   => 'false',
+        'schema' => 'false',
+        'class'  => '',
     ], $atts, 'init_view_count');
 
     $meta_key_map = [
@@ -121,7 +124,7 @@ add_shortcode('init_view_count', function ($atts) {
     $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', $raw_meta_key, $id);
 
     $views = (int) get_post_meta($id, $meta_key, true);
-    
+
     switch ($atts['format']) {
         case 'raw':
             $view_text = number_format_i18n($views);
@@ -134,15 +137,35 @@ add_shortcode('init_view_count', function ($atts) {
             break;
     }
 
-    $output = '<span class="init-plugin-suite-view-count-views">';
+    $wrapper_classes = ['init-plugin-suite-view-count-views'];
+    if (!empty($atts['class'])) {
+        $wrapper_classes[] = sanitize_html_class($atts['class']);
+    }
+
+    $output  = '<span class="' . esc_attr(implode(' ', $wrapper_classes)) . '">';
+
+    // icon SVG
+    if ($atts['icon'] === 'true') {
+        $output .= '<span class="init-plugin-suite-view-count-icon" aria-hidden="true">';
+        $output .= '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle fill="none" stroke="currentColor" cx="10" cy="10" r="3.45"></circle><path fill="none" stroke="currentColor" d="m19.5,10c-2.4,3.66-5.26,7-9.5,7h0,0,0c-4.24,0-7.1-3.34-9.49-7C2.89,6.34,5.75,3,9.99,3h0,0,0c4.25,0,7.11,3.34,9.5,7Z"></path></svg>';
+        $output .= '</span>';
+    }
+
     $output .= '<span class="init-plugin-suite-view-count-number" data-view="' . esc_attr($views) . '" data-id="' . esc_attr($id) . '">';
     $output .= esc_html($view_text) . '</span>';
 
     if ($atts['time'] === 'true' && $published) {
         if ($diff = init_plugin_suite_view_count_human_time_diff($published)) {
-            // translators: %s is a human-readable time string like "3 days"
+            // translators: %s is a human-readable time difference like "3 days", "2 weeks"
             $output .= ' &middot; ' . sprintf(__('Posted %s ago', 'init-view-count'), esc_html($diff));
         }
+    }
+
+    // Nếu bật schema.org
+    if ($atts['schema'] === 'true') {
+        $output .= '<meta itemprop="interactionStatistic" itemscope itemtype="https://schema.org/InteractionCounter">';
+        $output .= '<meta itemprop="interactionType" content="https://schema.org/ViewAction" />';
+        $output .= '<meta itemprop="userInteractionCount" content="' . esc_attr($views) . '" />';
     }
 
     return $output . '</span>';
@@ -283,6 +306,9 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
                 'format'              => __( 'Format', 'init-view-count' ),
                 'time'                => __( 'Show Time Diff', 'init-view-count' ),
                 'tabs'                => __( 'Tabs', 'init-view-count' ),
+                'icon'                => __( 'Show Icon', 'init-view-count' ),
+                'schema'              => __( 'Enable Schema.org', 'init-view-count' ),
+                'class'               => __( 'Custom Class', 'init-view-count' ),
             ],
         ]
     );

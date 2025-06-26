@@ -15,6 +15,13 @@ function init_plugin_suite_view_count_render_settings_page() {
     if (isset($_POST['init_plugin_suite_view_count_save'])) {
         check_admin_referer('init_plugin_suite_view_count_settings_action');
 
+        $auto_insert_position = isset($_POST['init_plugin_suite_view_count_auto_insert']) ? sanitize_text_field(wp_unslash($_POST['init_plugin_suite_view_count_auto_insert'])) : 'none';
+        $allowed_positions = ['none', 'before_content', 'after_content'];
+        if (!in_array($auto_insert_position, $allowed_positions, true)) {
+            $auto_insert_position = 'none';
+        }
+        update_option('init_plugin_suite_view_count_auto_insert', $auto_insert_position);
+
         $delay = isset($_POST['init_plugin_suite_view_count_delay']) ? absint($_POST['init_plugin_suite_view_count_delay']) : 15000;
         $scroll_percent = isset($_POST['init_plugin_suite_view_count_scroll_percent']) ? absint($_POST['init_plugin_suite_view_count_scroll_percent']) : 75;
         $scroll_enabled = isset($_POST['init_plugin_suite_view_count_scroll_enabled']) ? 1 : 0;
@@ -75,16 +82,54 @@ function init_plugin_suite_view_count_render_settings_page() {
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row"><?php esc_html_e('Auto-insert shortcode into post content?', 'init-view-count'); ?></th>
+                    <td>
+                        <label>
+                            <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="none"
+                                <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'none'); ?> />
+                            <?php esc_html_e('Do not auto-insert (manual shortcode only)', 'init-view-count'); ?>
+                        </label><br>
+                        <label>
+                            <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="before_content"
+                                <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'before_content'); ?> />
+                            <?php esc_html_e('Insert before content', 'init-view-count'); ?>
+                        </label><br>
+                        <label>
+                            <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="after_content"
+                                <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'after_content'); ?> />
+                            <?php esc_html_e('Insert after content', 'init-view-count'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('Only applies to post types where view count is enabled. Developers can always insert shortcode manually.', 'init-view-count'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row"><?php esc_html_e('Enable daily views?', 'init-view-count'); ?></th>
-                    <td><input type="checkbox" name="init_plugin_suite_view_count_enable_day" <?php checked(get_option('init_plugin_suite_view_count_enable_day', 1)); ?> /></td>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_enable_day" <?php checked(get_option('init_plugin_suite_view_count_enable_day', 1)); ?> />
+                            <?php esc_html_e('Count and store views per day', 'init-view-count'); ?>
+                        </label>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Enable weekly views?', 'init-view-count'); ?></th>
-                    <td><input type="checkbox" name="init_plugin_suite_view_count_enable_week" <?php checked(get_option('init_plugin_suite_view_count_enable_week', 1)); ?> /></td>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_enable_week" <?php checked(get_option('init_plugin_suite_view_count_enable_week', 1)); ?> />
+                            <?php esc_html_e('Track total views by week', 'init-view-count'); ?>
+                        </label>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Enable monthly views?', 'init-view-count'); ?></th>
-                    <td><input type="checkbox" name="init_plugin_suite_view_count_enable_month" <?php checked(get_option('init_plugin_suite_view_count_enable_month', 1)); ?> /></td>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_enable_month" <?php checked(get_option('init_plugin_suite_view_count_enable_month', 1)); ?> />
+                            <?php esc_html_e('Track total views by month', 'init-view-count'); ?>
+                        </label>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Delay before counting (ms)', 'init-view-count'); ?></th>
@@ -96,22 +141,25 @@ function init_plugin_suite_view_count_render_settings_page() {
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Enable scroll check?', 'init-view-count'); ?></th>
-                    <td><input type="checkbox" name="init_plugin_suite_view_count_scroll_enabled" <?php checked(get_option('init_plugin_suite_view_count_scroll_enabled', true)); ?> /></td>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_scroll_enabled" <?php checked(get_option('init_plugin_suite_view_count_scroll_enabled', true)); ?> />
+                            <?php esc_html_e('Only count views after user scrolls past required percent', 'init-view-count'); ?>
+                        </label>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Storage method', 'init-view-count'); ?></th>
                     <td>
-                        <fieldset>
-                            <legend class="screen-reader-text"><?php esc_html_e('Storage method', 'init-view-count'); ?></legend>
-                            <label>
-                                <input type="radio" name="init_plugin_suite_view_count_storage" value="session" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'session'); ?> />
-                                <?php esc_html_e('Session Storage', 'init-view-count'); ?>
-                            </label><br>
-                            <label>
-                                <input type="radio" name="init_plugin_suite_view_count_storage" value="local" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'local'); ?> />
-                                <?php esc_html_e('Local Storage', 'init-view-count'); ?>
-                            </label>
-                        </fieldset>
+                        <legend class="screen-reader-text"><?php esc_html_e('Storage method', 'init-view-count'); ?></legend>
+                        <label>
+                            <input type="radio" name="init_plugin_suite_view_count_storage" value="session" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'session'); ?> />
+                            <?php esc_html_e('Session Storage', 'init-view-count'); ?>
+                        </label><br>
+                        <label>
+                            <input type="radio" name="init_plugin_suite_view_count_storage" value="local" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'local'); ?> />
+                            <?php esc_html_e('Local Storage', 'init-view-count'); ?>
+                        </label>
                     </td>
                 </tr>
                 <tr>

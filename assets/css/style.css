@@ -62,7 +62,8 @@
 .init-plugin-suite-view-count-icon {
   display: inline-block;
   vertical-align: middle;
-  margin-right: 2px;
+  margin-right: 3px;
+  line-height: 1;
 }
 
 .init-plugin-suite-view-count-margin-small-left {

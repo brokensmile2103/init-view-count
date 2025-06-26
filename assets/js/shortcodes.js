@@ -40,7 +40,10 @@
                 attributes: {
                     field: { label: t('field', 'Field'), type: 'select', options: ['total', 'day', 'week', 'month'], default: 'total' },
                     format: { label: t('format', 'Format'), type: 'select', options: ['formatted', 'raw', 'short'], default: 'formatted' },
-                    time: { label: t('time', 'Show Time Diff'), type: 'checkbox', default: false }
+                    time: { label: t('time', 'Show Time Diff'), type: 'checkbox', default: false },
+                    icon: { label: t('icon', 'Show Icon'), type: 'checkbox', default: false },
+                    schema: { label: t('schema', 'Enable Schema.org'), type: 'checkbox', default: false },
+                    class: { label: t('class', 'Custom Class'), type: 'text', placeholder: 'e.g. view-count-lg', default: '' }
                 }
             }
         ];

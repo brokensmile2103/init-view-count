@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.9  
+Stable tag: 1.10  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -57,9 +57,12 @@ GitHub repository: [https://github.com/brokensmile2103/init-view-count](https://
 Shows current view count for a post. Only works inside a post loop.
 
 **Attributes:**
-- `format`: `formatted` (default), `raw`, or `short`
-- `field`: `total`, `day`, `week`, `month`
+- `field`: `total` (default), `day`, `week`, `month` – which counter to display
+- `format`: `formatted` (default), `raw`, or `short` – controls number formatting
 - `time`: `true` to show time diff from post date (e.g. "3 days ago")
+- `icon`: `true` to display a small SVG icon before the count
+- `schema`: `true` to output schema.org microdata (InteractionCounter)
+- `class`: add a custom CSS class to the outer wrapper
 
 === [init_view_list] ===  
 Show list of most viewed posts.
@@ -117,6 +120,65 @@ Retrieve the most viewed posts, ranked by view count.
 
 This endpoint supports filtering and caching, and can be extended to support custom output formats.
 
+== Filters for Developers ==
+
+This plugin provides multiple filters to help developers customize behavior and output in both REST API and shortcode use cases.
+
+**`init_plugin_suite_view_count_should_count`**  
+Allow or prevent counting views for a specific post.  
+**Applies to:** REST `/count`  
+**Params:** `bool $should_count`, `int $post_id`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_meta_key`**  
+Change the meta key used to read or write view counts.  
+**Applies to:** REST & Shortcodes  
+**Params:** `string $meta_key`, `int|null $post_id`
+
+**`init_plugin_suite_view_count_after_counted`**  
+Run custom logic after view count has been incremented.  
+**Applies to:** REST `/count`  
+**Params:** `int $post_id`, `array $updated`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_api_top_args`**  
+Customize WP_Query arguments used for `/top` endpoint.  
+**Applies to:** REST `/top`  
+**Params:** `array $args`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_api_top_item`**  
+Modify each item before it's returned in the `/top` response.  
+**Applies to:** REST `/top`  
+**Params:** `array $item`, `WP_Post $post`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_api_top_cache_time`**  
+Adjust cache time (in seconds) for `/top` results.  
+**Applies to:** REST `/top`  
+**Params:** `int $ttl`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_query_args`**  
+Filter WP_Query args for `[init_view_list]` shortcode.  
+**Applies to:** `[init_view_list]`  
+**Params:** `array $args`, `array $atts`
+
+**`init_plugin_suite_view_count_empty_output`**  
+Customize the HTML output when no posts are found.  
+**Applies to:** `[init_view_list]`  
+**Params:** `string $output`, `array $atts`
+
+**`init_plugin_suite_view_count_view_list_atts`**  
+Modify shortcode attributes before WP_Query is run.  
+**Applies to:** `[init_view_list]`  
+**Params:** `array $atts`
+
+**`init_plugin_suite_view_count_default_shortcode`**  
+Customize the default shortcode used when auto-inserting view count into post content.  
+**Applies to:** `[init_view_count]` auto-insert  
+**Params:** `string $shortcode`
+
+**`init_plugin_suite_view_count_auto_insert_enabled`**  
+Control whether auto-insert is enabled for a given context.  
+**Applies to:** `[init_view_count]` auto-insert  
+**Params:** `bool $enabled`, `string $position`, `string $post_type`
+
 == Template Override ==
 
 To customize output layout, copy any template file into your theme:
@@ -167,55 +229,6 @@ Yes. Use `'meta_key' => '_init_view_count'` and `'orderby' => 'meta_value_num'` 
 = Can I reduce the number of view requests sent to the server? =
 Yes. You can enable batch view tracking in the plugin settings. Instead of sending one request per view, views will be stored in the browser and sent in a group once the threshold is reached.
 
-== Filters for Developers ==
-
-This plugin provides multiple filters to help developers customize behavior and output in both REST API and shortcode use cases.
-
-**`init_plugin_suite_view_count_should_count`**  
-Allow or prevent counting views for a specific post.  
-**Applies to:** REST `/count`  
-**Params:** `bool $should_count`, `int $post_id`, `WP_REST_Request $request`
-
-**`init_plugin_suite_view_count_meta_key`**  
-Change the meta key used to read or write view counts.  
-**Applies to:** REST & Shortcodes  
-**Params:** `string $meta_key`, `int|null $post_id`
-
-**`init_plugin_suite_view_count_after_counted`**  
-Run custom logic after view count has been incremented.  
-**Applies to:** REST `/count`  
-**Params:** `int $post_id`, `array $updated`, `WP_REST_Request $request`
-
-**`init_plugin_suite_view_count_api_top_args`**  
-Customize WP_Query arguments used for `/top` endpoint.  
-**Applies to:** REST `/top`  
-**Params:** `array $args`, `WP_REST_Request $request`
-
-**`init_plugin_suite_view_count_api_top_item`**  
-Modify each item before it's returned in the `/top` response.  
-**Applies to:** REST `/top`  
-**Params:** `array $item`, `WP_Post $post`, `WP_REST_Request $request`
-
-**`init_plugin_suite_view_count_api_top_cache_time`**  
-Adjust cache time (in seconds) for `/top` results.  
-**Applies to:** REST `/top`  
-**Params:** `int $ttl`, `WP_REST_Request $request`
-
-**`init_plugin_suite_view_count_query_args`**  
-Filter WP_Query args for `[init_view_list]` shortcode.  
-**Applies to:** `[init_view_list]`  
-**Params:** `array $args`, `array $atts`
-
-**`init_plugin_suite_view_count_empty_output`**  
-Customize the HTML output when no posts are found.  
-**Applies to:** `[init_view_list]`  
-**Params:** `string $output`, `array $atts`
-
-**`init_plugin_suite_view_count_view_list_atts`**  
-Modify shortcode attributes before WP_Query is run.  
-**Applies to:** `[init_view_list]`  
-**Params:** `array $atts`
-
 == Screenshots ==
 
 1. Plugin settings page – configure post types, view types, delay, scroll check, and storage method.
@@ -226,6 +239,16 @@ Modify shortcode attributes before WP_Query is run.
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.10 – June 26, 2025 =
+- Added new `icon="true"` attribute to `[init_view_count]` shortcode to display inline SVG before the view count
+- New setting: "Auto-insert shortcode into post content?" with options to insert before or after post content
+- Auto-insert only applies to post types where view tracking is enabled (manual shortcode use still supported)
+- Added `schema="true"` attribute to `[init_view_count]` to output Schema.org microdata (`InteractionCounter`)
+- Added `class="custom-class"` attribute to allow injecting custom CSS classes into the shortcode wrapper
+- New filter `init_plugin_suite_view_count_default_shortcode` allows developers to override default auto-insert output
+- New filter `init_plugin_suite_view_count_auto_insert_enabled` gives control over whether auto-insert is active per context
+- Fully backward-compatible: all new features are optional and disabled by default
 
 = 1.9 – June 24, 2025 =
 - Replaced all PHP 8+ `match` expressions with backwards-compatible logic using array maps and switches

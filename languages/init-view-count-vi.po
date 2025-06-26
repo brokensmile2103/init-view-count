@@ -173,3 +173,39 @@ msgstr "Hiển thị bảng xếp hạng lượt xem trong Bảng tin WordPress.
 
 msgid "Uncheck to hide the widget for all users."
 msgstr "Bỏ chọn để ẩn widget với tất cả người dùng."
+
+msgid "Count and store views per day"
+msgstr "Đếm và lưu lượt xem theo ngày"
+
+msgid "Track total views by week"
+msgstr "Theo dõi tổng lượt xem theo tuần"
+
+msgid "Track total views by month"
+msgstr "Theo dõi tổng lượt xem theo tháng"
+
+msgid "Only count views after user scrolls past required percent"
+msgstr "Chỉ đếm khi người dùng cuộn vượt qua phần trăm yêu cầu"
+
+msgid "Auto-insert shortcode into post content?"
+msgstr "Tự động chèn shortcode vào nội dung bài viết?"
+
+msgid "Do not auto-insert (manual shortcode only)"
+msgstr "Không tự chèn (chỉ dùng shortcode thủ công)"
+
+msgid "Insert before content"
+msgstr "Chèn trước nội dung"
+
+msgid "Insert after content"
+msgstr "Chèn sau nội dung"
+
+msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
+msgstr "Chỉ áp dụng cho các post type đã bật đếm view. Lập trình viên luôn có thể chèn thủ công bằng shortcode."
+
+msgid "Show Icon"
+msgstr "Hiện biểu tượng"
+
+msgid "Enable Schema.org"
+msgstr "Bật hỗ trợ Schema.org"
+
+msgid "Custom Class"
+msgstr "Lớp CSS tùy chỉnh"

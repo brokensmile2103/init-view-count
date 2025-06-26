@@ -173,3 +173,39 @@ msgstr ""
 
 msgid "Uncheck to hide the widget for all users."
 msgstr ""
+
+msgid "Count and store views per day"
+msgstr ""
+
+msgid "Track total views by week"
+msgstr ""
+
+msgid "Track total views by month"
+msgstr ""
+
+msgid "Only count views after user scrolls past required percent"
+msgstr ""
+
+msgid "Auto-insert shortcode into post content?"
+msgstr ""
+
+msgid "Do not auto-insert (manual shortcode only)"
+msgstr ""
+
+msgid "Insert before content"
+msgstr ""
+
+msgid "Insert after content"
+msgstr ""
+
+msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
+msgstr ""
+
+msgid "Show Icon"
+msgstr ""
+
+msgid "Enable Schema.org"
+msgstr ""
+
+msgid "Custom Class"
+msgstr ""
