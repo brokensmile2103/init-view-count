@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.10  
+Stable tag: 1.11  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -240,6 +240,13 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 
 == Changelog ==
 
+= 1.11 – June 30, 2025 =
+- Shortcode `[init_view_ranking]` now supports `post_type="..."` to filter rankings by custom post type
+- JS file `ranking.js` updated to pass `post_type` to REST API and cache results per tab and type
+- Removed redundant function `init_plugin_suite_view_count_human_time_diff()` in favor of core `human_time_diff()`
+- Updated `[init_view_count]` shortcode to use native `human_time_diff()` for publishing time display
+- Updated all templates to use native `human_time_diff()` instead of removed custom function
+
 = 1.10 – June 26, 2025 =
 - Added new `icon="true"` attribute to `[init_view_count]` shortcode to display inline SVG before the view count
 - New setting: "Auto-insert shortcode into post content?" with options to insert before or after post content
@@ -317,3 +324,8 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 - 4 templates included  
 - Fully extensible with filters/hooks  
 - Shortcodes with layout switching
+
+== License ==
+
+This plugin is licensed under the GPLv2 or later.  
+You are free to use, modify, and distribute it under the same license.

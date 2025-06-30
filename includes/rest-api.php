@@ -100,7 +100,8 @@ function init_plugin_suite_view_count_count_callback($request) {
 
 function init_plugin_suite_view_count_is_ip_recent( $post_id ) {
     // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    $ip = filter_var( $_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP );
+    $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+    $ip = filter_var( $ip, FILTER_VALIDATE_IP );
     if ( ! $ip ) {
         return false;
     }
@@ -145,10 +146,8 @@ function init_plugin_suite_view_count_top_callback($request) {
             return rest_ensure_response([]);
         }
 
-        // Sort theo score nếu cần
         usort($trending, fn($a, $b) => $b['score'] <=> $a['score']);
 
-        // Lấy slice phân trang
         $sliced = array_slice($trending, $offset, $number);
         $ids    = wp_list_pluck($sliced, 'id');
 
@@ -156,17 +155,15 @@ function init_plugin_suite_view_count_top_callback($request) {
             return rest_ensure_response([]);
         }
 
-        // Lấy bài viết
         $query = new WP_Query([
             'post__in'       => $ids,
-            'orderby'        => 'post__in', // vẫn cần để tránh rối thứ tự
+            'orderby'        => 'post__in',
             'post_type'      => $post_type,
             'post_status'    => 'publish',
             'posts_per_page' => count($ids),
             'no_found_rows'  => true,
         ]);
 
-        // Dựng map trending nhanh
         $trending_map = [];
         foreach ($sliced as $i => $entry) {
             $trending_map[$entry['id']] = [
@@ -176,7 +173,6 @@ function init_plugin_suite_view_count_top_callback($request) {
             ];
         }
 
-        // Chuẩn hoá kết quả
         $results = [];
         foreach ($query->posts as $post) {
             $base = [
@@ -290,7 +286,6 @@ function init_plugin_suite_view_count_top_callback($request) {
         }
     }
 
-    // Append trending data if available
     if ($fields !== 'minimal') {
         $trending = get_transient('init_plugin_suite_view_count_trending');
         if (is_array($trending)) {

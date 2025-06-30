@@ -17,7 +17,6 @@
     let timePassed = false;
     let alreadyTriggered = false;
 
-    // === INIT ===
     setTimeout(() => {
         timePassed = true;
         checkAndSendView();

@@ -39,7 +39,7 @@ if (!$thumb_html) {
                     </svg>
                 </span>
                 <?php
-                $human_time = init_plugin_suite_view_count_human_time_diff(get_the_time('U', $item));
+                $human_time = human_time_diff(get_the_time('U', $item), current_time('timestamp'));
                 echo esc_html($human_time ?: get_the_date('', $item));
                 ?>
             </span>

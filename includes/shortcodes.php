@@ -17,8 +17,6 @@ add_shortcode('init_view_list', function ($atts) {
         'page'            => 1,
     ], $atts, 'init_view_list');
 
-    // 'trending' range uses '_init_view_count' for fallback display,
-    // actual data comes from transient, not sorted by meta
     $meta_key_map = [
         'day'      => '_init_view_day_count',
         'week'     => '_init_view_week_count',
@@ -29,10 +27,6 @@ add_shortcode('init_view_list', function ($atts) {
     $raw_meta_key = isset($meta_key_map[$atts['range']]) ? $meta_key_map[$atts['range']] : '_init_view_count';
     $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', $raw_meta_key, null);
 
-    /**
-     * @note meta_key + meta_query is intentional here to sort posts by view count.
-     * This shortcode is designed to list popular posts based on view count.
-     */
     $query_args = [
         'post_type'           => $atts['post_type'],
         'posts_per_page'      => absint($atts['number']),
@@ -144,7 +138,6 @@ add_shortcode('init_view_count', function ($atts) {
 
     $output  = '<span class="' . esc_attr(implode(' ', $wrapper_classes)) . '">';
 
-    // icon SVG
     if ($atts['icon'] === 'true') {
         $output .= '<span class="init-plugin-suite-view-count-icon" aria-hidden="true">';
         $output .= '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle fill="none" stroke="currentColor" cx="10" cy="10" r="3.45"></circle><path fill="none" stroke="currentColor" d="m19.5,10c-2.4,3.66-5.26,7-9.5,7h0,0,0c-4.24,0-7.1-3.34-9.49-7C2.89,6.34,5.75,3,9.99,3h0,0,0c4.25,0,7.11,3.34,9.5,7Z"></path></svg>';
@@ -155,13 +148,10 @@ add_shortcode('init_view_count', function ($atts) {
     $output .= esc_html($view_text) . '</span>';
 
     if ($atts['time'] === 'true' && $published) {
-        if ($diff = init_plugin_suite_view_count_human_time_diff($published)) {
-            // translators: %s is a human-readable time difference like "3 days", "2 weeks"
-            $output .= ' &middot; ' . sprintf(__('Posted %s ago', 'init-view-count'), esc_html($diff));
-        }
+        $diff = human_time_diff($published, current_time('timestamp'));
+        $output .= ' &middot; ' . sprintf(__('Posted %s ago', 'init-view-count'), esc_html($diff));
     }
 
-    // Nếu bật schema.org
     if ($atts['schema'] === 'true') {
         $output .= '<meta itemprop="interactionStatistic" itemscope itemtype="https://schema.org/InteractionCounter">';
         $output .= '<meta itemprop="interactionType" content="https://schema.org/ViewAction" />';
@@ -173,9 +163,10 @@ add_shortcode('init_view_count', function ($atts) {
 
 add_shortcode('init_view_ranking', function ($atts) {
     $atts = shortcode_atts([
-        'tabs'   => 'total,day,week,month',
-        'number' => 5,
-        'class'  => '',
+        'tabs'      => 'total,day,week,month',
+        'number'    => 5,
+        'class'     => '',
+        'post_type' => '',
     ], $atts, 'init_view_ranking');
 
     wp_enqueue_script(
@@ -190,6 +181,7 @@ add_shortcode('init_view_ranking', function ($atts) {
         'noData'     => __('No data found.', 'init-view-count'),
         'loadError'  => __('Failed to load data.', 'init-view-count'),
         'viewsLabel' => __('views', 'init-view-count'),
+        'postType'   => $atts['post_type'],
     ]);
 
     $tabs = array_filter(array_map('trim', explode(',', $atts['tabs'])));
@@ -204,46 +196,12 @@ add_shortcode('init_view_ranking', function ($atts) {
 
     // Template override
     $template = locate_template('init-view-count/ranking.php') ?: INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'templates/ranking.php';
-    if (!file_exists($template)) return ''; // fallback tránh lỗi
+    if (!file_exists($template)) return '';
 
     ob_start();
     include $template;
     return ob_get_clean();
 });
-
-function init_plugin_suite_view_count_human_time_diff($from, $to = null) {
-    $to = $to ?: current_time('timestamp');
-    $diff = abs($to - $from);
-    if ($diff > 90 * DAY_IN_SECONDS) return false;
-
-    $locale = get_locale();
-    $is_vi = str_starts_with($locale, 'vi');
-
-    $value = 0;
-    if ($diff < HOUR_IN_SECONDS) {
-        $value = max(1, round($diff / MINUTE_IN_SECONDS));
-        // translators: %s is the number of minutes.
-        $unit  = $is_vi ? _n('%s phút', '%s phút', $value, 'init-view-count') : _n('%s minute', '%s minutes', $value, 'init-view-count');
-    } elseif ($diff < DAY_IN_SECONDS) {
-        $value = max(1, round($diff / HOUR_IN_SECONDS));
-        // translators: %s is the number of hours.
-        $unit  = $is_vi ? _n('%s giờ', '%s giờ', $value, 'init-view-count') : _n('%s hour', '%s hours', $value, 'init-view-count');
-    } elseif ($diff < WEEK_IN_SECONDS) {
-        $value = max(1, round($diff / DAY_IN_SECONDS));
-        // translators: %s is the number of days.
-        $unit  = $is_vi ? _n('%s ngày', '%s ngày', $value, 'init-view-count') : _n('%s day', '%s days', $value, 'init-view-count');
-    } elseif ($diff < 30 * DAY_IN_SECONDS) {
-        $value = max(1, round($diff / WEEK_IN_SECONDS));
-        // translators: %s is the number of weeks.
-        $unit  = $is_vi ? _n('%s tuần', '%s tuần', $value, 'init-view-count') : _n('%s week', '%s weeks', $value, 'init-view-count');
-    } else {
-        $value = max(1, round($diff / (30 * DAY_IN_SECONDS)));
-        // translators: %s is the number of months.
-        $unit  = $is_vi ? _n('%s tháng', '%s tháng', $value, 'init-view-count') : _n('%s month', '%s months', $value, 'init-view-count');
-    }
-
-    return sprintf($unit, $value);
-}
 
 function init_plugin_suite_view_count_format_thousands($num) {
     if ($num < 1000) return (string) $num;
@@ -268,7 +226,6 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
         return;
     }
 
-    // Script chung cho các tính năng shortcode builder UI (copy, preview, v.v.)
     wp_enqueue_script(
         'init-view-count-shortcode-builder',
         INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/js/init-shortcode-builder.js',
@@ -313,7 +270,6 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
         ]
     );
 
-    // Script dành riêng cho khu vực builder admin (render nút + panel)
     wp_enqueue_script(
         'init-view-count-admin-shortcode-panel',
         INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/js/shortcodes.js',

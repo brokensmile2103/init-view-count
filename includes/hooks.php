@@ -3,11 +3,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Auto-insert view count shortcode into post content
- * Hooked into: the_content
- */
-
 // Kiểm tra có nên auto chèn không
 function init_plugin_suite_view_count_should_auto_insert($position) {
     if (!is_singular() || is_admin() || is_feed()) {

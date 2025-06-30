@@ -30,6 +30,7 @@
                 shortcode: 'init_view_ranking',
                 attributes: {
                     tabs: { label: t('tabs', 'Tabs'), type: 'text', default: 'total,day,week,month' },
+                    post_type: { label: t('post_type', 'Post Type'), type: 'text', default: 'post' },
                     number: { label: t('number', 'Number of Posts'), type: 'number', default: 5 },
                     class: { label: t('class', 'Custom CSS class'), type: 'text', default: '' }
                 }

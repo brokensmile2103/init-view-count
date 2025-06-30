@@ -45,19 +45,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadData(range, target, number = 5) {
-        if (cache[range]) {
-            target.innerHTML = cache[range];
+        const postType = InitViewRankingI18n.postType || '';
+        const cacheKey = postType ? `${range}_${postType}` : range;
+
+        if (cache[cacheKey]) {
+            target.innerHTML = cache[cacheKey];
             return;
         }
 
         target.innerHTML = renderLoading(number);
 
-        fetch(`/wp-json/initvico/v1/top?range=${range}&number=${number}`)
+        const url = new URL('/wp-json/initvico/v1/top', window.location.origin);
+        url.searchParams.set('range', range);
+        url.searchParams.set('number', number);
+        if (postType) {
+            url.searchParams.set('post_type', postType);
+        }
+
+        fetch(url.toString())
             .then(res => res.json())
             .then(data => {
                 if (!Array.isArray(data)) return;
                 const html = data.map(renderItem).join('');
-                cache[range] = html;
+                cache[cacheKey] = html;
                 target.innerHTML = html || `<div class="init-plugin-suite-view-count-empty">${InitViewRankingI18n.noData}</div>`;
                 target.dataset.loaded = "true";
             })
@@ -66,20 +76,17 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    // map: data-range → content element
     const contentMap = {};
     contents.forEach(content => {
         const range = content.dataset.range;
         if (range) contentMap[range] = content;
     });
 
-    // Auto load first tab
     const first = wrapper.querySelector('.init-plugin-suite-view-count-ranking-tabs li.active button');
     if (first && contentMap[first.dataset.range]) {
         loadData(first.dataset.range, contentMap[first.dataset.range], number);
     }
 
-    // Handle tab switch
     tabs.forEach(btn => {
         btn.addEventListener('click', function () {
             const range = this.dataset.range;

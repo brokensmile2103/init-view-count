@@ -73,32 +73,36 @@ function init_plugin_suite_view_count_render_settings_page() {
                 <tr>
                     <th scope="row"><?php esc_html_e('Post types to track views', 'init-view-count'); ?></th>
                     <td>
-                        <?php foreach ($all_post_types as $type) : ?>
-                            <label>
-                                <input type="checkbox" name="init_plugin_suite_view_count_post_types[]" value="<?php echo esc_attr($type->name); ?>" <?php checked(in_array($type->name, $selected_post_types)); ?> />
-                                <?php echo esc_html($type->label); ?>
-                            </label><br>
-                        <?php endforeach; ?>
+                        <fieldset>
+                            <?php foreach ($all_post_types as $type) : ?>
+                                <label>
+                                    <input type="checkbox" name="init_plugin_suite_view_count_post_types[]" value="<?php echo esc_attr($type->name); ?>" <?php checked(in_array($type->name, $selected_post_types)); ?> />
+                                    <?php echo esc_html($type->label); ?>
+                                </label><br>
+                            <?php endforeach; ?>
+                        </fieldset>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Auto-insert shortcode into post content?', 'init-view-count'); ?></th>
                     <td>
-                        <label>
-                            <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="none"
-                                <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'none'); ?> />
-                            <?php esc_html_e('Do not auto-insert (manual shortcode only)', 'init-view-count'); ?>
-                        </label><br>
-                        <label>
-                            <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="before_content"
-                                <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'before_content'); ?> />
-                            <?php esc_html_e('Insert before content', 'init-view-count'); ?>
-                        </label><br>
-                        <label>
-                            <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="after_content"
-                                <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'after_content'); ?> />
-                            <?php esc_html_e('Insert after content', 'init-view-count'); ?>
-                        </label>
+                        <fieldset>
+                            <label>
+                                <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="none"
+                                    <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'none'); ?> />
+                                <?php esc_html_e('Do not auto-insert (manual shortcode only)', 'init-view-count'); ?>
+                            </label><br>
+                            <label>
+                                <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="before_content"
+                                    <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'before_content'); ?> />
+                                <?php esc_html_e('Insert before content', 'init-view-count'); ?>
+                            </label><br>
+                            <label>
+                                <input type="radio" name="init_plugin_suite_view_count_auto_insert" value="after_content"
+                                    <?php checked(get_option('init_plugin_suite_view_count_auto_insert', 'none'), 'after_content'); ?> />
+                                <?php esc_html_e('Insert after content', 'init-view-count'); ?>
+                            </label>
+                        </fieldset>
                         <p class="description">
                             <?php esc_html_e('Only applies to post types where view count is enabled. Developers can always insert shortcode manually.', 'init-view-count'); ?>
                         </p>
@@ -151,15 +155,16 @@ function init_plugin_suite_view_count_render_settings_page() {
                 <tr>
                     <th scope="row"><?php esc_html_e('Storage method', 'init-view-count'); ?></th>
                     <td>
-                        <legend class="screen-reader-text"><?php esc_html_e('Storage method', 'init-view-count'); ?></legend>
-                        <label>
-                            <input type="radio" name="init_plugin_suite_view_count_storage" value="session" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'session'); ?> />
-                            <?php esc_html_e('Session Storage', 'init-view-count'); ?>
-                        </label><br>
-                        <label>
-                            <input type="radio" name="init_plugin_suite_view_count_storage" value="local" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'local'); ?> />
-                            <?php esc_html_e('Local Storage', 'init-view-count'); ?>
-                        </label>
+                        <fieldset>
+                            <label>
+                                <input type="radio" name="init_plugin_suite_view_count_storage" value="session" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'session'); ?> />
+                                <?php esc_html_e('Session Storage', 'init-view-count'); ?>
+                            </label><br>
+                            <label>
+                                <input type="radio" name="init_plugin_suite_view_count_storage" value="local" <?php checked(get_option('init_plugin_suite_view_count_storage', 'session'), 'local'); ?> />
+                                <?php esc_html_e('Local Storage', 'init-view-count'); ?>
+                            </label>
+                        </fieldset>
                     </td>
                 </tr>
                 <tr>
