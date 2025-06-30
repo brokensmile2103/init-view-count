@@ -4,7 +4,7 @@
 
 **Counts real views. Stores in meta. Renders beautifully. Built for performance.**
 
-[![Version](https://img.shields.io/badge/stable-v1.10-blue.svg)](https://wordpress.org/plugins/init-view-count/)
+[![Version](https://img.shields.io/badge/stable-v1.11-blue.svg)](https://wordpress.org/plugins/init-view-count/)
 [![License](https://img.shields.io/badge/license-GPLv2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 ![Made with ❤️ in HCMC](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20in%20HCMC-blue)
 
@@ -78,6 +78,7 @@ Creates a tabbed ranking layout for views.
 - `tabs`: Comma-separated values: `day`, `week`, `month`, `total` (default: all)
 - `number`: Posts per tab
 - `class`: Custom wrapper class
+- `post_type`: Filter results by specific post type (e.g. post, page)
 
 > Includes lazy loading, skeleton loaders, and JS-only display.
 
