@@ -32,7 +32,10 @@ function init_plugin_suite_view_count_count_callback($request) {
         }
 
         $post_type = get_post_type($post_id);
-        $allowed   = (array) get_option('init_plugin_suite_view_count_post_types', ['post']);
+        $allowed = apply_filters(
+            'init_plugin_suite_view_count_force_post_types',
+            (array) get_option('init_plugin_suite_view_count_post_types', ['post'])
+        );
         if (!in_array($post_type, $allowed, true)) {
             $results[] = [
                 'post_id' => $post_id,

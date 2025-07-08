@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5  
 Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.11  
+Stable tag: 1.12  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -239,6 +239,11 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.12 – July 8, 2025 =
+- Shortcode `[init_view_count]` now supports `id="..."` attribute to display the view count of any post (not just the current one)
+- Allows showing view counts for related posts, custom queries, or manually selected IDs
+- Fully backward-compatible: if `id` is omitted, the current post will be used as before
 
 = 1.11 – June 30, 2025 =
 - Shortcode `[init_view_ranking]` now supports `post_type="..."` to filter rankings by custom post type

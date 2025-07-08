@@ -96,32 +96,39 @@ function init_plugin_suite_view_count_render_template($path, $vars = []) {
 
 add_shortcode('init_view_count', function ($atts) {
     global $post;
-    $id = $post->ID ?? 0;
-    $published = get_post_time('U', true, $id);
 
     $atts = shortcode_atts([
-        'field'  => 'total',
-        'format' => 'formatted',
-        'time'   => 'false',
-        'icon'   => 'false',
-        'schema' => 'false',
-        'class'  => '',
+        'id'     => '',         // ID bài viết cần đếm (tùy chọn)
+        'field'  => 'total',    // Loại đếm: total, day, week, month
+        'format' => 'formatted',// Kiểu hiển thị: formatted, short, raw
+        'time'   => 'false',    // Có hiển thị thời gian đăng không
+        'icon'   => 'false',    // Có hiển thị icon con mắt không
+        'schema' => 'false',    // Có chèn schema tương tác không
+        'class'  => '',         // Thêm class tùy ý
     ], $atts, 'init_view_count');
 
+    // Xác định ID: nếu có truyền qua thì dùng, không thì lấy bài hiện tại
+    $id = absint($atts['id']) ?: ($post->ID ?? 0);
+    if (!$id) return ''; // Không có ID thì thoát
+
+    $published = get_post_time('U', true, $id);
+
+    // Ánh xạ field tương ứng với meta_key
     $meta_key_map = [
         'day'   => '_init_view_day_count',
         'week'  => '_init_view_week_count',
         'month' => '_init_view_month_count',
     ];
-
     $raw_meta_key = isset($meta_key_map[$atts['field']]) ? $meta_key_map[$atts['field']] : '_init_view_count';
-    $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', $raw_meta_key, $id);
+    $meta_key     = apply_filters('init_plugin_suite_view_count_meta_key', $raw_meta_key, $id);
 
+    // Lấy số lượt xem
     $views = (int) get_post_meta($id, $meta_key, true);
 
+    // Xử lý format hiển thị
     switch ($atts['format']) {
         case 'raw':
-            $view_text = number_format_i18n($views);
+            $view_text = $views;
             break;
         case 'short':
             $view_text = init_plugin_suite_view_count_format_thousands($views);
@@ -131,6 +138,7 @@ add_shortcode('init_view_count', function ($atts) {
             break;
     }
 
+    // Bắt đầu render HTML
     $wrapper_classes = ['init-plugin-suite-view-count-views'];
     if (!empty($atts['class'])) {
         $wrapper_classes[] = sanitize_html_class($atts['class']);
@@ -147,11 +155,13 @@ add_shortcode('init_view_count', function ($atts) {
     $output .= '<span class="init-plugin-suite-view-count-number" data-view="' . esc_attr($views) . '" data-id="' . esc_attr($id) . '">';
     $output .= esc_html($view_text) . '</span>';
 
+    // Hiển thị thời gian đăng
     if ($atts['time'] === 'true' && $published) {
         $diff = human_time_diff($published, current_time('timestamp'));
         $output .= ' &middot; ' . sprintf(__('Posted %s ago', 'init-view-count'), esc_html($diff));
     }
 
+    // Schema.org cho SEO
     if ($atts['schema'] === 'true') {
         $output .= '<meta itemprop="interactionStatistic" itemscope itemtype="https://schema.org/InteractionCounter">';
         $output .= '<meta itemprop="interactionType" content="https://schema.org/ViewAction" />';
