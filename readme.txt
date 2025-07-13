@@ -1,12 +1,12 @@
 === Init View Count – Minimal, Accurate, Extensible ===
-Contributors: brokensmile.2103  
-Tags: views, counter, post views, shortcode, rest api   
-Requires at least: 5.5  
-Tested up to: 6.8  
-Requires PHP: 7.4  
-Stable tag: 1.12  
-License: GPLv2 or later  
-License URI: https://www.gnu.org/licenses/gpl-2.0.html  
+Contributors: brokensmile.2103
+Tags: views, counter, post views, shortcode, rest api
+Requires at least: 5.5
+Tested up to: 6.8
+Requires PHP: 7.4
+Stable tag: 1.13
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Count post views accurately via REST API with customizable display. Lightweight, fast, and extensible. Includes shortcode with multiple layouts.
 
@@ -154,6 +154,11 @@ Adjust cache time (in seconds) for `/top` results.
 **Applies to:** REST `/top`  
 **Params:** `int $ttl`, `WP_REST_Request $request`
 
+**`init_plugin_suite_view_count_top_post_types`**  
+Customize the list of post types returned by the `/top` endpoint.  
+**Applies to:** REST `/top`  
+**Params:** `array $post_types`, `WP_REST_Request $request`
+
 **`init_plugin_suite_view_count_query_args`**  
 Filter WP_Query args for `[init_view_list]` shortcode.  
 **Applies to:** `[init_view_list]`  
@@ -239,6 +244,10 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.13 – July 13, 2025 =
+- Added `init_plugin_suite_view_count_top_post_types` filter to allow overriding `post_type` in top view REST API route
+- Useful for restricting or customizing results (e.g., only `manga`, `article`, etc.)
 
 = 1.12 – July 8, 2025 =
 - Shortcode `[init_view_count]` now supports `id="..."` attribute to display the view count of any post (not just the current one)

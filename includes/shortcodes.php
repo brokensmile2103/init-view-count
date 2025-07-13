@@ -236,6 +236,10 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
         return;
     }
 
+    if ( $hook !== 'settings_page_init-view-count-settings' ) {
+        return;
+    }
+
     wp_enqueue_script(
         'init-view-count-shortcode-builder',
         INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/js/init-shortcode-builder.js',

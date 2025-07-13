@@ -39,6 +39,7 @@
                 label: t('init_view_count', 'Init View Count'),
                 shortcode: 'init_view_count',
                 attributes: {
+                    id: { label: t('post_id', 'Post ID (optional)'), type: 'number', default: '' },
                     field: { label: t('field', 'Field'), type: 'select', options: ['total', 'day', 'week', 'month'], default: 'total' },
                     format: { label: t('format', 'Format'), type: 'select', options: ['formatted', 'raw', 'short'], default: 'formatted' },
                     time: { label: t('time', 'Show Time Diff'), type: 'checkbox', default: false },

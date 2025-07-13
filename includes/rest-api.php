@@ -132,16 +132,19 @@ function init_plugin_suite_view_count_is_ip_recent( $post_id ) {
 }
 
 function init_plugin_suite_view_count_top_callback($request) {
-    $range     = $request->get_param('range') ?: 'total';
-    $number    = absint($request->get_param('number')) ?: 5;
-    $page      = max(1, absint($request->get_param('page')));
-    $offset    = ($page - 1) * $number;
-    $post_type = $request->get_param('post_type') ?: ['post', 'page'];
-    $fields    = $request->get_param('fields') === 'minimal' ? 'minimal' : 'full';
-    $no_cache  = $request->get_param('no_cache') === '1';
+    $range         = $request->get_param('range') ?: 'total';
+    $number        = absint($request->get_param('number')) ?: 5;
+    $page          = max(1, absint($request->get_param('page')));
+    $offset        = ($page - 1) * $number;
+    
+    $raw_post_type = $request->get_param('post_type') ?: ['post', 'page'];
+    $post_type     = apply_filters('init_plugin_suite_view_count_top_post_types', (array) $raw_post_type, $request);
 
-    $tax   = sanitize_key($request->get_param('tax'));
-    $terms = $request->get_param('terms');
+    $fields        = $request->get_param('fields') === 'minimal' ? 'minimal' : 'full';
+    $no_cache      = $request->get_param('no_cache') === '1';
+
+    $tax           = sanitize_key($request->get_param('tax'));
+    $terms         = $request->get_param('terms');
 
     if ($range === 'trending') {
         $trending = get_transient('init_plugin_suite_view_count_trending');

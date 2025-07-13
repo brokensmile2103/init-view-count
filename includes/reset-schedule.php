@@ -9,7 +9,10 @@ add_action('init_plugin_suite_view_count_cron_update_trending', 'init_plugin_sui
 add_action('init', function () {
     // Reset view counts hàng ngày lúc 00:01
     if (!wp_next_scheduled('init_plugin_suite_view_count_reset_counts')) {
-        $timestamp = strtotime('tomorrow 00:01', current_time('timestamp'));
+        $site_timezone = wp_timezone();
+        $dt = new DateTime('tomorrow 00:01', $site_timezone);
+        $timestamp = $dt->getTimestamp();
+
         wp_schedule_event($timestamp, 'daily', 'init_plugin_suite_view_count_reset_counts');
     }
 
