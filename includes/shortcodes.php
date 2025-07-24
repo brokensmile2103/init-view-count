@@ -31,11 +31,13 @@ add_shortcode('init_view_list', function ($atts) {
         'post_type'           => $atts['post_type'],
         'posts_per_page'      => absint($atts['number']),
         'offset'              => (max(1, absint($atts['page'])) - 1) * absint($atts['number']),
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
         'meta_key'            => $meta_key,
         'orderby'             => $atts['orderby'],
         'order'               => $atts['order'],
         'ignore_sticky_posts' => true,
         'no_found_rows'       => true,
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
         'meta_query'          => [[
             'key'     => $meta_key,
             'compare' => 'EXISTS',
@@ -158,6 +160,7 @@ add_shortcode('init_view_count', function ($atts) {
     // Hiển thị thời gian đăng
     if ($atts['time'] === 'true' && $published) {
         $diff = human_time_diff($published, current_time('timestamp'));
+        // translators: %s is a human-readable time difference like "3 days"
         $output .= ' &middot; ' . sprintf(__('Posted %s ago', 'init-view-count'), esc_html($diff));
     }
 

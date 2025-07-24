@@ -10,11 +10,13 @@ $thumb_html = get_the_post_thumbnail($item, 'medium', [
 if (!$thumb_html) {
     // This is a static fallback image for posts without thumbnails.
     // SVG is loaded directly because it's not in the media library.
+    // phpcs:disable PluginCheck.CodeAnalysis.ImageFunctions.NonEnqueuedImage
     $thumb_html = sprintf(
         '<img src="%s" alt="%s" class="init-plugin-suite-view-count-thumb-img" loading="lazy" />',
         esc_url(INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/img/thumbnail.svg'),
         esc_attr(get_the_title($item))
     );
+    // phpcs:enable PluginCheck.CodeAnalysis.ImageFunctions.NonEnqueuedImage
 }
 ?>
 

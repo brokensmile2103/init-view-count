@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.13
+Stable tag: 1.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -244,6 +244,20 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.14 – July 24, 2025 =
+- Introduced a powerful hybrid trending algorithm with hourly updates
+- Trending score is calculated based on five dynamic components:
+  - View velocity (per hour, adjusted by recent growth patterns)
+  - Time decay (natural dropoff over time, with extended half-life)
+  - Engagement quality (comments, likes, shares per view)
+  - Content freshness boost (heavier weight for new posts)
+  - Category/tag momentum (boost for trending topics in the last 24 hours)
+- Trending list is automatically cached and refreshed every hour
+- Added diversity filter to ensure balanced results across authors and categories:
+  - Max 2 posts per author and 3 per category if diversity allows
+  - Automatically lifts limits if not enough authors/categories to fill the top list
+- Fully filterable and compatible with all public post types, taxonomies, and view tracking logic
 
 = 1.13 – July 13, 2025 =
 - Added `init_plugin_suite_view_count_top_post_types` filter to allow overriding `post_type` in top view REST API route

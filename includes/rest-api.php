@@ -102,9 +102,8 @@ function init_plugin_suite_view_count_count_callback($request) {
 }
 
 function init_plugin_suite_view_count_is_ip_recent( $post_id ) {
-    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-    $ip = filter_var( $ip, FILTER_VALIDATE_IP );
+    $ip = init_plugin_suite_view_count_get_real_ip();
+
     if ( ! $ip ) {
         return false;
     }
@@ -129,6 +128,42 @@ function init_plugin_suite_view_count_is_ip_recent( $post_id ) {
     set_transient( $key, $list, WEEK_IN_SECONDS * 2 );
 
     return false;
+}
+
+// Enhanced IP detection
+function init_plugin_suite_view_count_get_real_ip() {
+    $ip_keys = [
+        'HTTP_CF_CONNECTING_IP',     // Cloudflare
+        'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+        'HTTP_X_FORWARDED',          // Proxy
+        'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+        'HTTP_CLIENT_IP',            // Proxy
+        'HTTP_X_REAL_IP',           // Nginx proxy
+        'REMOTE_ADDR'               // Standard
+    ];
+
+    foreach ($ip_keys as $key) {
+        if (array_key_exists($key, $_SERVER)) {
+            $ip = sanitize_text_field( wp_unslash( $_SERVER[$key] ) );
+            
+            // Handle comma-separated IPs (X-Forwarded-For có thể có nhiều IP)
+            if (strpos($ip, ',') !== false) {
+                $ip = trim(explode(',', $ip)[0]);
+            }
+            
+            // Validate IP
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return $ip;
+            }
+            
+            // Fallback: accept private IPs too (for local dev)
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+    
+    return '127.0.0.1'; // Ultimate fallback
 }
 
 function init_plugin_suite_view_count_top_callback($request) {
@@ -240,6 +275,7 @@ function init_plugin_suite_view_count_top_callback($request) {
         'posts_per_page' => $number,
         'offset'         => $offset,
         'post_status'    => 'publish',
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
         'meta_key'       => $meta_key,
         'orderby'        => 'meta_value_num',
         'order'          => 'DESC',
@@ -248,6 +284,7 @@ function init_plugin_suite_view_count_top_callback($request) {
 
     if ($tax && taxonomy_exists($tax) && $terms) {
         $term_array = array_map('sanitize_title', explode(',', $terms));
+        // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
         $args['tax_query'] = [[
             'taxonomy' => $tax,
             'field'    => is_numeric($term_array[0]) ? 'term_id' : 'slug',
