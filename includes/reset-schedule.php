@@ -65,8 +65,18 @@ function init_plugin_suite_view_count_reset_counts() {
 function init_plugin_suite_view_count_cron_update_trending() {
     $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', null);
 
+    // Sanitize & fallback post types với validation chặt
+    $post_types = (array) get_option('init_plugin_suite_view_count_post_types', ['post']);
+    $post_types = array_unique(array_filter(array_map('sanitize_key', $post_types)));
+    $post_types = array_diff($post_types, ['attachment']);
+    $post_types = apply_filters('init_plugin_suite_view_count_trending_post_types', $post_types);
+    
+    if (empty($post_types)) {
+        $post_types = ['post']; // Fallback safety
+    }
+
     $query = new WP_Query([
-        'post_type'      => get_post_types(['public' => true]),
+        'post_type'      => $post_types,
         'posts_per_page' => 100,
         // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
         'meta_key'       => $meta_key,
@@ -83,11 +93,21 @@ function init_plugin_suite_view_count_cron_update_trending() {
 }
 
 function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
+    $lock_key = 'trending_calculation_lock';
+    $lock_group = 'init_ps';
+    
+    // Race condition protection với lock + fixed group
+    if (!wp_cache_add($lock_key, time(), $lock_group, 300)) {
+        // Nếu không thể tạo lock, return cached result
+        return get_transient('init_plugin_suite_view_count_trending') ?: [];
+    }
+
     $trending = [];
     $now = current_time('timestamp');
     
     $last_run = get_transient('trending_last_calculation');
     if ($last_run && ($now - $last_run) < 3300) {
+        wp_cache_delete($lock_key, $lock_group);
         return get_transient('init_plugin_suite_view_count_trending') ?: [];
     }
 
@@ -109,13 +129,26 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
 
         $post = get_post($post_id);
         if ($post) {
+            // Cache tất cả data cần thiết để tránh N+1 queries sau này
             $post_cache[$post_id] = [
                 'timestamp' => get_post_time('U', true, $post_id),
                 'category' => wp_get_post_categories($post_id, ['fields' => 'ids']),
                 'tags' => wp_get_post_tags($post_id, ['fields' => 'ids']),
+                'author_id' => (int) $post->post_author, // Cache author_id luôn
             ];
         }
     }
+
+    // Get configurable weights với safe defaults
+    $weights = wp_parse_args(
+        apply_filters('init_plugin_suite_view_count_trending_component_weights', []),
+        [
+            'velocity' => 1.0,
+            'engagement' => 1.0, 
+            'freshness' => 1.0,
+            'momentum' => 1.0
+        ]
+    );
 
     foreach ($post_ids as $post_id) {
         $views = $view_cache[$post_id];
@@ -134,10 +167,15 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
         $freshness_boost = init_plugin_suite_view_count_calculate_freshness_boost($age_hours);
         $category_momentum = init_plugin_suite_view_count_calculate_category_momentum($post_data['category'], $post_data['tags']);
 
+        // Apply configurable weights
         $base_score = $velocity_score * $time_decay;
-        $final_score = $base_score * $engagement_quality * $freshness_boost * $category_momentum;
+        $final_score = $base_score * 
+                      pow($engagement_quality, $weights['engagement']) * 
+                      pow($freshness_boost, $weights['freshness']) * 
+                      pow($category_momentum, $weights['momentum']);
 
-        $normalized_score = min($final_score, 10000);
+        // Soft cap thay vì hard cap
+        $normalized_score = 10000 * (1 - exp(-$final_score / 5000));
 
         $trending[] = [
             'id' => $post_id,
@@ -149,6 +187,8 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
             'views_total' => $views['total'],
             'age_hours' => round($age_hours, 2),
             'time' => $now,
+            'author_id' => $post_data['author_id'], // Cache author_id cho diversity
+            'categories' => $post_data['category'], // Cache categories cho diversity
             'components' => [
                 'velocity' => round($velocity_score, 4),
                 'time_decay' => round($time_decay, 4),
@@ -165,6 +205,9 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
     set_transient('init_plugin_suite_view_count_trending', $top_trending, DAY_IN_SECONDS);
     set_transient('init_plugin_suite_view_count_trending_debug', array_slice($trending, 0, 50), DAY_IN_SECONDS);
     set_transient('trending_last_calculation', $now, DAY_IN_SECONDS);
+
+    // Clean up lock với group
+    wp_cache_delete($lock_key, $lock_group);
 
     return $top_trending;
 }
@@ -214,22 +257,30 @@ function init_plugin_suite_view_count_calculate_time_decay($age_hours) {
     return exp(-$decay_rate * ($age_hours - 2) / $half_life);
 }
 
-// Engagement Quality - Chất lượng tương tác
+// Engagement Quality - Chất lượng tương tác (với smoothing)
 function init_plugin_suite_view_count_calculate_engagement_quality($post_id, $views) {
-    // Lấy số comments, likes, shares nếu có
+    // Lấy số comment
     $comments_count = wp_count_comments($post_id)->approved ?? 0;
-    $likes_count = (int) get_post_meta($post_id, '_likes_count', true);
-    $shares_count = (int) get_post_meta($post_id, '_shares_count', true);
-    
-    $total_views = max(1, $views['day']);
-    
+
+    // Áp dụng filter để cho phép thay đổi meta key của like và share
+    $meta_keys = apply_filters('init_plugin_suite_view_count_engagement_meta_keys', [
+        'likes'  => '_likes_count',
+        'shares' => '_shares_count',
+    ]);
+
+    $likes_count  = (int) get_post_meta($post_id, $meta_keys['likes'], true);
+    $shares_count = (int) get_post_meta($post_id, $meta_keys['shares'], true);
+
+    // Smoothing: tránh chia cho số quá nhỏ
+    $total_views = max(5, $views['day']);
+
     // Tính engagement rate
     $engagement_actions = $comments_count + $likes_count + $shares_count;
     $engagement_rate = $engagement_actions / $total_views;
-    
+
     // Convert to multiplier (1.0 - 2.0)
     $quality_multiplier = 1 + min($engagement_rate * 10, 1.0);
-    
+
     return $quality_multiplier;
 }
 
@@ -279,21 +330,24 @@ function init_plugin_suite_view_count_calculate_category_momentum($categories, $
     return min($momentum_boost, 1.5); // Cap tối đa 50%
 }
 
-// Diversity Filter - Đảm bảo đa dạng content
+// Diversity Filter - Đảm bảo đa dạng content (với fill-back O(n) optimized)
 function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $limit) {
     $selected = [];
+    $chosen = []; // Track selected IDs for O(1) lookup
     $category_count = [];
     $author_count = [];
 
-    // Tập hợp tất cả authors và categories trong danh sách trending
+    // Sử dụng cached data thay vì query lại
     $all_authors = [];
     $all_categories = [];
 
     foreach ($trending_posts as $post) {
-        $author_id = get_post_field('post_author', $post['id']);
+        // Dùng cached author_id thay vì get_post_field
+        $author_id = $post['author_id'];
         $all_authors[$author_id] = true;
 
-        $cats = wp_get_post_categories($post['id']);
+        // Dùng cached categories thay vì wp_get_post_categories
+        $cats = $post['categories'];
         foreach ($cats as $cat_id) {
             $all_categories[$cat_id] = true;
         }
@@ -315,10 +369,10 @@ function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $l
         $max_per_category = $limit;
     }
 
+    // Pass 1: Apply diversity filters
     foreach ($trending_posts as $post) {
-        $post_id = $post['id'];
-        $author_id = get_post_field('post_author', $post_id);
-        $cats = wp_get_post_categories($post_id);
+        $author_id = $post['author_id'];
+        $cats = $post['categories'];
 
         $author_ok = ($author_count[$author_id] ?? 0) < $max_per_author;
 
@@ -332,6 +386,7 @@ function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $l
 
         if ($author_ok && $category_ok) {
             $selected[] = $post;
+            $chosen[$post['id']] = true; // Track cho pass 2
 
             $author_count[$author_id] = ($author_count[$author_id] ?? 0) + 1;
             foreach ($cats as $cat_id) {
@@ -342,10 +397,21 @@ function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $l
         }
     }
 
+    // Pass 2: Fill remaining slots nếu chưa đủ (O(n) optimized)
+    if (count($selected) < $limit) {
+        foreach ($trending_posts as $post) {
+            // O(1) lookup thay vì O(n) loop
+            if (isset($chosen[$post['id']])) continue;
+            
+            $selected[] = $post;
+            if (count($selected) >= $limit) break;
+        }
+    }
+
     return $selected;
 }
 
-// Lấy hot topics trong 24h
+// Lấy hot topics trong 24h (Fixed SQL + Timezone)
 function init_plugin_suite_view_count_get_hot_topics_last_24h() {
     $cached = get_transient('hot_topics_24h');
     if ($cached !== false) {
@@ -354,20 +420,21 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
     
     global $wpdb;
     
-    // Query để lấy categories/tags có nhiều views nhất 24h qua
+    // Fixed: Dùng GMT timestamp và bỏ tt.taxonomy khỏi SELECT
     $day_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', 0);
+    $gmt_24h_ago = gmdate('Y-m-d H:i:s', current_time('timestamp', 1) - DAY_IN_SECONDS);
     
     $sql = "
-        SELECT p.ID, p.post_date,
+        SELECT p.ID,
                pm_day.meta_value as day_views,
-               GROUP_CONCAT(DISTINCT tr.term_taxonomy_id) as term_ids,
-               tt.taxonomy
+               GROUP_CONCAT(DISTINCT tr.term_taxonomy_id) as term_ids
         FROM {$wpdb->posts} p
         LEFT JOIN {$wpdb->postmeta} pm_day ON p.ID = pm_day.post_id AND pm_day.meta_key = %s
         LEFT JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-        LEFT JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+        LEFT JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id 
+            AND tt.taxonomy IN ('category', 'post_tag')
         WHERE p.post_status = 'publish'
-        AND p.post_date >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        AND p.post_date_gmt >= %s
         AND CAST(pm_day.meta_value AS UNSIGNED) > 0
         GROUP BY p.ID
         ORDER BY CAST(pm_day.meta_value AS UNSIGNED) DESC
@@ -375,7 +442,7 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
     ";
     
     // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $results = $wpdb->get_results($wpdb->prepare($sql, $day_meta_key));
+    $results = $wpdb->get_results($wpdb->prepare($sql, $day_meta_key, $gmt_24h_ago));
     $hot_topics = ['categories' => [], 'tags' => []];
     
     foreach ($results as $row) {
@@ -386,7 +453,11 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
         
         foreach ($term_ids as $term_id) {
             $term_id = (int) $term_id;
-            $taxonomy = get_term($term_id)->taxonomy ?? '';
+            $term = get_term($term_id);
+            
+            if (!$term || is_wp_error($term)) continue;
+            
+            $taxonomy = $term->taxonomy;
             
             if ($taxonomy === 'category') {
                 $hot_topics['categories'][$term_id] = ($hot_topics['categories'][$term_id] ?? 0) + $views;

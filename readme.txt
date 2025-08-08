@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.14
+Stable tag: 1.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -184,6 +184,21 @@ Control whether auto-insert is enabled for a given context.
 **Applies to:** `[init_view_count]` auto-insert  
 **Params:** `bool $enabled`, `string $position`, `string $post_type`
 
+**`init_plugin_suite_view_count_engagement_meta_keys`**  
+Change the meta keys used to retrieve `like` and `share` counts when calculating engagement quality.  
+**Applies to:** Engagement algorithm  
+**Params:** `array $meta_keys` (`likes`, `shares`), `int $post_id`
+
+**`init_plugin_suite_view_count_trending_post_types`**  
+Override the list of post types used by the Trending cron calculation.  
+**Applies to:** Cron Trending  
+**Params:** `array $post_types`  
+
+**`init_plugin_suite_view_count_trending_component_weights`**
+Adjust weights for Trending score components.
+**Applies to:** Trending algorithm  
+**Params:** `array $weights` (`velocity`, `engagement`, `freshness`, `momentum`)
+
 == Template Override ==
 
 To customize output layout, copy any template file into your theme:
@@ -244,6 +259,19 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.15 – August 8, 2025 =
+- Trending Engine v2 – optimized for performance and stability:
+  - Added cache lock (object cache) to prevent race conditions when cron overlaps
+  - Soft-cap scoring using an exponential formula for smooth limits (avoids hard caps)
+  - Optimized O(n) diversity filter with auto fill-back to always return enough items
+  - Improved hot topics SQL for ONLY_FULL_GROUP_BY compatibility and timezone safety with post_date_gmt
+  - Reduced N+1 queries by caching author_id, categories, and tags per post
+- New filters for Trending:
+  - `init_plugin_suite_view_count_trending_post_types` – limit/override post types (e.g., only `manga`)
+  - `init_plugin_suite_view_count_trending_component_weights` – adjust weights for velocity, engagement, freshness, momentum
+- Sanitize & fallback: normalized post types from settings, auto-remove `attachment`, safe fallback when empty
+- Engagement smoothing: improved stability when daily views are low
 
 = 1.14 – July 24, 2025 =
 - Introduced a powerful hybrid trending algorithm with hourly updates
