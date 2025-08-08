@@ -4,7 +4,7 @@
 
 **Counts real views. Stores in meta. Renders beautifully. Built for performance.**
 
-[![Version](https://img.shields.io/badge/stable-v1.14-blue.svg)](https://wordpress.org/plugins/init-view-count/)
+[![Version](https://img.shields.io/badge/stable-v1.15-blue.svg)](https://wordpress.org/plugins/init-view-count/)
 [![License](https://img.shields.io/badge/license-GPLv2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 ![Made with ❤️ in HCMC](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20in%20HCMC-blue)
 
@@ -181,6 +181,12 @@ Style it your way – just like WooCommerce templates.
 
 - `init_plugin_suite_view_count_default_shortcode`
 - `init_plugin_suite_view_count_auto_insert_enabled`
+
+#### Trending
+
+- `init_plugin_suite_view_count_engagement_meta_keys` – change meta keys used to retrieve `like` and `share` counts when calculating engagement quality
+- `init_plugin_suite_view_count_trending_post_types` – limit/override post types used for trending calculation (e.g., only `manga`)
+- `init_plugin_suite_view_count_trending_component_weights` – adjust weights for velocity, engagement, freshness, momentum
 
 Full docs: [The Complete Guide to Init View Count](https://en.inithtml.com/series/the-complete-guide-to-init-view-count/)
 
