@@ -70,7 +70,7 @@ function init_plugin_suite_view_count_cron_update_trending() {
     $post_types = array_unique(array_filter(array_map('sanitize_key', $post_types)));
     $post_types = array_diff($post_types, ['attachment']);
     $post_types = apply_filters('init_plugin_suite_view_count_trending_post_types', $post_types);
-    
+
     if (empty($post_types)) {
         $post_types = ['post']; // Fallback safety
     }
@@ -92,37 +92,44 @@ function init_plugin_suite_view_count_cron_update_trending() {
     }
 }
 
+// ==========================================
+// == CORE: TÍNH ĐIỂM TRENDING (BẢN NÂNG)  ==
+// ==========================================
+
 function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
-    $lock_key = 'trending_calculation_lock';
+    $lock_key   = 'trending_calculation_lock';
     $lock_group = 'init_ps';
-    
+
     // Race condition protection với lock + fixed group
     if (!wp_cache_add($lock_key, time(), $lock_group, 300)) {
         // Nếu không thể tạo lock, return cached result
         return get_transient('init_plugin_suite_view_count_trending') ?: [];
     }
 
-    $trending = [];
-    $now = current_time('timestamp');
-    
+    $trending  = [];
+    $now       = current_time('timestamp');
+
     $last_run = get_transient('trending_last_calculation');
     if ($last_run && ($now - $last_run) < 3300) {
         wp_cache_delete($lock_key, $lock_group);
         return get_transient('init_plugin_suite_view_count_trending') ?: [];
     }
 
+    // Prefetch meta cache nếu site có object cache tốt (giảm N+1)
+    update_meta_cache('post', $post_ids);
+
     $view_cache = [];
     $post_cache = [];
 
     foreach ($post_ids as $post_id) {
-        $day_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
-        $week_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
+        $day_meta_key   = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count',   $post_id);
+        $week_meta_key  = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count',  $post_id);
         $month_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
-        $total_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_count', $post_id);
+        $total_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_count',       $post_id);
 
         $view_cache[$post_id] = [
-            'day' => (int) get_post_meta($post_id, $day_meta_key, true),
-            'week' => (int) get_post_meta($post_id, $week_meta_key, true),
+            'day'   => (int) get_post_meta($post_id, $day_meta_key, true),
+            'week'  => (int) get_post_meta($post_id, $week_meta_key, true),
             'month' => (int) get_post_meta($post_id, $month_meta_key, true),
             'total' => (int) get_post_meta($post_id, $total_meta_key, true),
         ];
@@ -132,75 +139,125 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
             // Cache tất cả data cần thiết để tránh N+1 queries sau này
             $post_cache[$post_id] = [
                 'timestamp' => get_post_time('U', true, $post_id),
-                'category' => wp_get_post_categories($post_id, ['fields' => 'ids']),
-                'tags' => wp_get_post_tags($post_id, ['fields' => 'ids']),
+                'category'  => wp_get_post_categories($post_id, ['fields' => 'ids']),
+                'tags'      => wp_get_post_tags($post_id, ['fields' => 'ids']),
                 'author_id' => (int) $post->post_author, // Cache author_id luôn
             ];
         }
     }
 
-    // Get configurable weights với safe defaults
+    // Get configurable weights với safe defaults (BẢN MỚI)
     $weights = wp_parse_args(
         apply_filters('init_plugin_suite_view_count_trending_component_weights', []),
         [
-            'velocity' => 1.0,
-            'engagement' => 1.0, 
-            'freshness' => 1.0,
-            'momentum' => 1.0
+            'velocity'   => 1.0,
+            'engagement' => 1.0,
+            'freshness'  => 1.0,
+            'momentum'   => 1.0,
+            // NEW:
+            'uplift'     => 1.0,  // seasonality-aware uplift
+            'ewma'       => 1.0,  // momentum theo EWMA
+            'fatigue'    => 1.0,  // giảm theo exposure
+            'explore'    => 1.0,  // tỷ lệ explore
+            'mmr'        => 1.0,  // mức đa dạng nội dung
         ]
     );
 
     foreach ($post_ids as $post_id) {
-        $views = $view_cache[$post_id];
+        $views     = $view_cache[$post_id] ?? null;
         $post_data = $post_cache[$post_id] ?? null;
 
-        if (!$post_data || $views['day'] < 1) continue;
+        if (!$views || !$post_data || $views['day'] < 1) continue;
 
-        $post_timestamp = $post_data['timestamp'];
-        if (!$post_timestamp || $post_timestamp <= 0) continue;
+        $post_timestamp = (int) ($post_data['timestamp'] ?? 0);
+        if ($post_timestamp <= 0) continue;
 
-        $age_hours = max(0.5, ($now - $post_timestamp) / 3600);
+        $age_hours = max(0.5, ($now - $post_timestamp) / 3600.0);
 
-        $velocity_score = init_plugin_suite_view_count_calculate_velocity_score($views, $age_hours);
-        $time_decay = init_plugin_suite_view_count_calculate_time_decay($age_hours);
+        $velocity_score     = init_plugin_suite_view_count_calculate_velocity_score($views, $age_hours);
+        $time_decay         = init_plugin_suite_view_count_calculate_time_decay($age_hours);
         $engagement_quality = init_plugin_suite_view_count_calculate_engagement_quality($post_id, $views);
-        $freshness_boost = init_plugin_suite_view_count_calculate_freshness_boost($age_hours);
-        $category_momentum = init_plugin_suite_view_count_calculate_category_momentum($post_data['category'], $post_data['tags']);
+        $freshness_boost    = init_plugin_suite_view_count_calculate_freshness_boost($age_hours);
+        $category_momentum  = init_plugin_suite_view_count_calculate_category_momentum($post_data['category'], $post_data['tags']);
+
+        // NEW: Uplift (seasonality-aware) + EWMA momentum + Anti-gaming
+        list($expected_views, $uplift_mult, $uplift_raw) = init_plugin_suite_view_count_expected_views($views, $age_hours, $post_data['category']);
+        list($ewma_val, $ewma_mult, $acc)                = init_plugin_suite_view_count_ewma_velocity($post_id, $views, $age_hours);
+        $anti_gaming_mult                                 = init_plugin_suite_view_count_anti_gaming_multiplier($views);
 
         // Apply configurable weights
-        $base_score = $velocity_score * $time_decay;
-        $final_score = $base_score * 
-                      pow($engagement_quality, $weights['engagement']) * 
-                      pow($freshness_boost, $weights['freshness']) * 
-                      pow($category_momentum, $weights['momentum']);
+        $base_score  = $velocity_score * $time_decay;
+        $final_score = $base_score
+                     * pow($engagement_quality, $weights['engagement'])
+                     * pow($freshness_boost,    $weights['freshness'])
+                     * pow($category_momentum,  $weights['momentum'])
+                     * pow($uplift_mult,        $weights['uplift'])
+                     * pow($ewma_mult,          $weights['ewma'])
+                     * $anti_gaming_mult;
 
-        // Soft cap thay vì hard cap
+        // Soft cap thay vì hard cap + kẹp tăng trưởng liên run
         $normalized_score = 10000 * (1 - exp(-$final_score / 5000));
+        $normalized_score = init_plugin_suite_view_count_cap_score_growth($post_id, $normalized_score);
 
         $trending[] = [
-            'id' => $post_id,
-            'score' => round($normalized_score, 4),
-            'views' => $views['day'],
-            'views_day' => $views['day'],
-            'views_week' => $views['week'],
-            'views_month' => $views['month'],
-            'views_total' => $views['total'],
-            'age_hours' => round($age_hours, 2),
-            'time' => $now,
-            'author_id' => $post_data['author_id'], // Cache author_id cho diversity
-            'categories' => $post_data['category'], // Cache categories cho diversity
-            'components' => [
-                'velocity' => round($velocity_score, 4),
-                'time_decay' => round($time_decay, 4),
-                'engagement' => round($engagement_quality, 4),
-                'freshness' => round($freshness_boost, 4),
-                'momentum' => round($category_momentum, 4),
+            'id'           => $post_id,
+            'score'        => round($normalized_score, 4),
+            'views'        => $views['day'],
+            'views_day'    => $views['day'],
+            'views_week'   => $views['week'],
+            'views_month'  => $views['month'],
+            'views_total'  => $views['total'],
+            'age_hours'    => round($age_hours, 2),
+            'time'         => $now,
+            'author_id'    => $post_data['author_id'], // Cache author_id cho diversity
+            'categories'   => $post_data['category'],  // Cache categories cho diversity
+            'tags'         => $post_data['tags'],
+            'components'   => [
+                'velocity'    => round($velocity_score, 4),
+                'time_decay'  => round($time_decay, 4),
+                'engagement'  => round($engagement_quality, 4),
+                'freshness'   => round($freshness_boost, 4),
+                'momentum'    => round($category_momentum, 4),
+                // NEW debug fields
+                'uplift'      => round($uplift_mult, 4),
+                'uplift_raw'  => round($uplift_raw, 4),
+                'expected'    => round($expected_views, 2),
+                'ewma'        => round($ewma_mult, 4),
+                'ewma_val'    => round($ewma_val, 4),
+                'acc'         => round($acc, 4),
             ]
         ];
     }
 
+    // Rank lần 1
     usort($trending, fn($a, $b) => $b['score'] <=> $a['score']);
-    $top_trending = init_plugin_suite_view_count_apply_diversity_filter($trending, 20);
+
+    // Mark top flags (trước khi fatigue/MMR) để tính streak
+    $pre_top  = array_slice($trending, 0, 20);
+    $top_hash = [];
+    foreach ($pre_top as $row) { $top_hash[$row['id']] = true; }
+
+    // Exposure fatigue
+    foreach ($trending as &$item) {
+        list($fatigue_mult, $streak) = init_plugin_suite_view_count_exposure_fatigue_multiplier($item['id'], isset($top_hash[$item['id']]));
+        $item['score'] *= pow($fatigue_mult, $weights['fatigue']);
+        $item['components']['fatigue']       = round($fatigue_mult, 4);
+        $item['components']['fatigue_streak']= (int) $streak;
+    }
+    unset($item);
+
+    // Rank lần 2 (sau fatigue)
+    usort($trending, fn($a,$b) => $b['score'] <=> $a['score']);
+
+    // MMR re-rank (đa dạng nội dung sâu)
+    $mmr_lambda = 0.75;
+    $mmr_out    = init_plugin_suite_view_count_mmr_rerank($trending, $mmr_lambda, 20);
+
+    // Explore/Exploit: bơm thử bài tiềm năng
+    $mmr_out = init_plugin_suite_view_count_maybe_explore($mmr_out, $trending, $weights);
+
+    // Diversity Filter quota hiện có (fill-back O(n))
+    $top_trending = init_plugin_suite_view_count_apply_diversity_filter($mmr_out, 20);
 
     set_transient('init_plugin_suite_view_count_trending', $top_trending, DAY_IN_SECONDS);
     set_transient('init_plugin_suite_view_count_trending_debug', array_slice($trending, 0, 50), DAY_IN_SECONDS);
@@ -209,23 +266,28 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
     // Clean up lock với group
     wp_cache_delete($lock_key, $lock_group);
 
+    /**
+     * Hook debug mở rộng (nếu cần)
+     * do_action('init_plugin_suite_view_count_trending_debug_row', $top_trending, $trending);
+     */
+
     return $top_trending;
 }
 
+// ===================================================
+// == CÁC THÀNH PHẦN ĐIỂM (CŨ + NÂNG)               ==
+// ===================================================
+
 // Tính Velocity Score - Tốc độ tăng trưởng lượt xem
 function init_plugin_suite_view_count_calculate_velocity_score($views, $age_hours) {
-    $day_views = $views['day'];
-    $week_views = $views['week'];
+    $day_views   = $views['day'];
+    $week_views  = $views['week'];
     $month_views = $views['month'];
-    $total_views = $views['total'];
-    
-    // Tính tỷ lệ views trong ngày so với tuần
-    $daily_ratio = $week_views > 0 ? ($day_views / $week_views) : 0;
-    
+
     // Tính acceleration - so sánh day vs week vs month
-    $weekly_avg = $week_views > 0 ? $week_views / 7 : 0;
+    $weekly_avg  = $week_views  > 0 ? $week_views  / 7  : 0;
     $monthly_avg = $month_views > 0 ? $month_views / 30 : 0;
-    
+
     $acceleration = 1.0;
     if ($weekly_avg > 0 && $day_views > $weekly_avg) {
         $acceleration += ($day_views / $weekly_avg - 1) * 0.3;
@@ -233,36 +295,31 @@ function init_plugin_suite_view_count_calculate_velocity_score($views, $age_hour
     if ($monthly_avg > 0 && $weekly_avg > $monthly_avg) {
         $acceleration += ($weekly_avg / $monthly_avg - 1) * 0.2;
     }
-    
+
     // Base velocity: views per hour
     $base_velocity = $day_views / min($age_hours, 24);
-    
+
     // Áp dụng logarithmic scaling để tránh bias cho posts có views cực cao
     $scaled_velocity = log(1 + $base_velocity) * 10;
-    
+
     return $scaled_velocity * $acceleration;
 }
 
 // Time Decay - Giảm điểm theo thời gian (optimized for 1h cron)
 function init_plugin_suite_view_count_calculate_time_decay($age_hours) {
-    // Adjusted cho cron interval 1h - decay gentle hơn ban đầu
     if ($age_hours <= 2) {
         return 1.0; // No decay cho 2h đầu
     }
-    
-    // Decay factor: giảm 50% sau 36h thay vì 24h
+    // Decay factor: giảm 50% sau 36h
     $decay_rate = 0.693; // ln(2)
-    $half_life = 36; // hours - tăng từ 24h lên 36h
-    
+    $half_life  = 36;    // hours
     return exp(-$decay_rate * ($age_hours - 2) / $half_life);
 }
 
 // Engagement Quality - Chất lượng tương tác (với smoothing)
 function init_plugin_suite_view_count_calculate_engagement_quality($post_id, $views) {
-    // Lấy số comment
     $comments_count = wp_count_comments($post_id)->approved ?? 0;
 
-    // Áp dụng filter để cho phép thay đổi meta key của like và share
     $meta_keys = apply_filters('init_plugin_suite_view_count_engagement_meta_keys', [
         'likes'  => '_likes_count',
         'shares' => '_shares_count',
@@ -271,93 +328,77 @@ function init_plugin_suite_view_count_calculate_engagement_quality($post_id, $vi
     $likes_count  = (int) get_post_meta($post_id, $meta_keys['likes'], true);
     $shares_count = (int) get_post_meta($post_id, $meta_keys['shares'], true);
 
-    // Smoothing: tránh chia cho số quá nhỏ
     $total_views = max(5, $views['day']);
-
-    // Tính engagement rate
     $engagement_actions = $comments_count + $likes_count + $shares_count;
-    $engagement_rate = $engagement_actions / $total_views;
+    $engagement_rate    = $engagement_actions / $total_views;
 
     // Convert to multiplier (1.0 - 2.0)
     $quality_multiplier = 1 + min($engagement_rate * 10, 1.0);
-
     return $quality_multiplier;
 }
 
 // Freshness Boost - Boost cho content mới (optimized for 1h cron)
 function init_plugin_suite_view_count_calculate_freshness_boost($age_hours) {
-    // Adjusted cho cron 1h/lần - boost spread out hơn
-    if ($age_hours <= 1) {
-        return 1.8; // 80% boost cho content cực mới
-    } elseif ($age_hours <= 3) {
-        return 1.4; // 40% boost
-    } elseif ($age_hours <= 6) {
-        return 1.2; // 20% boost
-    } elseif ($age_hours <= 12) {
-        return 1.1; // 10% boost
-    } elseif ($age_hours <= 24) {
-        return 1.05; // 5% boost
-    }
-    
-    return 1.0; // Không boost
+    if ($age_hours <= 1)   return 1.8;
+    if ($age_hours <= 3)   return 1.4;
+    if ($age_hours <= 6)   return 1.2;
+    if ($age_hours <= 12)  return 1.1;
+    if ($age_hours <= 24)  return 1.05;
+    return 1.0;
 }
 
 // Category Momentum - Xu hướng theo chủ đề
 function init_plugin_suite_view_count_calculate_category_momentum($categories, $tags) {
     static $hot_topics_cache = null;
-    
     if ($hot_topics_cache === null) {
-        // Lấy danh sách chủ đề hot trong 24h qua
         $hot_topics_cache = init_plugin_suite_view_count_get_hot_topics_last_24h();
     }
-    
+
     $momentum_boost = 1.0;
-    
+
     // Check categories
     foreach ($categories as $cat_id) {
         if (isset($hot_topics_cache['categories'][$cat_id])) {
             $momentum_boost *= (1 + $hot_topics_cache['categories'][$cat_id] * 0.1);
         }
     }
-    
+
     // Check tags
     foreach ($tags as $tag_id) {
         if (isset($hot_topics_cache['tags'][$tag_id])) {
             $momentum_boost *= (1 + $hot_topics_cache['tags'][$tag_id] * 0.05);
         }
     }
-    
+
     return min($momentum_boost, 1.5); // Cap tối đa 50%
 }
 
 // Diversity Filter - Đảm bảo đa dạng content (với fill-back O(n) optimized)
 function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $limit) {
     $selected = [];
-    $chosen = []; // Track selected IDs for O(1) lookup
+    $chosen   = []; // Track selected IDs for O(1) lookup
     $category_count = [];
-    $author_count = [];
+    $author_count   = [];
 
     // Sử dụng cached data thay vì query lại
-    $all_authors = [];
+    $all_authors    = [];
     $all_categories = [];
 
     foreach ($trending_posts as $post) {
-        // Dùng cached author_id thay vì get_post_field
         $author_id = $post['author_id'];
         $all_authors[$author_id] = true;
 
-        // Dùng cached categories thay vì wp_get_post_categories
-        $cats = $post['categories'];
+        $cats = $post['categories'] ?? [];
         foreach ($cats as $cat_id) {
             $all_categories[$cat_id] = true;
         }
     }
 
-    $author_count_total = count($all_authors);
+    $author_count_total   = count($all_authors);
     $category_count_total = count($all_categories);
 
     // Giới hạn mặc định
-    $max_per_author = 2;
+    $max_per_author   = 2;
     $max_per_category = 3;
 
     // Nếu số lượng author * max_per_author < limit → không nên áp dụng giới hạn
@@ -372,7 +413,7 @@ function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $l
     // Pass 1: Apply diversity filters
     foreach ($trending_posts as $post) {
         $author_id = $post['author_id'];
-        $cats = $post['categories'];
+        $cats      = $post['categories'] ?? [];
 
         $author_ok = ($author_count[$author_id] ?? 0) < $max_per_author;
 
@@ -386,7 +427,7 @@ function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $l
 
         if ($author_ok && $category_ok) {
             $selected[] = $post;
-            $chosen[$post['id']] = true; // Track cho pass 2
+            $chosen[$post['id']] = true;
 
             $author_count[$author_id] = ($author_count[$author_id] ?? 0) + 1;
             foreach ($cats as $cat_id) {
@@ -400,9 +441,7 @@ function init_plugin_suite_view_count_apply_diversity_filter($trending_posts, $l
     // Pass 2: Fill remaining slots nếu chưa đủ (O(n) optimized)
     if (count($selected) < $limit) {
         foreach ($trending_posts as $post) {
-            // O(1) lookup thay vì O(n) loop
             if (isset($chosen[$post['id']])) continue;
-            
             $selected[] = $post;
             if (count($selected) >= $limit) break;
         }
@@ -417,13 +456,12 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
     if ($cached !== false) {
         return $cached;
     }
-    
+
     global $wpdb;
-    
-    // Fixed: Dùng GMT timestamp và bỏ tt.taxonomy khỏi SELECT
+
     $day_meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', 0);
-    $gmt_24h_ago = gmdate('Y-m-d H:i:s', current_time('timestamp', 1) - DAY_IN_SECONDS);
-    
+    $gmt_24h_ago  = gmdate('Y-m-d H:i:s', current_time('timestamp', 1) - DAY_IN_SECONDS);
+
     $sql = "
         SELECT p.ID,
                pm_day.meta_value as day_views,
@@ -431,7 +469,7 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
         FROM {$wpdb->posts} p
         LEFT JOIN {$wpdb->postmeta} pm_day ON p.ID = pm_day.post_id AND pm_day.meta_key = %s
         LEFT JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-        LEFT JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id 
+        LEFT JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
             AND tt.taxonomy IN ('category', 'post_tag')
         WHERE p.post_status = 'publish'
         AND p.post_date_gmt >= %s
@@ -440,25 +478,25 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
         ORDER BY CAST(pm_day.meta_value AS UNSIGNED) DESC
         LIMIT 100
     ";
-    
+
     // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     $results = $wpdb->get_results($wpdb->prepare($sql, $day_meta_key, $gmt_24h_ago));
     $hot_topics = ['categories' => [], 'tags' => []];
-    
+
     foreach ($results as $row) {
         if (!$row->term_ids) continue;
-        
+
         $term_ids = explode(',', $row->term_ids);
-        $views = (int) $row->day_views;
-        
+        $views    = (int) $row->day_views;
+
         foreach ($term_ids as $term_id) {
             $term_id = (int) $term_id;
             $term = get_term($term_id);
-            
+
             if (!$term || is_wp_error($term)) continue;
-            
+
             $taxonomy = $term->taxonomy;
-            
+
             if ($taxonomy === 'category') {
                 $hot_topics['categories'][$term_id] = ($hot_topics['categories'][$term_id] ?? 0) + $views;
             } elseif ($taxonomy === 'post_tag') {
@@ -466,19 +504,214 @@ function init_plugin_suite_view_count_get_hot_topics_last_24h() {
             }
         }
     }
-    
+
     // Normalize scores (0-1)
     $max_cat_views = max(array_values($hot_topics['categories']) ?: [1]);
     $max_tag_views = max(array_values($hot_topics['tags']) ?: [1]);
-    
+
     foreach ($hot_topics['categories'] as $id => $views) {
         $hot_topics['categories'][$id] = $views / $max_cat_views;
     }
-    
+
     foreach ($hot_topics['tags'] as $id => $views) {
         $hot_topics['tags'][$id] = $views / $max_tag_views;
     }
-    
+
     set_transient('hot_topics_24h', $hot_topics, HOUR_IN_SECONDS * 2);
     return $hot_topics;
+}
+
+// =====================================
+// == NÂNG CẤP MỚI: SHAPE & UPLIFT    ==
+// =====================================
+
+function init_plugin_suite_view_count_get_site_traffic_shape() {
+    $cache = get_transient('init_plugin_suite_view_count_site_traffic_shape');
+    if ($cache !== false) return $cache;
+
+    // Shape mặc định phẳng (1.0)
+    $shape = [
+        'hour' => array_fill(0, 24, 1.0),
+        'wday' => array_fill(0, 7, 1.0),
+    ];
+
+    // Cho phép nguồn khác override bằng hook (đưa mảng 24h/7d đã chuẩn hóa hoặc thô)
+    $now  = current_time('timestamp');
+    $hour = (int) gmdate('G', $now);
+    $wday = (int) gmdate('w', $now);
+    $shape = apply_filters('init_plugin_suite_view_count_site_traffic_shape', $shape, $hour, $wday);
+
+    // normalize mean=1
+    $norm = function($arr){
+        $m = array_sum($arr) / max(1, count($arr));
+        if ($m <= 0) return $arr;
+        foreach ($arr as $i => $v) $arr[$i] = $v / $m;
+        return $arr;
+    };
+    $shape['hour'] = $norm($shape['hour']);
+    $shape['wday'] = $norm($shape['wday']);
+
+    set_transient('init_plugin_suite_view_count_site_traffic_shape', $shape, HOUR_IN_SECONDS * 2);
+    return $shape;
+}
+
+function init_plugin_suite_view_count_expected_views($views, $age_hours, $post_categories) {
+    $shape = init_plugin_suite_view_count_get_site_traffic_shape();
+
+    $now   = current_time('timestamp', true);
+    $hour  = (int) gmdate('G', $now);
+    $wday  = (int) gmdate('w', $now);
+
+    $week_avg_per_day = max(0.0, $views['week'] / 7.0);
+    $progress         = min(24.0, max(1.0, $age_hours)) / 24.0;
+
+    $hot_topics = init_plugin_suite_view_count_get_hot_topics_last_24h();
+    $cat_hot = 0.0;
+    foreach ((array) $post_categories as $cid) {
+        if (!empty($hot_topics['categories'][$cid])) {
+            $cat_hot = max($cat_hot, (float) $hot_topics['categories'][$cid]); // 0..1
+        }
+    }
+
+    $expected = $week_avg_per_day * $progress;
+    $expected *= $shape['hour'][$hour] ?? 1.0;
+    $expected *= $shape['wday'][$wday] ?? 1.0;
+    $expected *= (1.0 + 0.1 * $cat_hot);
+
+    // variance stabilization (Anscombe-ish)
+    $obs    = max(0.0, (float) $views['day']);
+    $uplift = (sqrt($obs + 0.375) - sqrt(max(0.0, $expected) + 0.375));
+
+    // Scale multiplier ~ [0.8 .. 1.5]
+    $mult = 1.0 + max(-0.2, min(0.5, $uplift * 0.15));
+    return [$expected, $mult, $uplift];
+}
+
+// =====================================
+// == NÂNG CẤP MỚI: EWMA & ANTI-GAME  ==
+// =====================================
+
+function init_plugin_suite_view_count_ewma_velocity($post_id, $views, $age_hours) {
+    $v = $views['day'] / max(1.0, min($age_hours, 24.0)); // views/hour gần nhất
+
+    $half  = 6.0; // half-life 6h
+    $alpha = 1.0 - pow(0.5, 1.0 / $half);
+
+    $key  = "ewma_v_$post_id";
+    $prev = wp_cache_get($key, 'init_ps');
+    if ($prev === false) $prev = $v;
+
+    $ewma = $alpha * $v + (1 - $alpha) * $prev;
+    wp_cache_set($key, $ewma, 'init_ps', HOUR_IN_SECONDS * 12);
+
+    // acceleration (kẹp nhẹ)
+    $acc = max(-0.5, min(0.5, $ewma - $prev));
+
+    // multiplier ~ [0.8 .. 1.3]
+    $mult = 1.0 + max(-0.2, min(0.3, log(1 + $ewma) * 0.15 + $acc * 0.1));
+    return [$ewma, $mult, $acc];
+}
+
+function init_plugin_suite_view_count_anti_gaming_multiplier($views) {
+    $day   = max(0, (int) $views['day']);
+    $month = max(1, (int) $views['month']);
+    $total = max(1, (int) $views['total']);
+
+    $day_month_ratio = $day / max(1, $month / 30.0);
+    $day_total_ratio = $day / max(1, $total / 90.0);
+
+    $penalty = 1.0;
+    if ($day_month_ratio > 20) $penalty *= 0.9;
+    if ($day_total_ratio > 50) $penalty *= 0.85;
+
+    return $penalty;
+}
+
+function init_plugin_suite_view_count_cap_score_growth($post_id, $score) {
+    $k    = "last_score_$post_id";
+    $prev = get_transient($k);
+    if ($prev !== false) {
+        $max_allowed = $prev * 1.8 + 10; // cho phép tăng 80% (+10 buffer)
+        $score = min($score, $max_allowed);
+    }
+    set_transient($k, $score, HOUR_IN_SECONDS * 6);
+    return $score;
+}
+
+// =====================================
+// == NÂNG CẤP MỚI: FATIGUE + MMR     ==
+// =====================================
+
+function init_plugin_suite_view_count_exposure_fatigue_multiplier($post_id, $is_top_now) {
+    $k = "top_streak_$post_id";
+    $streak = (int) get_transient($k);
+    if ($is_top_now) {
+        $streak++;
+        set_transient($k, $streak, HOUR_IN_SECONDS * 8);
+    } else {
+        delete_transient($k);
+        $streak = 0;
+    }
+    // sau 6h đứng top, bắt đầu giảm; min 0.8
+    $mult = max(0.8, 1.0 - max(0, $streak - 6) * 0.03);
+    return [$mult, $streak];
+}
+
+function init_plugin_suite_view_count_similarity($a, $b) {
+    // Jaccard theo tập category+tag
+    $sa = array_unique(array_merge($a['categories'] ?? [], $a['tags'] ?? []));
+    $sb = array_unique(array_merge($b['categories'] ?? [], $b['tags'] ?? []));
+    if (empty($sa) && empty($sb)) return 0.0;
+    $ia = array_intersect($sa, $sb);
+    $ua = array_unique(array_merge($sa, $sb));
+    return count($ia) / max(1, count($ua));
+}
+
+function init_plugin_suite_view_count_mmr_rerank(array $posts, $lambda = 0.75, $limit = 20) {
+    $selected = [];
+    $cands    = array_values($posts);
+
+    while (!empty($cands) && count($selected) < $limit) {
+        $best_i = 0; $best_val = -INF;
+        foreach ($cands as $i => $p) {
+            $rel = $p['score'];
+            $div = 0.0;
+            foreach ($selected as $s) {
+                $div = max($div, init_plugin_suite_view_count_similarity($p, $s));
+            }
+            $mmr = $lambda * $rel - (1 - $lambda) * $div * $rel; // phạt tương đồng theo độ lớn rel
+            if ($mmr > $best_val) { $best_val = $mmr; $best_i = $i; }
+        }
+        $selected[] = $cands[$best_i];
+        array_splice($cands, $best_i, 1);
+    }
+    return $selected;
+}
+
+function init_plugin_suite_view_count_maybe_explore(array $ranked, array $pool, $weights) {
+    $epsilon = min(0.25, max(0.0, 0.05 * (float) ($weights['explore'] ?? 1.0))); // 0..0.25
+    // Ngẫu nhiên theo epsilon
+    if (mt_rand() / mt_getrandmax() > $epsilon) return $ranked;
+
+    // chèn 1-2 bài "tiềm năng" (high uplift * ewma) ở vị trí 5-10
+    $cands = array_slice($pool, 0, 50);
+    usort($cands, function($a,$b){
+        $sa = (float) (($a['components']['uplift'] ?? 1.0) * ($a['components']['ewma'] ?? 1.0));
+        $sb = (float) (($b['components']['uplift'] ?? 1.0) * ($b['components']['ewma'] ?? 1.0));
+        return $sb <=> $sa;
+    });
+    $pick = array_slice($cands, 0, 2);
+    $pos  = min(count($ranked), max(5, rand(5,10)));
+    array_splice($ranked, $pos, 0, $pick);
+
+    // loại trùng + cắt limit 20
+    $seen = [];
+    $out  = [];
+    foreach ($ranked as $p) {
+        if (!isset($seen[$p['id']])) {
+            $out[] = $p; $seen[$p['id']] = 1;
+        }
+        if (count($out) >= 20) break;
+    }
+    return $out;
 }

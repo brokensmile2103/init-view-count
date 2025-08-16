@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.15
+Stable tag: 1.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -259,6 +259,25 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.16 – August 16, 2025 =
+- Trending Engine v3 – AI-powered uplift & momentum detection:
+  - Seasonality-aware uplift: compares actual views against expected traffic shape (hour-of-day, day-of-week) for true anomalies
+  - EWMA momentum with acceleration: smoother trend detection, keeps natural growth without noise
+  - Anti-gaming protection: robust ratio checks (day vs month/total) and capped score growth per run
+  - Exposure fatigue: reduces dominance of posts that stay at the top too long, keeps feed fresh
+  - MMR re-ranking: maximized marginal relevance for better diversity across categories and tags
+  - Explore/exploit logic: occasional boost for promising new posts with strong uplift signals
+- Performance & caching:
+  - Cached EWMA velocity per post with 12h TTL, minimal overhead
+  - Site traffic shape cached for 2h with filterable override hook
+  - Added transient-based streak tracking for fatigue multiplier
+- Debug & transparency:
+  - Extended debug payload includes uplift_raw, expected_views, ewma_val, acc, fatigue_streak
+  - New action `init_plugin_suite_view_count_trending_debug_row` available for developers to log detailed trending rows
+- Fully backward-compatible:
+  - Existing filters remain intact (`init_plugin_suite_view_count_trending_component_weights`, `init_plugin_suite_view_count_meta_key`)
+  - Default weights added for uplift, ewma, fatigue, explore, and mmr with safe multipliers
 
 = 1.15 – August 8, 2025 =
 - Trending Engine v2 – optimized for performance and stability:
