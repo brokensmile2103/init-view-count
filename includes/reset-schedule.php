@@ -7,7 +7,7 @@ add_action('init_plugin_suite_view_count_reset_counts', 'init_plugin_suite_view_
 add_action('init_plugin_suite_view_count_cron_update_trending', 'init_plugin_suite_view_count_cron_update_trending');
 
 add_action('init', function () {
-    // Reset view counts hàng ngày lúc 00:01
+    // Reset view counts hàng ngày lúc 00:01 (theo timezone WP)
     if (!wp_next_scheduled('init_plugin_suite_view_count_reset_counts')) {
         $site_timezone = wp_timezone();
         $dt = new DateTime('tomorrow 00:01', $site_timezone);
@@ -25,7 +25,23 @@ add_action('init', function () {
 // === DAILY CRON RESET ===
 
 function init_plugin_suite_view_count_reset_counts() {
+    // === Context thời gian ===
+    $now          = current_time('timestamp');              // theo timezone site
+    $day_of_week  = (int) wp_date('w', $now);               // 0 = Sunday, 1 = Monday, ...
+    $day_of_month = (int) wp_date('j', $now);               // 1 = first day
+    $iso_week     = (int) wp_date('W', $now);
+    $year         = (int) wp_date('Y', $now);
+
+    // Cho phép tùy chỉnh điều kiện reset tuần/tháng
+    $should_reset_week  = apply_filters('init_plugin_suite_view_count_should_reset_week',  ($day_of_week === 1), $day_of_week, $now);
+    $should_reset_month = apply_filters('init_plugin_suite_view_count_should_reset_month', ($day_of_month === 1), $day_of_month, $now);
+
+    // Xác định post types (public) – robust
     $post_types = array_unique(array_filter(array_map('sanitize_key', get_post_types(['public' => true]))));
+    if (empty($post_types)) {
+        // fallback an toàn
+        $post_types = ['post'];
+    }
 
     $args = [
         'post_type'      => $post_types,
@@ -35,49 +51,125 @@ function init_plugin_suite_view_count_reset_counts() {
         'no_found_rows'  => true,
     ];
 
-    $posts = get_posts($args);
-    if (empty($posts)) return;
+    // Bối cảnh chung bắn qua hooks
+    $context = [
+        'now'              => $now,
+        'now_gmt'          => current_time('timestamp', true),
+        'date'             => wp_date('Y-m-d H:i:s', $now),
+        'day_of_week'      => $day_of_week,
+        'day_of_month'     => $day_of_month,
+        'iso_week'         => $iso_week,
+        'year'             => $year,
+        'should_reset_week'=> (bool) $should_reset_week,
+        'should_reset_month'=> (bool) $should_reset_month,
+        'post_types'       => $post_types,
+    ];
 
-    $now = current_time('timestamp');
-    $day_of_week = (int) wp_date('w', $now);   // 0 = Sunday, 1 = Monday, ...
-    $day_of_month = (int) wp_date('j', $now);  // 1 = first day
+    /**
+     * 1) BEFORE RESET (toàn cục)
+     * Cho phép bên ngoài chuẩn bị mọi thứ (log, backup, chuyển trạng thái…)
+     */
+    do_action('init_plugin_suite_view_count_before_reset_counts', $context);
+
+    /**
+     * 2) DAILY SHAPE ROLLUP: gọi TRƯỚC khi xoá day-count
+     * Module ML: hook vào đây để snapshot bins hôm qua và cập nhật EMA hour/wday.
+     * - Không bắt buộc cài đặt; nếu không có listener thì bỏ qua.
+     * - $context giúp quyết định chế độ cập nhật (ví dụ tuần/tháng mới).
+     */
+    do_action('init_plugin_suite_view_count_daily_shape_rollup', $context);
+
+    // Lấy danh sách post
+    $posts = get_posts($args);
+    if (empty($posts)) {
+        // Vẫn bắn after hook với summary rỗng
+        $summary = [
+            'total_posts'      => 0,
+            'reset_day'        => (bool) get_option('init_plugin_suite_view_count_enable_day'),
+            'reset_week'       => (bool) (get_option('init_plugin_suite_view_count_enable_week') && $should_reset_week),
+            'reset_month'      => (bool) (get_option('init_plugin_suite_view_count_enable_month') && $should_reset_month),
+            'affected_posts'   => 0,
+        ];
+        do_action('init_plugin_suite_view_count_after_reset_counts', $summary, $context);
+        return;
+    }
+
+    // Tùy chọn bật tắt (giữ nguyên logic cũ)
+    $enable_day   = (bool) get_option('init_plugin_suite_view_count_enable_day');
+    $enable_week  = (bool) get_option('init_plugin_suite_view_count_enable_week');
+    $enable_month = (bool) get_option('init_plugin_suite_view_count_enable_month');
+
+    $affected = 0;
 
     foreach ($posts as $post_id) {
-        if (get_option('init_plugin_suite_view_count_enable_day')) {
+        // Kế hoạch reset cho post này (đẩy ra hook pre_reset_post)
+        $per_post_plan = [
+            'day'   => $enable_day,
+            'week'  => ($enable_week  && $should_reset_week),
+            'month' => ($enable_month && $should_reset_month),
+        ];
+
+        /**
+         * 3) PRE RESET (mỗi post)
+         * Cho phép plugin khác log lại giá trị cũ, đếm tổng, hoặc thực hiện side-effect.
+         */
+        do_action('init_plugin_suite_view_count_pre_reset_post', $post_id, $per_post_plan, $context);
+
+        if ($per_post_plan['day']) {
             $meta_day = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
             delete_post_meta($post_id, $meta_day);
         }
 
-        if (get_option('init_plugin_suite_view_count_enable_week') && $day_of_week === 1) {
+        if ($per_post_plan['week']) {
             $meta_week = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
             delete_post_meta($post_id, $meta_week);
         }
 
-        if (get_option('init_plugin_suite_view_count_enable_month') && $day_of_month === 1) {
+        if ($per_post_plan['month']) {
             $meta_month = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
             delete_post_meta($post_id, $meta_month);
+        }
+
+        $affected++;
+    }
+
+    // Tóm tắt cho after hook
+    $summary = [
+        'total_posts'      => count($posts),
+        'reset_day'        => $enable_day,
+        'reset_week'       => ($enable_week  && $should_reset_week),
+        'reset_month'      => ($enable_month && $should_reset_month),
+        'affected_posts'   => $affected,
+    ];
+
+    /**
+     * 4) AFTER RESET (toàn cục)
+     * Cho phép clear cache, rebuild index, audit log, v.v.
+     */
+    do_action('init_plugin_suite_view_count_after_reset_counts', $summary, $context);
+
+    // (Tùy chọn) Kích hoạt trending ngay sau reset (để danh sách phản ánh số liệu mới)
+    $trigger_trending = apply_filters('init_plugin_suite_view_count_after_daily_reset_trigger_trending', true);
+    if ($trigger_trending) {
+        // Đặt single event ngay lập tức (safe với cron runner)
+        if (!wp_next_scheduled('init_plugin_suite_view_count_cron_update_trending')) {
+            wp_schedule_single_event(time() + 10, 'init_plugin_suite_view_count_cron_update_trending');
+        } else {
+            // Nếu đã có lịch hourly, vẫn bắn ngay để không chờ 1h
+            do_action('init_plugin_suite_view_count_cron_update_trending');
         }
     }
 }
 
 // === CRON: UPDATE TRENDING ===
 
-function init_plugin_suite_view_count_cron_update_trending() {
-    $meta_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', null);
+// Internal helper: fetch top post IDs by a specific meta key.
+function init_plugin_suite_view_count_fetch_ids_by_key( $meta_key, $post_types, $limit ) {
+    if ( empty( $meta_key ) ) return [];
 
-    // Sanitize & fallback post types với validation chặt
-    $post_types = (array) get_option('init_plugin_suite_view_count_post_types', ['post']);
-    $post_types = array_unique(array_filter(array_map('sanitize_key', $post_types)));
-    $post_types = array_diff($post_types, ['attachment']);
-    $post_types = apply_filters('init_plugin_suite_view_count_trending_post_types', $post_types);
-
-    if (empty($post_types)) {
-        $post_types = ['post']; // Fallback safety
-    }
-
-    $query = new WP_Query([
+    $q = new WP_Query([
         'post_type'      => $post_types,
-        'posts_per_page' => 100,
+        'posts_per_page' => $limit,
         // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
         'meta_key'       => $meta_key,
         'orderby'        => 'meta_value_num',
@@ -87,8 +179,114 @@ function init_plugin_suite_view_count_cron_update_trending() {
         'fields'         => 'ids',
     ]);
 
-    if (!empty($query->posts)) {
-        init_plugin_suite_view_count_calculate_trending($query->posts);
+    return ! empty( $q->posts ) ? $q->posts : [];
+}
+
+// Update Trending: multi-key fallback + rank fusion
+function init_plugin_suite_view_count_cron_update_trending() {
+    // ====== Configs ======
+    $limit     = (int) apply_filters('init_plugin_suite_view_count_trending_limit', 100);
+    $min_count = (int) apply_filters('init_plugin_suite_view_count_trending_min_count', 20);
+
+    // ====== Post types (sanitize kỹ) ======
+    $post_types = (array) get_option('init_plugin_suite_view_count_post_types', ['post']);
+    $post_types = array_unique(array_filter(array_map('sanitize_key', $post_types)));
+    $post_types = array_diff($post_types, ['attachment']);
+    $post_types = apply_filters('init_plugin_suite_view_count_trending_post_types', $post_types);
+    if (empty($post_types)) $post_types = ['post'];
+
+    // ====== Meta keys ======
+    $day_key   = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count',   null);
+    $week_key  = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count',  null);
+    $month_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', null);
+    $total_key = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_count',       null);
+
+    // ====== Pull lists ======
+    $day_ids   = init_plugin_suite_view_count_fetch_ids_by_key( $day_key,   $post_types, $limit );
+
+    // Nếu đủ theo ngày thì dùng luôn để giữ hành vi cũ
+    if (count($day_ids) >= $min_count) {
+        init_plugin_suite_view_count_calculate_trending( array_slice($day_ids, 0, $limit) );
+        return;
+    }
+
+    // Chỉ query thêm khi cần fallback
+    $week_ids  = init_plugin_suite_view_count_fetch_ids_by_key( $week_key,  $post_types, $limit );
+    $month_ids = init_plugin_suite_view_count_fetch_ids_by_key( $month_key, $post_types, $limit );
+    $total_ids = init_plugin_suite_view_count_fetch_ids_by_key( $total_key, $post_types, $limit );
+
+    // ====== Rank-fusion fallback ======
+    // Tạo map rank cho nhanh
+    $rank = function(array $ids){ return array_flip($ids); };
+    $day_rank   = $rank($day_ids);
+    $week_rank  = $rank($week_ids);
+    $month_rank = $rank($month_ids);
+    $total_rank = $rank($total_ids);
+
+    // Ứng viên: nối day → week → month → total, tránh trùng, tối đa $limit
+    $candidates = [];
+    foreach ([$day_ids, $week_ids, $month_ids, $total_ids] as $list) {
+        foreach ($list as $pid) {
+            if (!in_array($pid, $candidates, true)) {
+                $candidates[] = $pid;
+                if (count($candidates) >= $limit) break 2;
+            }
+        }
+    }
+
+    // Trọng số rank (ưu tiên day)
+    $weights = (array) apply_filters('init_plugin_suite_view_count_trending_weights', [
+        'day'   => 1.0,
+        'week'  => 0.6,
+        'month' => 0.3,
+        'total' => 0.15,
+    ]);
+
+    $get_part = function($r) use ($limit){ return 1.0 - ($r / max(1,$limit)); };
+
+    $scores = [];
+    foreach ($candidates as $pid) {
+        $s = 0.0;
+        if (isset($day_rank[$pid]))   $s += $weights['day']   * $get_part($day_rank[$pid]);
+        if (isset($week_rank[$pid]))  $s += $weights['week']  * $get_part($week_rank[$pid]);
+        if (isset($month_rank[$pid])) $s += $weights['month'] * $get_part($month_rank[$pid]);
+        if (isset($total_rank[$pid])) $s += $weights['total'] * $get_part($total_rank[$pid]);
+        // bonus nếu có mặt ở day list
+        if (isset($day_rank[$pid]))   $s += (float) apply_filters('init_plugin_suite_view_count_trending_day_presence_bonus', 0.02);
+        $scores[$pid] = $s;
+    }
+
+    // Sort theo score desc, tie-break bằng rank ngày → rank tuần → ID mới hơn
+    usort($candidates, function($a,$b) use($scores,$day_rank,$week_rank){
+        $sa=$scores[$a]??0; $sb=$scores[$b]??0;
+        if ($sa===$sb) {
+            $ra=$day_rank[$a]??PHP_INT_MAX; $rb=$day_rank[$b]??PHP_INT_MAX;
+            if ($ra===$rb) {
+                $wa=$week_rank[$a]??PHP_INT_MAX; $wb=$week_rank[$b]??PHP_INT_MAX;
+                if ($wa===$wb) return $b<=>$a; // id mới trước
+                return $wa<=>$wb;
+            }
+            return $ra<=>$rb;
+        }
+        return ($sa<$sb)?1:-1;
+    });
+
+    // Đảm bảo tối thiểu min_count (nếu vẫn thiếu, tiếp tục bơm từ các list dài hơn)
+    if (count($candidates) < $min_count) {
+        foreach ([$week_ids,$month_ids,$total_ids] as $more) {
+            foreach ($more as $pid) {
+                if (!in_array($pid,$candidates,true)) {
+                    $candidates[]=$pid;
+                    if (count($candidates)>= $min_count) break 2;
+                }
+            }
+        }
+    }
+
+    // Pass sang core calculate
+    $final_ids = array_slice($candidates, 0, max($min_count, $limit));
+    if (!empty($final_ids)) {
+        init_plugin_suite_view_count_calculate_trending($final_ids);
     }
 }
 
@@ -167,23 +365,42 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
         $views     = $view_cache[$post_id] ?? null;
         $post_data = $post_cache[$post_id] ?? null;
 
-        if (!$views || !$post_data || $views['day'] < 1) continue;
+        if (!$views || !$post_data) continue;
 
         $post_timestamp = (int) ($post_data['timestamp'] ?? 0);
         if ($post_timestamp <= 0) continue;
 
         $age_hours = max(0.5, ($now - $post_timestamp) / 3600.0);
 
-        $velocity_score     = init_plugin_suite_view_count_calculate_velocity_score($views, $age_hours);
+        // --- Day views fallback (đầu ngày day thường = 0) ---
+        $views_eff = $views; // bản sao an toàn
+
+        if ((int)$views_eff['day'] === 0) {
+            // Ước lượng day_views từ week với tiến độ trong ngày (0..1),
+            // giúp velocity/engagement không bị 0 cứng.
+            $weekly_avg_per_day = $views['week'] > 0 ? ($views['week'] / 7.0) : 0.0;
+            $progress_in_day    = min(1.0, max(0.05, $age_hours / 24.0)); // ít nhất 5% để tránh 0
+            $est_day            = (int) round($weekly_avg_per_day * $progress_in_day);
+
+            // kẹp nhẹ để không over-estimate khi tuần quá thấp
+            if ($views['month'] > 0) {
+                $monthly_avg_per_day = $views['month'] / 30.0;
+                $est_day = max($est_day, (int) round(0.3 * $monthly_avg_per_day * $progress_in_day));
+            }
+
+            $views_eff['day'] = max(1, $est_day); // tối thiểu 1 để có velocity dương
+        }
+
+        $velocity_score     = init_plugin_suite_view_count_calculate_velocity_score($views_eff, $age_hours);
         $time_decay         = init_plugin_suite_view_count_calculate_time_decay($age_hours);
-        $engagement_quality = init_plugin_suite_view_count_calculate_engagement_quality($post_id, $views);
+        $engagement_quality = init_plugin_suite_view_count_calculate_engagement_quality($post_id, $views_eff);
         $freshness_boost    = init_plugin_suite_view_count_calculate_freshness_boost($age_hours);
         $category_momentum  = init_plugin_suite_view_count_calculate_category_momentum($post_data['category'], $post_data['tags']);
 
         // NEW: Uplift (seasonality-aware) + EWMA momentum + Anti-gaming
         list($expected_views, $uplift_mult, $uplift_raw) = init_plugin_suite_view_count_expected_views($views, $age_hours, $post_data['category']);
         list($ewma_val, $ewma_mult, $acc)                = init_plugin_suite_view_count_ewma_velocity($post_id, $views, $age_hours);
-        $anti_gaming_mult                                 = init_plugin_suite_view_count_anti_gaming_multiplier($views);
+        $anti_gaming_mult                                = init_plugin_suite_view_count_anti_gaming_multiplier($views);
 
         // Apply configurable weights
         $base_score  = $velocity_score * $time_decay;
@@ -200,19 +417,21 @@ function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
         $normalized_score = init_plugin_suite_view_count_cap_score_growth($post_id, $normalized_score);
 
         $trending[] = [
-            'id'           => $post_id,
-            'score'        => round($normalized_score, 4),
-            'views'        => $views['day'],
-            'views_day'    => $views['day'],
-            'views_week'   => $views['week'],
-            'views_month'  => $views['month'],
-            'views_total'  => $views['total'],
-            'age_hours'    => round($age_hours, 2),
-            'time'         => $now,
-            'author_id'    => $post_data['author_id'], // Cache author_id cho diversity
-            'categories'   => $post_data['category'],  // Cache categories cho diversity
-            'tags'         => $post_data['tags'],
-            'components'   => [
+            'id'                => $post_id,
+            'score'             => round($normalized_score, 4),
+            'views'             => $views['day'],
+            'views_day'         => $views['day'],
+            'views_week'        => $views['week'],
+            'views_month'       => $views['month'],
+            'views_total'       => $views['total'],
+            'views_day_used'    => (int)$views_eff['day'],
+            'used_day_fallback' => (int)($views['day'] === 0),
+            'age_hours'         => round($age_hours, 2),
+            'time'              => $now,
+            'author_id'         => $post_data['author_id'], // Cache author_id cho diversity
+            'categories'        => $post_data['category'],  // Cache categories cho diversity
+            'tags'              => $post_data['tags'],
+            'components'        => [
                 'velocity'    => round($velocity_score, 4),
                 'time_decay'  => round($time_decay, 4),
                 'engagement'  => round($engagement_quality, 4),
@@ -536,10 +755,10 @@ function init_plugin_suite_view_count_get_site_traffic_shape() {
     ];
 
     // Cho phép nguồn khác override bằng hook (đưa mảng 24h/7d đã chuẩn hóa hoặc thô)
-    $now  = current_time('timestamp');
-    $hour = (int) gmdate('G', $now);
-    $wday = (int) gmdate('w', $now);
-    $shape = apply_filters('init_plugin_suite_view_count_site_traffic_shape', $shape, $hour, $wday);
+    $now_gmt = current_time('timestamp', true);
+    $hour    = (int) wp_date('G', $now_gmt);
+    $wday    = (int) wp_date('w', $now_gmt);
+    $shape   = apply_filters('init_plugin_suite_view_count_site_traffic_shape', $shape, $hour, $wday);
 
     // normalize mean=1
     $norm = function($arr){
@@ -558,9 +777,9 @@ function init_plugin_suite_view_count_get_site_traffic_shape() {
 function init_plugin_suite_view_count_expected_views($views, $age_hours, $post_categories) {
     $shape = init_plugin_suite_view_count_get_site_traffic_shape();
 
-    $now   = current_time('timestamp', true);
-    $hour  = (int) gmdate('G', $now);
-    $wday  = (int) gmdate('w', $now);
+    $now_gmt = current_time('timestamp', true);
+    $hour    = (int) wp_date('G', $now_gmt);
+    $wday    = (int) wp_date('w', $now_gmt);
 
     $week_avg_per_day = max(0.0, $views['week'] / 7.0);
     $progress         = min(24.0, max(1.0, $age_hours)) / 24.0;
@@ -691,7 +910,7 @@ function init_plugin_suite_view_count_mmr_rerank(array $posts, $lambda = 0.75, $
 function init_plugin_suite_view_count_maybe_explore(array $ranked, array $pool, $weights) {
     $epsilon = min(0.25, max(0.0, 0.05 * (float) ($weights['explore'] ?? 1.0))); // 0..0.25
     // Ngẫu nhiên theo epsilon
-    if (mt_rand() / mt_getrandmax() > $epsilon) return $ranked;
+    if ( ( wp_rand(0, 1000000) / 1000000 ) > $epsilon ) return $ranked;
 
     // chèn 1-2 bài "tiềm năng" (high uplift * ewma) ở vị trí 5-10
     $cands = array_slice($pool, 0, 50);
@@ -701,7 +920,7 @@ function init_plugin_suite_view_count_maybe_explore(array $ranked, array $pool, 
         return $sb <=> $sa;
     });
     $pick = array_slice($cands, 0, 2);
-    $pos  = min(count($ranked), max(5, rand(5,10)));
+    $pos  = min(count($ranked), max(5, wp_rand(5, 10)));
     array_splice($ranked, $pos, 0, $pick);
 
     // loại trùng + cắt limit 20

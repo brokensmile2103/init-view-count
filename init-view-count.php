@@ -3,7 +3,7 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 1.16
+ * Version: 1.17
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
@@ -18,13 +18,14 @@
 defined('ABSPATH') || exit;
 
 // === Constants ===
-define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '1.16');
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '1.17');
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG',   'init-view-count' );
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_DIR',     plugin_dir_path(__FILE__));
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_URL',     plugin_dir_url(__FILE__));
 
 // === Include core files ===
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/rest-api.php';
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/traffic-shape.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/reset-schedule.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/shortcodes.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/hooks.php';

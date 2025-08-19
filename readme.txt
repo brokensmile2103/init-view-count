@@ -4,7 +4,7 @@ Tags: views, counter, post views, shortcode, rest api
 Requires at least: 5.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.16
+Stable tag: 1.17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -259,6 +259,32 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.17 – August 16, 2025 =
+- Traffic Shape Learner – AI-powered hourly & weekday distribution model:
+  - Collects raw hourly bins per day and rolls them up into site-wide traffic shape
+  - Hour-of-day pattern: updated via EMA with Bayesian prior smoothing (kappa control)
+  - Day-of-week pattern: updated via EMA with stabilized daily totals
+  - Both distributions normalized to mean = 1 for consistent multiplicative scaling
+- Performance & caching:
+  - Learned shapes cached in transient for 2h with filterable TTL
+  - Rollup action protected by object-cache lock to avoid race conditions
+  - Minimal overhead: only 1 write per view increment + 1 rollup per day
+- Filters & extensibility:
+  - `init_plugin_suite_view_count_site_traffic_shape` provides current hour/day shape arrays
+  - Tunable alpha/kappa values via filters for both hour-of-day and weekday models
+  - `init_plugin_suite_view_count_shape_collect_enabled` allows enabling/disabling collection
+- Reset & admin:
+  - New admin-post action `init_plugin_suite_view_count_shape_reset` to clear all learned shape data
+  - Fully safe to run anytime – plugin will rebuild patterns automatically
+- Backward compatibility:
+  - All existing trending and view count filters remain intact
+  - Trending Engine v3 (1.16) automatically integrates with learned shapes for uplift calculation
+- Trending Engine improvements:
+  - Multi-key fallback (day → week → month → total) ensures enough posts even at start of day
+  - Day-views fallback estimation from week/month averages prevents empty scores at early hours
+  - Optimized CRON queries: skip week/month/total lookups if daily data already sufficient
+  - Debug payload now includes `views_day_used` and fallback flags for transparency
 
 = 1.16 – August 16, 2025 =
 - Trending Engine v3 – AI-powered uplift & momentum detection:
