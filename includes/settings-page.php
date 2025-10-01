@@ -58,6 +58,9 @@ function init_plugin_suite_view_count_render_settings_page() {
         $disable_style = !empty($_POST['init_plugin_suite_view_count_disable_style']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_disable_style', $disable_style);
 
+        $disable_trending = ! empty($_POST['init_plugin_suite_view_count_disable_trending']) ? 1 : 0;
+        update_option('init_plugin_suite_view_count_disable_trending', $disable_trending);
+
         echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Settings saved.', 'init-view-count') . '</p></div>';
     }
 
@@ -211,6 +214,20 @@ function init_plugin_suite_view_count_render_settings_page() {
                         </label>
                         <p class="description">
                             <?php esc_html_e('Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS.', 'init-view-count'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Disable Trending?', 'init-view-count'); ?></th>
+                    <td>
+                        <label>
+                            <input type="checkbox"
+                                   name="init_plugin_suite_view_count_disable_trending"
+                                   <?php checked(get_option('init_plugin_suite_view_count_disable_trending', 0)); ?> />
+                            <?php esc_html_e('Completely turn off trending calculations and outputs.', 'init-view-count'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('Check this to hard-disable trending.', 'init-view-count'); ?>
                         </p>
                     </td>
                 </tr>

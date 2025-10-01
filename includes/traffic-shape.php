@@ -37,6 +37,10 @@ function init_plugin_suite_view_count_shape_normalize_mean_one(array $arr) {
 add_action('init_plugin_suite_view_count_after_counted', 'init_plugin_suite_view_count_shape_on_after_counted', 10, 3);
 
 function init_plugin_suite_view_count_shape_on_after_counted($post_id, $updated, $request) {
+    if ( ! init_view_count_trending_enabled() ) {
+        return; // noop khi Trending tắt
+    }
+
     if ( apply_filters('init_plugin_suite_view_count_shape_collect_enabled', true) !== true ) return;
     if ( is_admin() && apply_filters('init_plugin_suite_view_count_shape_skip_admin', true) ) return;
 
@@ -104,6 +108,10 @@ function init_plugin_suite_view_count_shape_on_after_counted($post_id, $updated,
 add_action('init_plugin_suite_view_count_daily_shape_rollup', 'init_plugin_suite_view_count_shape_daily_rollup', 10, 1);
 
 function init_plugin_suite_view_count_shape_daily_rollup($context) {
+    if ( ! init_view_count_trending_enabled() ) {
+        return; // noop khi Trending tắt
+    }
+
     $lock_key = 'rollup_lock';
     if ( ! wp_cache_add($lock_key, time(), INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_LOCK_GROUP, 300) ) {
         return;
@@ -201,6 +209,14 @@ function init_plugin_suite_view_count_shape_daily_rollup($context) {
 add_filter('init_plugin_suite_view_count_site_traffic_shape', 'init_plugin_suite_view_count_shape_provide', 5, 3);
 
 function init_plugin_suite_view_count_shape_provide($shape, $hour_now, $wday_now) {
+    if ( ! init_view_count_trending_enabled() ) {
+        // Neutral shape: mean = 1 cho cả giờ & thứ
+        return [
+            'hour' => array_fill(0, 24, 1.0),
+            'wday' => array_fill(0, 7,  1.0),
+        ];
+    }
+
     $cache = get_transient('init_plugin_suite_view_count_site_traffic_shape_learned');
     if ($cache && is_array($cache)) {
         return $cache;

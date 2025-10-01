@@ -201,10 +201,13 @@ add_shortcode('init_view_ranking', function ($atts) {
     if (empty($tabs)) return '';
 
     $labels = [
-        'total' => __('All Time', 'init-view-count'),
-        'day'   => __('Today', 'init-view-count'),
-        'week'  => __('This Week', 'init-view-count'),
-        'month' => __('This Month', 'init-view-count'),
+        'total'      => __('All Time', 'init-view-count'),
+        'day'        => __('Today', 'init-view-count'),
+        'week'       => __('This Week', 'init-view-count'),
+        'month'      => __('This Month', 'init-view-count'),
+        'yesterday'  => __('Yesterday', 'init-view-count'),
+        'last_week'  => __('Last Week', 'init-view-count'),
+        'last_month' => __('Last Month', 'init-view-count'),
     ];
 
     // Template override
@@ -228,8 +231,8 @@ function init_plugin_suite_view_count_format_thousands($num) {
     }
 
     $value = ($num - floor($num) > 0)
-        ? number_format($num, 1, '.', '')
-        : number_format($num, 0, '.', '');
+        ? number_format_i18n($num, 1, '.', '')
+        : number_format_i18n($num, 0, '.', '');
 
     return $value . ' ' . $suffixes[$i - 1];
 }

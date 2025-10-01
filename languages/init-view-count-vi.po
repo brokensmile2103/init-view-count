@@ -6,6 +6,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "Init View Count"
+msgstr "Init View Count"
+
 msgid "Init View Count – Minimal, Accurate, Extensible"
 msgstr "Init View Count – Tối giản, Chính xác, Mở rộng dễ dàng"
 
@@ -68,6 +71,15 @@ msgstr "Tuần này"
 
 msgid "This Month"
 msgstr "Tháng này"
+
+msgid "Yesterday"
+msgstr "Hôm qua"
+
+msgid "Last Week"
+msgstr "Tuần trước"
+
+msgid "Last Month"
+msgstr "Tháng trước"
 
 msgid "No data found."
 msgstr "Không có dữ liệu."
@@ -209,3 +221,12 @@ msgstr "Bật hỗ trợ Schema.org"
 
 msgid "Custom Class"
 msgstr "Lớp CSS tùy chỉnh"
+
+msgid "Disable Trending?"
+msgstr "Tắt tính năng Trending?"
+
+msgid "Completely turn off trending calculations and outputs."
+msgstr "Tắt hoàn toàn việc tính toán và hiển thị Trending."
+
+msgid "Check this to hard-disable trending."
+msgstr "Đánh dấu để vô hiệu hóa Trending."

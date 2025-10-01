@@ -1,10 +1,10 @@
-=== Init View Count – Minimal, Accurate, Extensible ===
+=== Init View Count – AI-Powered, Trending, REST API ===
 Contributors: brokensmile.2103
-Tags: views, counter, post views, shortcode, rest api
+Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 5.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.17
+Stable tag: 1.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,7 +25,11 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Supports pagination in `[init_view_list]` via the `page` attribute
 - Batch view tracking support to reduce REST requests on busy sites
 - Optional strict IP-based filtering to block fake view requests posted directly to the REST endpoint
-- Now includes a Dashboard widget to monitor top viewed posts directly in wp-admin.
+- Includes a Dashboard widget to monitor top viewed posts directly in wp-admin
+- Learns site-wide traffic shape (hourly & weekday) via AI-powered smoothing
+- Shapes cached and updated efficiently with minimal overhead
+- Safe reset action to rebuild patterns automatically
+- Fully integrated with Trending Engine v3 for uplift-based scoring
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
 
@@ -43,6 +47,10 @@ GitHub repository: [https://github.com/brokensmile2103/init-view-count](https://
 - Fully compatible with headless and SPA frameworks (REST-first + lazy)
 - Supports batch mode: delay view requests and send in groups (configurable in settings)
 - Includes optional Dashboard widget for quick admin overview of top viewed posts
+- AI-powered Traffic Shape Learner – understands your site’s hourly & weekly rhythm
+- Auto-integrated with Trending Engine v3 for seasonality-aware uplift detection
+- Smart fallbacks (day → week → month → total) ensure rankings never run empty
+- Ultra-light: only 1 write per increment + 1 rollup per day, cache-first design
 
 == Installation ==
 
@@ -260,7 +268,32 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 
 == Changelog ==
 
-= 1.17 – August 16, 2025 =
+= 1.18 – October 1, 2025 =
+- Reset & history tracking:  
+  - Daily, weekly, and monthly reset now archive values into `_init_view_day_yesterday`, `_init_view_week_last`, `_init_view_month_last`  
+  - Enables direct retrieval of “Yesterday”, “Last Week”, and “Last Month” stats  
+  - Fully backward-compatible – existing keys remain unchanged  
+- Shortcode `[init_view_ranking]`:  
+  - New ranges supported: `yesterday`, `last_week`, `last_month`  
+  - Default tabs unchanged (`total,day,week,month`) for compatibility  
+  - Added i18n labels for new ranges (“Yesterday”, “Last Week”, “Last Month”) 
+- REST API (`init_plugin_suite_view_count_top`):  
+  - `range` parameter extended with `yesterday`, `last_week`, `last_month`  
+  - Auto-maps to new meta keys, preserves existing defaults  
+  - Minimal/full field responses and caching remain consistent  
+- Settings & control:  
+  - New option **“Disable Trending”** in settings page  
+  - When enabled: trending engine, shape learner, and all related calculations return no-op  
+  - When disabled (default): trending runs as normal, no behavior change for existing sites  
+- Performance & stability:  
+  - Only 3 additional meta writes per reset cycle  
+  - All new keys pass through `init_plugin_suite_view_count_meta_key` for extensibility  
+  - Trending, shape learner, and caching unaffected unless explicitly disabled  
+- Backward compatibility:  
+  - Existing shortcodes, API calls, and filters continue to work unchanged  
+  - No migration required – new keys auto-populate from next reset cycle  
+
+= 1.17 – August 20, 2025 =
 - Traffic Shape Learner – AI-powered hourly & weekday distribution model:
   - Collects raw hourly bins per day and rolls them up into site-wide traffic shape
   - Hour-of-day pattern: updated via EMA with Bayesian prior smoothing (kappa control)

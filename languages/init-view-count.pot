@@ -6,6 +6,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "Init View Count"
+msgstr ""
+
 msgid "Init View Count – Minimal, Accurate, Extensible"
 msgstr ""
 
@@ -67,6 +70,15 @@ msgid "This Week"
 msgstr ""
 
 msgid "This Month"
+msgstr ""
+
+msgid "Yesterday"
+msgstr ""
+
+msgid "Last Week"
+msgstr ""
+
+msgid "Last Month"
 msgstr ""
 
 msgid "No data found."
@@ -208,4 +220,13 @@ msgid "Enable Schema.org"
 msgstr ""
 
 msgid "Custom Class"
+msgstr ""
+
+msgid "Disable Trending?"
+msgstr ""
+
+msgid "Completely turn off trending calculations and outputs."
+msgstr ""
+
+msgid "Check this to hard-disable trending."
 msgstr ""

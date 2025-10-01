@@ -257,9 +257,12 @@ function init_plugin_suite_view_count_top_callback($request) {
     }
 
     $meta_key_map = [
-        'day'   => '_init_view_day_count',
-        'week'  => '_init_view_week_count',
-        'month' => '_init_view_month_count',
+        'day'         => '_init_view_day_count',
+        'week'        => '_init_view_week_count',
+        'month'       => '_init_view_month_count',
+        'yesterday'   => '_init_view_day_yesterday',
+        'last_week'   => '_init_view_week_last',
+        'last_month'  => '_init_view_month_last',
     ];
 
     $meta_key = isset($meta_key_map[$range]) ? $meta_key_map[$range] : '_init_view_count';

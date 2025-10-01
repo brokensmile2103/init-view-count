@@ -38,6 +38,7 @@ function init_plugin_suite_view_count_reset_counts() {
 
     // Xác định post types (public) – robust
     $post_types = array_unique(array_filter(array_map('sanitize_key', get_post_types(['public' => true]))));
+    $post_types = array_diff($post_types, ['attachment']);
     if (empty($post_types)) {
         // fallback an toàn
         $post_types = ['post'];
@@ -115,18 +116,36 @@ function init_plugin_suite_view_count_reset_counts() {
          */
         do_action('init_plugin_suite_view_count_pre_reset_post', $post_id, $per_post_plan, $context);
 
+        // Day → push to "yesterday" then delete today
         if ($per_post_plan['day']) {
-            $meta_day = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
+            $meta_day      = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
+            $meta_day_prev = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_yesterday', $post_id);
+
+            $day_val = (int) get_post_meta($post_id, $meta_day, true);
+            update_post_meta($post_id, $meta_day_prev, $day_val);
+
             delete_post_meta($post_id, $meta_day);
         }
 
+        // Week → push to "last week" then delete this week
         if ($per_post_plan['week']) {
-            $meta_week = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
+            $meta_week      = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
+            $meta_week_prev = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_last', $post_id);
+
+            $week_val = (int) get_post_meta($post_id, $meta_week, true);
+            update_post_meta($post_id, $meta_week_prev, $week_val);
+
             delete_post_meta($post_id, $meta_week);
         }
 
+        // Month → push to "last month" then delete this month
         if ($per_post_plan['month']) {
-            $meta_month = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
+            $meta_month      = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
+            $meta_month_prev = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_last', $post_id);
+
+            $month_val = (int) get_post_meta($post_id, $meta_month, true);
+            update_post_meta($post_id, $meta_month_prev, $month_val);
+
             delete_post_meta($post_id, $meta_month);
         }
 
@@ -149,8 +168,8 @@ function init_plugin_suite_view_count_reset_counts() {
     do_action('init_plugin_suite_view_count_after_reset_counts', $summary, $context);
 
     // (Tùy chọn) Kích hoạt trending ngay sau reset (để danh sách phản ánh số liệu mới)
-    $trigger_trending = apply_filters('init_plugin_suite_view_count_after_daily_reset_trigger_trending', true);
-    if ($trigger_trending) {
+    $trigger_trending = apply_filters('init_plugin_suite_view_count_after_daily_reset_trigger_trending', false);
+    if ($trigger_trending && init_view_count_trending_enabled()) {
         // Đặt single event ngay lập tức (safe với cron runner)
         if (!wp_next_scheduled('init_plugin_suite_view_count_cron_update_trending')) {
             wp_schedule_single_event(time() + 10, 'init_plugin_suite_view_count_cron_update_trending');
@@ -162,6 +181,12 @@ function init_plugin_suite_view_count_reset_counts() {
 }
 
 // === CRON: UPDATE TRENDING ===
+
+// Kiểm tra có đang bật tính Trending hay không
+function init_view_count_trending_enabled(): bool {
+    // Mặc định 0 = KHÔNG tắt → Trending đang bật
+    return (int) get_option('init_plugin_suite_view_count_disable_trending', 0) === 0;
+}
 
 // Internal helper: fetch top post IDs by a specific meta key.
 function init_plugin_suite_view_count_fetch_ids_by_key( $meta_key, $post_types, $limit ) {
@@ -184,6 +209,10 @@ function init_plugin_suite_view_count_fetch_ids_by_key( $meta_key, $post_types, 
 
 // Update Trending: multi-key fallback + rank fusion
 function init_plugin_suite_view_count_cron_update_trending() {
+    if ( ! init_view_count_trending_enabled() ) {
+        return; // noop khi tắt trending
+    }
+
     // ====== Configs ======
     $limit     = (int) apply_filters('init_plugin_suite_view_count_trending_limit', 100);
     $min_count = (int) apply_filters('init_plugin_suite_view_count_trending_min_count', 20);
@@ -295,6 +324,10 @@ function init_plugin_suite_view_count_cron_update_trending() {
 // ==========================================
 
 function init_plugin_suite_view_count_calculate_trending(array $post_ids) {
+    if ( ! init_view_count_trending_enabled() ) {
+        return [];
+    }
+
     $lock_key   = 'trending_calculation_lock';
     $lock_group = 'init_ps';
 

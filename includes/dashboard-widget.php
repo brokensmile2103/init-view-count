@@ -15,7 +15,7 @@ add_action( 'wp_dashboard_setup', function() {
 } );
 
 function init_plugin_suite_view_count_render_dashboard_widget() {
-    echo do_shortcode( '[init_view_ranking number="10"]' );
+    echo do_shortcode( '[init_view_ranking tabs="total,day,week,month,last_month" number="10"]' );
 }
 
 add_action( 'admin_enqueue_scripts', function( $hook ) {
