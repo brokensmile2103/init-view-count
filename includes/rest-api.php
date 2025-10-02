@@ -72,21 +72,21 @@ function init_plugin_suite_view_count_count_callback($request) {
         $updated['total_formatted'] = number_format_i18n($views);
         $updated['total_short']     = init_plugin_suite_view_count_format_thousands($views);
 
-        if (get_option('init_plugin_suite_view_count_enable_day')) {
+        if (get_option('init_plugin_suite_view_count_enable_day', 1)) {
             $meta_day = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
             $views_day = (int) get_post_meta($post_id, $meta_day, true);
             update_post_meta($post_id, $meta_day, ++$views_day);
             $updated['day'] = $views_day;
         }
 
-        if (get_option('init_plugin_suite_view_count_enable_week')) {
+        if (get_option('init_plugin_suite_view_count_enable_week', 1)) {
             $meta_week = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
             $views_week = (int) get_post_meta($post_id, $meta_week, true);
             update_post_meta($post_id, $meta_week, ++$views_week);
             $updated['week'] = $views_week;
         }
 
-        if (get_option('init_plugin_suite_view_count_enable_month')) {
+        if (get_option('init_plugin_suite_view_count_enable_month', 1)) {
             $meta_month = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
             $views_month = (int) get_post_meta($post_id, $meta_month, true);
             update_post_meta($post_id, $meta_month, ++$views_month);

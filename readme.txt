@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 5.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.18
+Stable tag: 1.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -267,6 +267,15 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.19 – October 2, 2025 =
+- Hotfix: Daily/Weekly/Monthly counters now **enabled by default**
+  - `init_plugin_suite_view_count_enable_day` → default = 1
+  - `init_plugin_suite_view_count_enable_week` → default = 1
+  - `init_plugin_suite_view_count_enable_month` → default = 1
+- Fixes issue where counters stayed disabled unless user manually saved settings
+- No migration required – existing installs automatically respect new defaults
+- Backward compatibility: behavior unchanged if options already set explicitly
 
 = 1.18 – October 1, 2025 =
 - Reset & history tracking:  
