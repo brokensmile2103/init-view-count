@@ -33,6 +33,14 @@ function init_plugin_suite_view_count_shape_normalize_mean_one(array $arr) {
  * 1) GHI NHẬN LƯỢT VIEW THEO GIỜ (TODAY BINS) – XOAY 2 THÙNG (SITE TIME)
  *   - Log theo GIỜ SITE để khớp mốc reset.
  *   - Nếu phát hiện state.date != hôm nay → đẩy state cũ sang PENDING (yesterday) rồi khởi tạo TODAY.
+ *
+ * Tối ưu hiệu năng: 1 request REST /count có thể xử lý nhiều post_id cùng lúc
+ * (batch), và hook 'init_plugin_suite_view_count_after_counted' bắn ra cho
+ * TỪNG post. Thay vì get_option()/update_option() ngay lập tức cho mỗi post
+ * (N lần đọc/ghi option/request), ta chỉ GOM (buffer) số lượt view vào 1 biến
+ * đếm tĩnh trong suốt request, rồi flush (đọc + ghi option đúng 1 lần) khi
+ * request kết thúc ('shutdown'). Kết quả tương đương hệt như trước, chỉ khác
+ * số lần chạm DB/option cache.
  */
 add_action('init_plugin_suite_view_count_after_counted', 'init_plugin_suite_view_count_shape_on_after_counted', 10, 3);
 
@@ -43,6 +51,34 @@ function init_plugin_suite_view_count_shape_on_after_counted($post_id, $updated,
 
     if ( apply_filters('init_plugin_suite_view_count_shape_collect_enabled', true) !== true ) return;
     if ( is_admin() && apply_filters('init_plugin_suite_view_count_shape_skip_admin', true) ) return;
+
+    static $pending          = 0;
+    static $flush_registered = false;
+
+    $pending++;
+
+    if ( ! $flush_registered ) {
+        $flush_registered = true;
+        add_action('shutdown', function () use (&$pending) {
+            init_plugin_suite_view_count_shape_flush_pending($pending);
+        }, 20);
+    }
+}
+
+/**
+ * Flush toàn bộ số lượt view đã gom được (từ 1 hoặc nhiều post trong cùng
+ * 1 request) vào TODAY bins với đúng 1 lần get_option() + 1 lần update_option(),
+ * bất kể batch có bao nhiêu post_id.
+ *
+ * @param int $increment Tổng số lượt view đã gom được trong request hiện tại.
+ * @return void
+ */
+function init_plugin_suite_view_count_shape_flush_pending($increment) {
+    $increment = (int) $increment;
+
+    if ($increment < 1) {
+        return;
+    }
 
     $now_gmt   = current_time('timestamp', true);
     $today     = wp_date('Y-m-d', $now_gmt);
@@ -92,10 +128,10 @@ function init_plugin_suite_view_count_shape_on_after_counted($post_id, $updated,
         ];
     }
 
-    // Ghi nhận view theo GIỜ SITE
+    // Ghi nhận toàn bộ view đã gom được của request này vào đúng GIỜ SITE hiện tại.
     $hour = (int) wp_date('G', $now_gmt);
-    $state['hour_bins'][$hour] = (int)$state['hour_bins'][$hour] + 1;
-    $state['total']            = (int)$state['total'] + 1;
+    $state['hour_bins'][$hour] = (int)$state['hour_bins'][$hour] + $increment;
+    $state['total']            = (int)$state['total'] + $increment;
 
     update_option(INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_TODAY, $state, false);
 }

@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadData(range, target, number = 5) {
-        const postType = InitViewRankingI18n.postType || '';
+        const postType = (typeof InitViewRankingI18n !== 'undefined' && InitViewRankingI18n.postType) || '';
         const cacheKey = postType ? `${range}_${postType}` : range;
 
         if (cache[cacheKey]) {
@@ -55,17 +55,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
         target.innerHTML = renderLoading(number);
 
-        const url = new URL('/wp-json/initvico/v1/top', window.location.origin);
+        // --- Simple fallback for /wp-json/initvico/v1/top (ensure trailing slash) ---
+        const base =
+            (typeof InitViewCountSettings !== 'undefined' &&
+                InitViewCountSettings &&
+                InitViewCountSettings.restUrl)
+                ? InitViewCountSettings.restUrl
+                : `${window.location.origin}/wp-json/initvico/v1`;
+
+        // Đảm bảo có trailing slash rồi mới nối 'top'
+        const baseWithSlash = base.replace(/\/+$/, '') + '/';
+        const url = new URL(baseWithSlash + 'top');
+
         url.searchParams.set('range', range);
         url.searchParams.set('number', number);
         if (postType) {
             url.searchParams.set('post_type', postType);
         }
 
-        fetch(url.toString())
-            .then(res => res.json())
+        fetch(url.toString(), { method: 'GET' })
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then(data => {
-                if (!Array.isArray(data)) return;
+                if (!Array.isArray(data)) throw new Error('Invalid payload');
                 const html = data.map(renderItem).join('');
                 cache[cacheKey] = html;
                 target.innerHTML = html || `<div class="init-plugin-suite-view-count-empty">${InitViewRankingI18n.noData}</div>`;

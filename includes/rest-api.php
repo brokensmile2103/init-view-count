@@ -2,18 +2,114 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_action('rest_api_init', function () {
-    register_rest_route('initvico/v1', '/count', [
+    register_rest_route(INIT_PLUGIN_SUITE_VIEW_COUNT_NAMESPACE, '/count', [
         'methods'             => 'POST',
         'callback'            => 'init_plugin_suite_view_count_count_callback',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'init_plugin_suite_view_count_count_permission_callback',
     ]);
 
-    register_rest_route('initvico/v1', '/top', [
+    // /top chỉ đọc dữ liệu công khai (danh sách bài viết xem nhiều) nên không áp dụng
+    // kiểm tra nonce — vẫn luôn mở, kể cả khi "Require REST nonce verification?" được bật.
+    register_rest_route(INIT_PLUGIN_SUITE_VIEW_COUNT_NAMESPACE, '/top', [
         'methods'             => 'GET',
         'callback'            => 'init_plugin_suite_view_count_top_callback',
         'permission_callback' => '__return_true',
     ]);
 });
+
+/**
+ * Permission callback cho /count.
+ *
+ * Mặc định luôn cho phép (như hành vi cũ, vẫn public để hoạt động với mọi loại cache).
+ * Khi admin bật option "init_plugin_suite_view_count_require_nonce", request bắt buộc
+ * phải kèm header X-WP-Nonce hợp lệ (action 'wp_rest') do wp_localize_script() in ra —
+ * giúp chặn bớt request spam POST thẳng vào endpoint mà không load trang trước.
+ *
+ * Lưu ý: nonce của WordPress hết hạn sau ~12-24h, nên nếu bật option này trên site dùng
+ * full-page cache thời gian sống dài, các trang cache cũ sẽ mang nonce hết hạn và bị
+ * endpoint từ chối cho tới khi cache được làm mới.
+ *
+ * @param WP_REST_Request $request Request hiện tại.
+ * @return true|WP_Error
+ */
+function init_plugin_suite_view_count_count_permission_callback($request) {
+    if ((int) get_option('init_plugin_suite_view_count_require_nonce', 0) !== 1) {
+        return true;
+    }
+
+    $nonce = $request->get_header('X-WP-Nonce');
+
+    if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
+        return new WP_Error(
+            'init_view_count_invalid_nonce',
+            __('Invalid or expired security token.', 'init-view-count'),
+            ['status' => 403]
+        );
+    }
+
+    return true;
+}
+
+/**
+ * Cộng dồn +1 vào một meta key dạng số bằng SQL thuần (atomic ở tầng DB),
+ * thay vì đọc-rồi-ghi (get_post_meta + update_post_meta) vốn có thể mất
+ * lượt view khi 2 request cùng lúc ghi đè lên nhau (race condition).
+ *
+ * Hàm này KHÔNG tự xoá cache post meta sau khi ghi — bên gọi cần tự invalidate
+ * (xem init_plugin_suite_view_count_flush_meta_cache()) đúng 1 lần sau khi đã
+ * cộng dồn XONG TẤT CẢ các meta key của 1 post, để tránh xoá cache lặp lại
+ * nhiều lần không cần thiết trong cùng 1 request (VD: 4 key/post).
+ *
+ * @param int    $post_id  Post ID.
+ * @param string $meta_key Meta key cần +1.
+ * @return void
+ */
+function init_plugin_suite_view_count_atomic_increment($post_id, $meta_key) {
+    global $wpdb;
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cần UPDATE trực tiếp để đảm bảo tăng giá trị atomic, tránh race condition khi nhiều request cùng ghi 1 post; cache được tự invalidate 1 lần ở cấp caller (xem init_plugin_suite_view_count_flush_meta_cache()).
+    $wpdb->query(
+        $wpdb->prepare(
+            "UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = %s",
+            $post_id,
+            $meta_key
+        )
+    );
+
+    if ((int) $wpdb->rows_affected > 0) {
+        return;
+    }
+
+    // Chưa có row cho meta key này (lượt view đầu tiên) → tạo mới với giá trị 1.
+    // $unique = true để tránh insert trùng nếu có request khác vừa insert xong.
+    $inserted = add_post_meta($post_id, $meta_key, 1, true);
+
+    if (false === $inserted) {
+        // Thua trong race lúc insert lần đầu (request khác vừa tạo row) → row đã tồn tại,
+        // quay lại dùng UPDATE atomic như bình thường.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Xem giải thích ở UPDATE phía trên.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = %s",
+                $post_id,
+                $meta_key
+            )
+        );
+    }
+}
+
+/**
+ * Xoá cache post meta (object cache) cho 1 post sau khi các meta key của post đó
+ * đã được ghi trực tiếp bằng SQL (bypass hoàn toàn get_post_meta()/update_post_meta()).
+ * Gọi đúng 1 lần/post sau khi đã update xong toàn bộ key liên quan (total/day/week/month),
+ * thay vì gọi lặp lại theo từng key.
+ *
+ * @param int $post_id Post ID.
+ * @return void
+ */
+function init_plugin_suite_view_count_flush_meta_cache($post_id) {
+    wp_cache_delete($post_id, 'post_meta');
+}
 
 function init_plugin_suite_view_count_count_callback($request) {
     $ids        = $request->get_param('post_id');
@@ -64,34 +160,40 @@ function init_plugin_suite_view_count_count_callback($request) {
         }
 
         $updated = ['post_id' => $post_id];
+
+        // Đọc giá trị hiện tại qua get_post_meta() (có object cache, rẻ — KHÔNG re-query sau khi ghi).
+        // Việc +1 thực tế trong DB được thực hiện atomic bằng SQL thuần ở dưới để tránh
+        // tương tranh (race condition) giữa nhiều request cùng lúc; giá trị trả về cho
+        // client chỉ đơn giản là "giá trị đã đọc + 1" để tiết kiệm 1 query SELECT lại.
         $meta_total = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_count', $post_id);
-        $views = (int) get_post_meta($post_id, $meta_total, true);
-        update_post_meta($post_id, $meta_total, ++$views);
+        $views      = (int) get_post_meta($post_id, $meta_total, true) + 1;
+        init_plugin_suite_view_count_atomic_increment($post_id, $meta_total);
 
         $updated['total']           = $views;
         $updated['total_formatted'] = number_format_i18n($views);
         $updated['total_short']     = init_plugin_suite_view_count_format_thousands($views);
 
-        if (get_option('init_plugin_suite_view_count_enable_day', 1)) {
+        if ((int) get_option('init_plugin_suite_view_count_enable_day', 1) !== 0) {
             $meta_day = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
-            $views_day = (int) get_post_meta($post_id, $meta_day, true);
-            update_post_meta($post_id, $meta_day, ++$views_day);
-            $updated['day'] = $views_day;
+            $updated['day'] = (int) get_post_meta($post_id, $meta_day, true) + 1;
+            init_plugin_suite_view_count_atomic_increment($post_id, $meta_day);
         }
 
-        if (get_option('init_plugin_suite_view_count_enable_week', 1)) {
+        if ((int) get_option('init_plugin_suite_view_count_enable_week', 1) !== 0) {
             $meta_week = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
-            $views_week = (int) get_post_meta($post_id, $meta_week, true);
-            update_post_meta($post_id, $meta_week, ++$views_week);
-            $updated['week'] = $views_week;
+            $updated['week'] = (int) get_post_meta($post_id, $meta_week, true) + 1;
+            init_plugin_suite_view_count_atomic_increment($post_id, $meta_week);
         }
 
-        if (get_option('init_plugin_suite_view_count_enable_month', 1)) {
+        if ((int) get_option('init_plugin_suite_view_count_enable_month', 1) !== 0) {
             $meta_month = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
-            $views_month = (int) get_post_meta($post_id, $meta_month, true);
-            update_post_meta($post_id, $meta_month, ++$views_month);
-            $updated['month'] = $views_month;
+            $updated['month'] = (int) get_post_meta($post_id, $meta_month, true) + 1;
+            init_plugin_suite_view_count_atomic_increment($post_id, $meta_month);
         }
+
+        // Toàn bộ meta key của post này vừa được ghi bằng SQL thuần (bypass cache) →
+        // chỉ cần xoá cache đúng 1 lần cho post này, thay vì mỗi key xoá 1 lần.
+        init_plugin_suite_view_count_flush_meta_cache($post_id);
 
         do_action('init_plugin_suite_view_count_after_counted', $post_id, $updated, $request);
 

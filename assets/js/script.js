@@ -61,9 +61,15 @@
     }
 
     function sendView(postIds, currentPostId) {
-        fetch('/wp-json/initvico/v1/count', {
+        const restUrl = (InitViewCountSettings && InitViewCountSettings.restUrl) || '/wp-json/initvico/v1';
+        const headers = { 'Content-Type': 'application/json' };
+        if (config.nonce) {
+            headers['X-WP-Nonce'] = config.nonce;
+        }
+
+        fetch(`${restUrl}/count`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ post_id: postIds.length === 1 ? postIds[0] : postIds })
         })
         .then(res => res.json())

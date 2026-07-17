@@ -3,13 +3,13 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 1.19
+ * Version: 1.21
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
  * Domain Path: /languages
- * Requires at least: 5.5
- * Tested up to: 6.8
+ * Requires at least: 5.9
+ * Tested up to: 7.0
  * Requires PHP: 7.4
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,10 +18,11 @@
 defined('ABSPATH') || exit;
 
 // === Constants ===
-define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '1.19');
-define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG',   'init-view-count' );
-define('INIT_PLUGIN_SUITE_VIEW_COUNT_DIR',     plugin_dir_path(__FILE__));
-define('INIT_PLUGIN_SUITE_VIEW_COUNT_URL',     plugin_dir_url(__FILE__));
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION',   '1.21');
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG',      'init-view-count');
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_DIR',       plugin_dir_path(__FILE__));
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_URL',       plugin_dir_url(__FILE__));
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_NAMESPACE', 'initvico/v1');
 
 // === Include core files ===
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/rest-api.php';
@@ -68,12 +69,23 @@ add_action('wp_enqueue_scripts', function () {
 
     $config = [
         'post_id'       => $post_id,
+        'restUrl'       => esc_url(rest_url(INIT_PLUGIN_SUITE_VIEW_COUNT_NAMESPACE)),
         'delay'         => (int) get_option('init_plugin_suite_view_count_delay', 15000),
         'scrollPercent' => (int) get_option('init_plugin_suite_view_count_scroll_percent', 75),
-        'scrollEnabled' => (bool) get_option('init_plugin_suite_view_count_scroll_enabled', true),
+        'scrollEnabled' => ((int) get_option('init_plugin_suite_view_count_scroll_enabled', 1) === 1),
         'storage'       => get_option('init_plugin_suite_view_count_storage', 'session'),
         'batch'         => max(1, (int) get_option('init_plugin_suite_view_count_batch', 1)),
     ];
+
+    // Chỉ in nonce ra khi admin bật "Require REST nonce verification?" trong Settings.
+    // Mặc định TẮT vì nonce (wp_create_nonce('wp_rest')) hết hạn sau ~12-24h; nếu site
+    // dùng full-page cache thời gian sống dài, HTML cache cũ sẽ mang theo nonce đã hết hạn
+    // và request tới /count sẽ bị từ chối cho đến khi cache được làm mới.
+    if ((int) get_option('init_plugin_suite_view_count_require_nonce', 0) === 1) {
+        $config['nonce'] = wp_create_nonce('wp_rest');
+    }
+
+    $config = apply_filters('init_plugin_suite_view_count_localize_config', $config, $post_id);
 
     wp_localize_script('init-plugin-suite-view-count-script', 'InitViewCountSettings', $config);
 });

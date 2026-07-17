@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 1.10\n"
+"Project-Id-Version: Init View Count 1.21\n"
 "Language: vi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -168,6 +168,15 @@ msgstr ""
 msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr ""
 
+msgid "Invalid post ID."
+msgstr ""
+
+msgid "Not enabled for view counting."
+msgstr ""
+
+msgid "Invalid or expired security token."
+msgstr ""
+
 msgid "Enable strict IP check?"
 msgstr ""
 
@@ -175,6 +184,21 @@ msgid "Adds extra protection against bots or fake requests directly posting to t
 msgstr ""
 
 msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
+msgstr ""
+
+msgid "Require REST nonce verification?"
+msgstr ""
+
+msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
+msgstr ""
+
+msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
+msgstr ""
+
+msgid "Warning:"
+msgstr ""
+
+msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
 msgstr ""
 
 msgid "Enable dashboard widget?"

@@ -220,19 +220,27 @@ add_shortcode('init_view_ranking', function ($atts) {
 });
 
 function init_plugin_suite_view_count_format_thousands($num) {
-    if ($num < 1000) return (string) $num;
+    if ($num < 1000) {
+        return (string) $num;
+    }
 
     $locale = get_locale();
-    $suffixes = str_starts_with($locale, 'vi') ? ['N', 'Tr', 'T', 'TT'] : ['K', 'M', 'B', 'T'];
+    $suffixes = str_starts_with($locale, 'vi')
+        ? ['N', 'Tr', 'T', 'TT']  // Nghìn, Triệu, Tỷ, Nghìn tỷ
+        : ['K', 'M', 'B', 'T'];   // Thousand, Million, Billion, Trillion
+
     $i = 0;
     while ($num >= 1000 && $i < count($suffixes)) {
         $num /= 1000;
         $i++;
     }
 
-    $value = ($num - floor($num) > 0)
-        ? number_format_i18n($num, 1, '.', '')
-        : number_format_i18n($num, 0, '.', '');
+    // Tự format: luôn dùng dấu chấm cho thập phân, không dấu ngăn cách nghìn
+    if ($num - floor($num) > 0) {
+        $value = number_format($num, 1, '.', '');
+    } else {
+        $value = number_format($num, 0, '.', '');
+    }
 
     return $value . ' ' . $suffixes[$i - 1];
 }

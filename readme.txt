@@ -1,10 +1,10 @@
 === Init View Count – AI-Powered, Trending, REST API ===
 Contributors: brokensmile.2103
 Tags: post views, view counter, trending posts, REST API, shortcode
-Requires at least: 5.5
-Tested up to: 6.8
+Requires at least: 5.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.19
+Stable tag: 1.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,8 @@ Record one or more views. Accepts a single post ID or an array of post IDs.
 This endpoint checks if the post is published, belongs to a supported post type, and applies delay/scroll config (via JavaScript). It updates total and optionally day/week/month view counters.
 
 Note: The number of post IDs processed per request is limited based on the batch setting in plugin options.
+
+Optional: if "Require REST nonce verification?" is enabled in plugin settings, this endpoint also requires a valid `X-WP-Nonce` header (action `wp_rest`). This is off by default — see the FAQ below before turning it on.
 
 **`GET /wp-json/initvico/v1/top`**  
 Retrieve the most viewed posts, ranked by view count.
@@ -257,6 +259,9 @@ Yes. Use `'meta_key' => '_init_view_count'` and `'orderby' => 'meta_value_num'` 
 = Can I reduce the number of view requests sent to the server? =
 Yes. You can enable batch view tracking in the plugin settings. Instead of sending one request per view, views will be stored in the browser and sent in a group once the threshold is reached.
 
+= Should I enable "Require REST nonce verification"? =
+It's optional and off by default. Enabling it makes the `/count` endpoint reject requests that don't carry a valid WordPress REST nonce, which helps block fake POST requests sent directly to the endpoint. However, WordPress nonces expire after roughly 12-24 hours. If your site uses full-page caching with a long TTL, cached pages will keep serving an old nonce and view counting will quietly stop working on those pages until the cache refreshes. Leave it off on sites with long-lived page caching, or make sure the cache is purged/refreshed regularly. The `/top` endpoint is unaffected either way, since it's read-only and public by design.
+
 == Screenshots ==
 
 1. Plugin settings page – configure post types, view types, delay, scroll check, and storage method.
@@ -267,6 +272,21 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.21 – July 17, 2026 =
+- New optional setting: **Require REST nonce verification?** (Settings → Init View Count). Off by default. When enabled, `POST /count` requires a valid `X-WP-Nonce` header and rejects the request with `403` otherwise, helping block direct spam POSTs to the endpoint that skip loading the page first.
+  - The nonce is only added to the localized config, and the client only sends the header, when this setting is turned on — zero overhead otherwise.
+  - `GET /top` is intentionally excluded, since it's a read-only, public-by-design endpoint.
+  - Documented trade-off: WordPress nonces expire after ~12-24h, so sites using long-lived full-page caching may see view counting silently stop working on stale cached pages until the cache refreshes. See the Settings page description and the FAQ for details.
+- i18n: added missing English source strings (`Invalid post ID.`, `Not enabled for view counting.`) plus all new strings from this release to `languages/init-view-count.pot`, with ready-made Vietnamese translations in `languages/init-view-count-vi.po` / `.mo`.
+
+= 1.20 – July 16, 2026 =
+- Performance & accuracy overhaul for the `/count` REST endpoint:
+  - View counters (`total`, `day`, `week`, `month`) are now incremented with a direct, atomic SQL `UPDATE ... SET meta_value = meta_value + 1` instead of a read-then-write `get_post_meta()` + `update_post_meta()` pair, removing a race condition that could drop views under concurrent traffic
+  - The value returned to the client is derived locally (`cached value + 1`) instead of re-querying the database after the write, saving a query per counted key
+  - The object cache for a post's meta is now invalidated exactly once per post per request (after all of its keys are updated), instead of once per key
+- Traffic Shape Learner: hourly bin tracking is now buffered per-request and flushed with a single `get_option()`/`update_option()` call on `shutdown`, instead of once per counted post — meaningful reduction in option writes on sites using batch view tracking
+- General hardening pass across the REST API code path (WPCS-compliant direct queries with documented `phpcs:ignore` justifications, no behavior change to existing filters/actions)
 
 = 1.19 – October 2, 2025 =
 - Hotfix: Daily/Weekly/Monthly counters now **enabled by default**

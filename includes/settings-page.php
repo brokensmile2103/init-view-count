@@ -52,6 +52,9 @@ function init_plugin_suite_view_count_render_settings_page() {
         $strict_ip_check = !empty($_POST['init_plugin_suite_view_count_strict_ip_check']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_strict_ip_check', $strict_ip_check);
 
+        $require_nonce = !empty($_POST['init_plugin_suite_view_count_require_nonce']) ? 1 : 0;
+        update_option('init_plugin_suite_view_count_require_nonce', $require_nonce);
+
         $dashboard_widget_enabled = !empty($_POST['init_plugin_suite_view_count_enable_widget']) ? 1 : 0;
         update_option('init_plugin_suite_view_count_enable_widget', $dashboard_widget_enabled);
 
@@ -150,7 +153,7 @@ function init_plugin_suite_view_count_render_settings_page() {
                     <th scope="row"><?php esc_html_e('Enable scroll check?', 'init-view-count'); ?></th>
                     <td>
                         <label>
-                            <input type="checkbox" name="init_plugin_suite_view_count_scroll_enabled" <?php checked(get_option('init_plugin_suite_view_count_scroll_enabled', true)); ?> />
+                            <input type="checkbox" name="init_plugin_suite_view_count_scroll_enabled" <?php checked(get_option('init_plugin_suite_view_count_scroll_enabled', 1), 1); ?> />
                             <?php esc_html_e('Only count views after user scrolls past required percent', 'init-view-count'); ?>
                         </label>
                     </td>
@@ -190,6 +193,22 @@ function init_plugin_suite_view_count_render_settings_page() {
                         </label>
                         <p class="description">
                             <?php esc_html_e('Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check.', 'init-view-count'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Require REST nonce verification?', 'init-view-count'); ?></th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="init_plugin_suite_view_count_require_nonce" <?php checked(get_option('init_plugin_suite_view_count_require_nonce', 0)); ?> />
+                            <?php esc_html_e('Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint.', 'init-view-count'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('Blocks fake POST requests sent directly to the endpoint without loading the page first.', 'init-view-count'); ?>
+                        </p>
+                        <p class="description">
+                            <strong><?php esc_html_e('Warning:', 'init-view-count'); ?></strong>
+                            <?php esc_html_e('A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day.', 'init-view-count'); ?>
                         </p>
                     </td>
                 </tr>
