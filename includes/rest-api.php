@@ -299,12 +299,15 @@ function init_plugin_suite_view_count_top_callback($request) {
         }
 
         $query = new WP_Query([
-            'post__in'       => $ids,
-            'orderby'        => 'post__in',
-            'post_type'      => $post_type,
-            'post_status'    => 'publish',
-            'posts_per_page' => count($ids),
-            'no_found_rows'  => true,
+            'post__in'            => $ids,
+            'orderby'             => 'post__in',
+            'post_type'           => $post_type,
+            'post_status'         => 'publish',
+            'posts_per_page'      => count($ids),
+            'no_found_rows'       => true,
+            // Danh sách trending đã được xếp hạng sẵn theo score; không để WordPress
+            // đẩy sticky post lên đầu làm sai thứ tự đã tính toán.
+            'ignore_sticky_posts' => true,
         ]);
 
         $trending_map = [];
@@ -376,15 +379,18 @@ function init_plugin_suite_view_count_top_callback($request) {
     }
 
     $args = [
-        'post_type'      => $post_type,
-        'posts_per_page' => $number,
-        'offset'         => $offset,
-        'post_status'    => 'publish',
+        'post_type'           => $post_type,
+        'posts_per_page'      => $number,
+        'offset'              => $offset,
+        'post_status'         => 'publish',
         // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-        'meta_key'       => $meta_key,
-        'orderby'        => 'meta_value_num',
-        'order'          => 'DESC',
-        'no_found_rows'  => true,
+        'meta_key'            => $meta_key,
+        'orderby'             => 'meta_value_num',
+        'order'               => 'DESC',
+        'no_found_rows'       => true,
+        // Đây là bảng xếp hạng theo lượt xem, không phải danh sách bài viết thường
+        // → không để WordPress tự đẩy sticky post lên đầu bất kể lượt xem thực tế.
+        'ignore_sticky_posts' => true,
     ];
 
     if ($tax && taxonomy_exists($tax) && $terms) {

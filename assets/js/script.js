@@ -23,15 +23,28 @@
     }, delay);
 
     if (scrollRequired) {
-        window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY;
-            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const scrolledPercent = (scrollY / scrollHeight) * 100;
-            if (scrolledPercent >= scrollPercent) {
-                scrollPassed = true;
-                checkAndSendView();
-            }
-        });
+        let scrollTicking = false;
+
+        const onScroll = () => {
+            if (scrollTicking) return;
+            scrollTicking = true;
+
+            requestAnimationFrame(() => {
+                scrollTicking = false;
+
+                const scrollY = window.scrollY;
+                const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrolledPercent = scrollHeight > 0 ? (scrollY / scrollHeight) * 100 : 100;
+
+                if (scrolledPercent >= scrollPercent) {
+                    scrollPassed = true;
+                    window.removeEventListener('scroll', onScroll);
+                    checkAndSendView();
+                }
+            });
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
     }
 
     function checkAndSendView() {

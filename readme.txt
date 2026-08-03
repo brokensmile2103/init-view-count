@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 5.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.21
+Stable tag: 1.22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -272,6 +272,10 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 1.22 – August 4, 2026 =
+- Bug fix: sticky posts were no longer being excluded from view-based rankings. `GET /top` (and by extension the `[init_view_ranking]` shortcode, which consumes it) and the hourly Trending Engine calculation could show a sticky post at the top of the list regardless of its actual view count, since the underlying `WP_Query` calls were missing `ignore_sticky_posts`. All ranking queries now explicitly ignore sticky posts, consistent with `[init_view_list]`, which already did this correctly.
+- Performance: the scroll-progress listener in the front-end tracking script (`script.js`) is now throttled with `requestAnimationFrame` instead of running its calculation on every single `scroll` event, and is automatically removed once the scroll threshold is reached — reduces main-thread work on long pages and low-end mobile devices. The listener is also registered as `passive` to avoid blocking scroll rendering. Also fixed a theoretical division-by-zero edge case when a page's content is shorter than the viewport.
 
 = 1.21 – July 17, 2026 =
 - New optional setting: **Require REST nonce verification?** (Settings → Init View Count). Off by default. When enabled, `POST /count` requires a valid `X-WP-Nonce` header and rejects the request with `403` otherwise, helping block direct spam POSTs to the endpoint that skip loading the page first.

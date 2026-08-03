@@ -193,15 +193,18 @@ function init_plugin_suite_view_count_fetch_ids_by_key( $meta_key, $post_types, 
     if ( empty( $meta_key ) ) return [];
 
     $q = new WP_Query([
-        'post_type'      => $post_types,
-        'posts_per_page' => $limit,
+        'post_type'           => $post_types,
+        'posts_per_page'      => $limit,
         // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-        'meta_key'       => $meta_key,
-        'orderby'        => 'meta_value_num',
-        'order'          => 'DESC',
-        'post_status'    => 'publish',
-        'no_found_rows'  => true,
-        'fields'         => 'ids',
+        'meta_key'            => $meta_key,
+        'orderby'             => 'meta_value_num',
+        'order'               => 'DESC',
+        'post_status'         => 'publish',
+        'no_found_rows'       => true,
+        'fields'              => 'ids',
+        // Xếp hạng theo lượt xem thực tế cho Trending Engine, không để sticky
+        // post chen vào danh sách ứng viên chỉ vì được ghim.
+        'ignore_sticky_posts' => true,
     ]);
 
     return ! empty( $q->posts ) ? $q->posts : [];
