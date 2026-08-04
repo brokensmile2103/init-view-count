@@ -4,7 +4,7 @@
 
 **Counts real views. Stores in meta. Renders beautifully. Built for performance.**
 
-[![Version](https://img.shields.io/badge/stable-v1.22-blue.svg)](https://wordpress.org/plugins/init-view-count/)
+[![Version](https://img.shields.io/badge/stable-v2.0.0-blue.svg)](https://wordpress.org/plugins/init-view-count/)
 [![License](https://img.shields.io/badge/license-GPLv2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 ![Made with ❤️ in HCMC](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20in%20HCMC-blue)
 
@@ -13,14 +13,18 @@
 Init View Count lets you track and display real post views — not just page loads or fake numbers.  
 It uses JavaScript + REST API to count only when the user actually scrolls and stays, storing data in meta keys like `_init_view_count`.
 
-It supports shortcodes, REST endpoints, trending detection, auto-insertion, and WooCommerce-style template overrides.  
+It supports shortcodes, native Gutenberg blocks, REST endpoints, the Abilities API, trending detection, auto-insertion, and WooCommerce-style template overrides.  
 Perfect for blogs, magazines, and content-focused WordPress sites.
 
 ![Demo](https://inithtml.com/wp-content/uploads/2025/06/Init-View-Count-Ranking-Demo.gif)
 
+> **Requires WordPress 6.9+.** As of v2.0.0, this is the minimum version — see [Changelog](#changelog) below.
+
 ## Highlights
 
 - Real view detection with scroll + delay logic
+- Native Block Editor (Gutenberg) support — no build step, no shortcodes needed
+- Abilities API support for AI agents and automation tools (WordPress 6.9+)
 - Auto-insert shortcode before/after post content (configurable)
 - Data stored in native post meta (no custom DB tables)
 - Headless + SPA-friendly via REST-first architecture
@@ -32,6 +36,16 @@ Perfect for blogs, magazines, and content-focused WordPress sites.
 - Optional batch mode: store views locally, reduce REST requests
 - Includes admin Dashboard widget to monitor top posts
 - Zero bloat, zero jQuery, zero nonsense
+
+## Block Editor (Gutenberg)
+
+Since v2.0.0, every shortcode also has a matching native block — search **"Init View Count"** in the block inserter. Each block has its own settings panel and a live preview powered by `ServerSideRender`, and renders through the exact same PHP output as its shortcode counterpart (no duplicated display logic).
+
+- **View Count** — mirrors `[init_view_count]`. Post ID, field (total/day/week/month), format, time-since-published, icon, and Schema.org toggle.
+- **Popular Posts List** — mirrors `[init_view_list]`. Number of posts, post type, template, title, view range, category/tag filter, empty-state text.
+- **View Ranking (Tabbed)** — mirrors `[init_view_ranking]`. Tabs, number of posts per tab, post type.
+
+No build tooling required — the editor script is plain vanilla JavaScript, so it ships and updates just like the rest of the plugin.
 
 ## Shortcodes
 
@@ -108,6 +122,15 @@ Get most viewed posts.
 - `no_cache`: `1` to bypass transients
 
 > Trending scores are cached hourly using transients.
+
+## Abilities API
+
+Since v2.0.0, on WordPress 6.9+ the plugin registers two **read-only** abilities via [`wp_register_ability()`](https://developer.wordpress.org/apis/abilities-api/), under the `init-view-count` category. This lets AI agents and automation tools discover and query view-count data through WordPress's standardized ability registry, without needing to know the plugin's REST routes.
+
+- **`init-view-count/get-post-views`** — returns the tracked view count for a single post (total/day/week/month).
+- **`init-view-count/get-top-posts`** — returns a ranked list of the most viewed posts. Wraps the exact same logic as `GET /top` and `[init_view_ranking]`, so results always match.
+
+No write or destructive abilities are exposed — nothing can increment or reset view counts through this API.
 
 ## Batch View Tracking
 
@@ -195,7 +218,7 @@ Full docs: [The Complete Guide to Init View Count](https://en.inithtml.com/serie
 1. Upload to `/wp-content/plugins/init-view-count`
 2. Activate under **Plugins → Installed Plugins**
 3. Configure under **Settings → Init View Count**
-4. Add shortcodes or consume REST API
+4. Add shortcodes/blocks or consume the REST API / Abilities API
 
 ## License
 
