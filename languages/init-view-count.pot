@@ -1,445 +1,679 @@
+# Copyright (C) 2026 Init HTML
+# This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 1.21\n"
-"Language: vi\n"
+"Project-Id-Version: Init View Count 2.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-08-04T06:24:10+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: init-view-count\n"
 
+#. Plugin Name of the plugin
+#: init-view-count.php
+#: includes/abilities-api.php:36
+#: includes/blocks.php:33
+#: includes/dashboard-widget.php:12
+#: includes/settings-page.php:7
+#: includes/shortcodes.php:275
 msgid "Init View Count"
 msgstr ""
 
-msgid "Init View Count – Minimal, Accurate, Extensible"
+#. Plugin URI of the plugin
+#: init-view-count.php
+msgid "https://inithtml.com/plugin/init-view-count/"
 msgstr ""
 
+#. Description of the plugin
+#: init-view-count.php
 msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
 msgstr ""
 
-msgid "Init View Count Settings"
+#. Author of the plugin
+#: init-view-count.php
+msgid "Init HTML"
 msgstr ""
 
-msgid "Settings"
+#. Author URI of the plugin
+#: init-view-count.php
+msgid "https://inithtml.com/"
 msgstr ""
 
-msgid "Settings saved."
-msgstr ""
-
-msgid "Post types to track views"
-msgstr ""
-
-msgid "Enable daily views?"
-msgstr ""
-
-msgid "Enable weekly views?"
-msgstr ""
-
-msgid "Enable monthly views?"
-msgstr ""
-
-msgid "Delay before counting (ms)"
-msgstr ""
-
-msgid "Scroll percent required"
-msgstr ""
-
-msgid "Enable scroll check?"
-msgstr ""
-
-msgid "Storage method"
-msgstr ""
-
-msgid "Session Storage"
-msgstr ""
-
-msgid "Local Storage"
-msgstr ""
-
-msgid "Disable plugin CSS?"
-msgstr ""
-
-msgid "Save Settings"
-msgstr ""
-
-msgid "All Time"
-msgstr ""
-
-msgid "Today"
-msgstr ""
-
-msgid "This Week"
-msgstr ""
-
-msgid "This Month"
-msgstr ""
-
-msgid "Yesterday"
-msgstr ""
-
-msgid "Last Week"
-msgstr ""
-
-msgid "Last Month"
-msgstr ""
-
-msgid "No data found."
-msgstr ""
-
-msgid "Failed to load data."
-msgstr ""
-
-msgid "Disable built-in CSS output."
-msgstr ""
-
-msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
-msgstr ""
-
-msgid "Popular Posts"
-msgstr ""
-
-msgid "views"
-msgstr ""
-
-msgid "Copy"
-msgstr ""
-
-msgid "Copied!"
-msgstr ""
-
-msgid "Close"
-msgstr ""
-
-msgid "Shortcode Preview"
-msgstr ""
-
-msgid "Shortcode Builder"
-msgstr ""
-
-msgid "Type"
-msgstr ""
-
-msgid "Title"
-msgstr ""
-
-msgid "Number of Posts"
-msgstr ""
-
-msgid "Template"
-msgstr ""
-
-msgid "View Range"
-msgstr ""
-
-msgid "Post Type"
-msgstr ""
-
-msgid "Category"
-msgstr ""
-
-msgid "Tag"
-msgstr ""
-
-msgid "Order By"
-msgstr ""
-
-msgid "Order Direction"
-msgstr ""
-
-msgid "Custom CSS class"
-msgstr ""
-
-msgid "Field"
-msgstr ""
-
-msgid "Format"
-msgstr ""
-
-msgid "Show Time Diff"
-msgstr ""
-
-msgid "Tabs"
-msgstr ""
-
-msgid "Posted %s ago"
-msgstr ""
-
-msgid "Batch view tracking"
-msgstr ""
-
-msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
-msgstr ""
-
-msgid "Invalid post ID."
-msgstr ""
-
-msgid "Not enabled for view counting."
-msgstr ""
-
-msgid "Invalid or expired security token."
-msgstr ""
-
-msgid "Enable strict IP check?"
-msgstr ""
-
-msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
-msgstr ""
-
-msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
-msgstr ""
-
-msgid "Require REST nonce verification?"
-msgstr ""
-
-msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
-msgstr ""
-
-msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
-msgstr ""
-
-msgid "Warning:"
-msgstr ""
-
-msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
-msgstr ""
-
-msgid "Enable dashboard widget?"
-msgstr ""
-
-msgid "Display top view ranking inside WordPress Dashboard."
-msgstr ""
-
-msgid "Uncheck to hide the widget for all users."
-msgstr ""
-
-msgid "Count and store views per day"
-msgstr ""
-
-msgid "Track total views by week"
-msgstr ""
-
-msgid "Track total views by month"
-msgstr ""
-
-msgid "Only count views after user scrolls past required percent"
-msgstr ""
-
-msgid "Auto-insert shortcode into post content?"
-msgstr ""
-
-msgid "Do not auto-insert (manual shortcode only)"
-msgstr ""
-
-msgid "Insert before content"
-msgstr ""
-
-msgid "Insert after content"
-msgstr ""
-
-msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
-msgstr ""
-
-msgid "Show Icon"
-msgstr ""
-
-msgid "Enable Schema.org"
-msgstr ""
-
-msgid "Custom Class"
-msgstr ""
-
-msgid "Disable Trending?"
-msgstr ""
-
-msgid "Completely turn off trending calculations and outputs."
-msgstr ""
-
-msgid "Check this to hard-disable trending."
-msgstr ""
-
-# --- Abilities API + Block Editor (v1.23) ---
-#: includes/abilities-api.php:36
+#: includes/abilities-api.php:37
 msgid "Read-only abilities for querying tracked post view counts and popular posts."
 msgstr ""
 
-#: includes/abilities-api.php:55
+#: includes/abilities-api.php:56
 msgid "Get Post Views"
 msgstr ""
 
-#: includes/abilities-api.php:56
+#: includes/abilities-api.php:57
 msgid "Returns the tracked view count for a single post (total, day, week, or month). Read-only, does not increment the counter."
 msgstr ""
 
-#: includes/abilities-api.php:63
+#: includes/abilities-api.php:64
 msgid "The ID of the post to look up."
 msgstr ""
 
-#: includes/abilities-api.php:68
+#: includes/abilities-api.php:69
 msgid "Which counter to read."
 msgstr ""
 
-#: includes/abilities-api.php:80
+#: includes/abilities-api.php:81
 msgid "The post ID that was looked up."
 msgstr ""
 
-#: includes/abilities-api.php:84
+#: includes/abilities-api.php:85
 msgid "The counter field that was returned."
 msgstr ""
 
-#: includes/abilities-api.php:88
+#: includes/abilities-api.php:89
 msgid "Raw view count."
 msgstr ""
 
-#: includes/abilities-api.php:92
+#: includes/abilities-api.php:93
 msgid "Locale-formatted view count (e.g. \"1,234\")."
 msgstr ""
 
-#: includes/abilities-api.php:96
+#: includes/abilities-api.php:97
 msgid "Abbreviated view count (e.g. \"1.2K\")."
 msgstr ""
 
-#: includes/abilities-api.php:116
+#: includes/abilities-api.php:117
 msgid "Get Top Viewed Posts"
 msgstr ""
 
-#: includes/abilities-api.php:117
+#: includes/abilities-api.php:118
 msgid "Returns a ranked list of the most viewed posts for a given time range (total, day, week, month, or trending). Wraps the same data used by the [init_view_ranking] shortcode and the GET /top REST route."
 msgstr ""
 
-#: includes/abilities-api.php:124
+#: includes/abilities-api.php:125
 msgid "How many posts to return."
 msgstr ""
 
-#: includes/abilities-api.php:131
+#: includes/abilities-api.php:132
 msgid "Pagination page number."
 msgstr ""
 
-#: includes/abilities-api.php:138
+#: includes/abilities-api.php:139
 msgid "Post types to include."
 msgstr ""
 
-#: includes/abilities-api.php:143
+#: includes/abilities-api.php:144
 msgid "Time range to rank by."
 msgstr ""
 
-#: includes/abilities-api.php:149
+#: includes/abilities-api.php:150
 msgid "\"minimal\" returns only id/title/link; \"full\" includes excerpt, thumbnail, category, etc."
 msgstr ""
 
-#: includes/abilities-api.php:155
+#: includes/abilities-api.php:156
 msgid "Optional taxonomy slug to filter by."
 msgstr ""
 
-#: includes/abilities-api.php:159
+#: includes/abilities-api.php:160
 msgid "Comma-separated term slugs or IDs, used together with \"tax\"."
 msgstr ""
 
-#: includes/abilities-api.php:163
+#: includes/abilities-api.php:164
 msgid "Bypass the 5-minute result cache."
 msgstr ""
 
-#: includes/abilities-api.php:175
+#: includes/abilities-api.php:176
 msgid "Post ID."
 msgstr ""
 
-#: includes/abilities-api.php:179
+#: includes/abilities-api.php:180
 msgid "Post title."
 msgstr ""
 
-#: includes/abilities-api.php:183
+#: includes/abilities-api.php:184
 msgid "Post permalink."
 msgstr ""
 
-#: includes/abilities-api.php:187
+#: includes/abilities-api.php:188
 msgid "View count for the requested range."
 msgstr ""
 
-#: includes/abilities-api.php:223
+#: includes/abilities-api.php:224
 msgid "Invalid or non-published post ID."
 msgstr ""
 
-#: includes/abilities-api.php:264
+#: includes/abilities-api.php:265
 msgid "The view count REST layer is not available."
 msgstr ""
 
+#: includes/rest-api.php:45
+msgid "Invalid or expired security token."
+msgstr ""
+
+#: includes/rest-api.php:125
+msgid "Invalid post ID."
+msgstr ""
+
+#: includes/rest-api.php:138
+msgid "Not enabled for view counting."
+msgstr ""
+
+#: includes/settings-page.php:6
+#: includes/settings-page.php:75
+msgid "Init View Count Settings"
+msgstr ""
+
+#: includes/settings-page.php:67
+msgid "Settings saved."
+msgstr ""
+
+#: includes/settings-page.php:80
+msgid "Post types to track views"
+msgstr ""
+
+#: includes/settings-page.php:93
+msgid "Auto-insert shortcode into post content?"
+msgstr ""
+
+#: includes/settings-page.php:99
+msgid "Do not auto-insert (manual shortcode only)"
+msgstr ""
+
+#: includes/settings-page.php:104
+msgid "Insert before content"
+msgstr ""
+
+#: includes/settings-page.php:109
+msgid "Insert after content"
+msgstr ""
+
+#: includes/settings-page.php:113
+msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
+msgstr ""
+
+#: includes/settings-page.php:118
+msgid "Enable daily views?"
+msgstr ""
+
+#: includes/settings-page.php:122
+msgid "Count and store views per day"
+msgstr ""
+
+#: includes/settings-page.php:127
+msgid "Enable weekly views?"
+msgstr ""
+
+#: includes/settings-page.php:131
+msgid "Track total views by week"
+msgstr ""
+
+#: includes/settings-page.php:136
+msgid "Enable monthly views?"
+msgstr ""
+
+#: includes/settings-page.php:140
+msgid "Track total views by month"
+msgstr ""
+
+#: includes/settings-page.php:145
+msgid "Delay before counting (ms)"
+msgstr ""
+
+#: includes/settings-page.php:149
+msgid "Scroll percent required"
+msgstr ""
+
+#: includes/settings-page.php:153
+msgid "Enable scroll check?"
+msgstr ""
+
+#: includes/settings-page.php:157
+msgid "Only count views after user scrolls past required percent"
+msgstr ""
+
+#: includes/settings-page.php:162
+msgid "Storage method"
+msgstr ""
+
+#: includes/settings-page.php:167
+msgid "Session Storage"
+msgstr ""
+
+#: includes/settings-page.php:171
+msgid "Local Storage"
+msgstr ""
+
+#: includes/settings-page.php:177
+msgid "Batch view tracking"
+msgstr ""
+
+#: includes/settings-page.php:183
+msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
+msgstr ""
+
+#: includes/settings-page.php:188
+msgid "Enable strict IP check?"
+msgstr ""
+
+#: includes/settings-page.php:192
+msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
+msgstr ""
+
+#: includes/settings-page.php:195
+msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
+msgstr ""
+
+#: includes/settings-page.php:200
+msgid "Require REST nonce verification?"
+msgstr ""
+
+#: includes/settings-page.php:204
+msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
+msgstr ""
+
+#: includes/settings-page.php:207
+msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
+msgstr ""
+
+#: includes/settings-page.php:210
+msgid "Warning:"
+msgstr ""
+
+#: includes/settings-page.php:211
+msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
+msgstr ""
+
+#: includes/settings-page.php:216
+msgid "Enable dashboard widget?"
+msgstr ""
+
+#: includes/settings-page.php:220
+msgid "Display top view ranking inside WordPress Dashboard."
+msgstr ""
+
+#: includes/settings-page.php:223
+msgid "Uncheck to hide the widget for all users."
+msgstr ""
+
+#: includes/settings-page.php:228
+msgid "Disable plugin CSS?"
+msgstr ""
+
+#: includes/settings-page.php:232
+msgid "Disable built-in CSS output."
+msgstr ""
+
+#: includes/settings-page.php:235
+msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
+msgstr ""
+
+#: includes/settings-page.php:240
+msgid "Disable Trending?"
+msgstr ""
+
+#: includes/settings-page.php:246
+msgid "Completely turn off trending calculations and outputs."
+msgstr ""
+
+#: includes/settings-page.php:249
+msgid "Check this to hard-disable trending."
+msgstr ""
+
+#: includes/settings-page.php:254
+msgid "Save Settings"
+msgstr ""
+
+#: includes/settings-page.php:257
+#: includes/shortcodes.php:274
+msgid "Shortcode Builder"
+msgstr ""
+
+#: includes/shortcodes.php:9
+#: includes/shortcodes.php:280
+#: assets/js/blocks-editor.js:142
+msgid "Popular Posts"
+msgstr ""
+
+#. translators: %s is a human-readable time difference like "3 days"
+#: includes/shortcodes.php:164
+msgid "Posted %s ago"
+msgstr ""
+
+#: includes/shortcodes.php:194
+msgid "No data found."
+msgstr ""
+
+#: includes/shortcodes.php:195
+msgid "Failed to load data."
+msgstr ""
+
+#: includes/shortcodes.php:196
+msgid "views"
+msgstr ""
+
+#: includes/shortcodes.php:204
+#: assets/js/blocks-editor.js:183
+msgid "All Time"
+msgstr ""
+
+#: includes/shortcodes.php:205
+#: assets/js/blocks-editor.js:64
+#: assets/js/blocks-editor.js:184
+msgid "Today"
+msgstr ""
+
+#: includes/shortcodes.php:206
+#: assets/js/blocks-editor.js:65
+#: assets/js/blocks-editor.js:185
+msgid "This Week"
+msgstr ""
+
+#: includes/shortcodes.php:207
+#: assets/js/blocks-editor.js:66
+#: assets/js/blocks-editor.js:186
+msgid "This Month"
+msgstr ""
+
+#: includes/shortcodes.php:208
+msgid "Yesterday"
+msgstr ""
+
+#: includes/shortcodes.php:209
+msgid "Last Week"
+msgstr ""
+
+#: includes/shortcodes.php:210
+msgid "Last Month"
+msgstr ""
+
+#: includes/shortcodes.php:270
+msgid "Copy"
+msgstr ""
+
+#: includes/shortcodes.php:271
+msgid "Copied!"
+msgstr ""
+
+#: includes/shortcodes.php:272
+msgid "Close"
+msgstr ""
+
+#: includes/shortcodes.php:273
+msgid "Shortcode Preview"
+msgstr ""
+
+#: includes/shortcodes.php:276
+msgid "Init View List"
+msgstr ""
+
+#: includes/shortcodes.php:277
+msgid "Init View Ranking"
+msgstr ""
+
+#: includes/shortcodes.php:278
+msgid "Type"
+msgstr ""
+
+#: includes/shortcodes.php:279
+#: assets/js/blocks-editor.js:141
+msgid "Title"
+msgstr ""
+
+#: includes/shortcodes.php:281
+msgid "Number of Posts"
+msgstr ""
+
+#: includes/shortcodes.php:282
+#: assets/js/blocks-editor.js:167
+msgid "Template"
+msgstr ""
+
+#: includes/shortcodes.php:283
+msgid "View Range"
+msgstr ""
+
+#: includes/shortcodes.php:284
+msgid "Post Type"
+msgstr ""
+
+#: includes/shortcodes.php:285
+msgid "Category"
+msgstr ""
+
+#: includes/shortcodes.php:286
+msgid "Tag"
+msgstr ""
+
+#: includes/shortcodes.php:287
+msgid "Order By"
+msgstr ""
+
+#: includes/shortcodes.php:288
+msgid "Order Direction"
+msgstr ""
+
+#: includes/shortcodes.php:289
+msgid "Custom CSS class"
+msgstr ""
+
+#: includes/shortcodes.php:290
+#: assets/js/blocks-editor.js:60
+msgid "Field"
+msgstr ""
+
+#: includes/shortcodes.php:291
+#: assets/js/blocks-editor.js:73
+msgid "Format"
+msgstr ""
+
+#: includes/shortcodes.php:292
+msgid "Show Time Diff"
+msgstr ""
+
+#: includes/shortcodes.php:293
+#: assets/js/blocks-editor.js:250
+msgid "Tabs"
+msgstr ""
+
+#: includes/shortcodes.php:294
+msgid "Show Icon"
+msgstr ""
+
+#: includes/shortcodes.php:295
+msgid "Enable Schema.org"
+msgstr ""
+
+#: includes/shortcodes.php:296
+msgid "Custom Class"
+msgstr ""
+
+#: init-view-count.php:98
+msgid "Settings"
+msgstr ""
+
+#: assets/js/blocks-editor.js:48
 msgid "View Count Settings"
 msgstr ""
 
+#: assets/js/blocks-editor.js:50
 msgid "Post ID (0 = current post)"
 msgstr ""
 
+#: assets/js/blocks-editor.js:51
 msgid "Leave as 0 to always show the view count of whichever post/page this block is on."
 msgstr ""
 
+#: assets/js/blocks-editor.js:63
 msgid "Total"
 msgstr ""
 
+#: assets/js/blocks-editor.js:76
 msgid "Formatted (1,234)"
 msgstr ""
 
+#: assets/js/blocks-editor.js:77
 msgid "Short (1.2K)"
 msgstr ""
 
+#: assets/js/blocks-editor.js:78
 msgid "Raw"
 msgstr ""
 
+#: assets/js/blocks-editor.js:85
 msgid "Show time since published"
 msgstr ""
 
+#: assets/js/blocks-editor.js:92
 msgid "Show eye icon"
 msgstr ""
 
+#: assets/js/blocks-editor.js:99
 msgid "Enable Schema.org markup"
 msgstr ""
 
+#: assets/js/blocks-editor.js:139
 msgid "List Settings"
 msgstr ""
 
+#: assets/js/blocks-editor.js:143
 msgid "Leave empty to use the default title."
 msgstr ""
 
+#: assets/js/blocks-editor.js:150
 msgid "Number of posts"
 msgstr ""
 
+#: assets/js/blocks-editor.js:159
+#: assets/js/blocks-editor.js:267
 msgid "Post type"
 msgstr ""
 
+#: assets/js/blocks-editor.js:160
 msgid "Post type slug, e.g. \"post\" or a custom post type."
 msgstr ""
 
+#: assets/js/blocks-editor.js:170
 msgid "Sidebar"
 msgstr ""
 
+#: assets/js/blocks-editor.js:171
 msgid "Grid"
 msgstr ""
 
+#: assets/js/blocks-editor.js:172
 msgid "Details"
 msgstr ""
 
+#: assets/js/blocks-editor.js:173
 msgid "Full"
 msgstr ""
 
+#: assets/js/blocks-editor.js:180
 msgid "View range"
 msgstr ""
 
+#: assets/js/blocks-editor.js:193
 msgid "Category (slug)"
 msgstr ""
 
+#: assets/js/blocks-editor.js:200
 msgid "Tag (slug)"
 msgstr ""
 
+#: assets/js/blocks-editor.js:207
 msgid "Empty state text"
 msgstr ""
 
+#: assets/js/blocks-editor.js:208
 msgid "Shown when no posts match. Leave empty to render nothing."
 msgstr ""
 
+#: assets/js/blocks-editor.js:248
 msgid "Ranking Settings"
 msgstr ""
 
+#: assets/js/blocks-editor.js:251
 msgid "Comma-separated: total, day, week, month, yesterday, last_week, last_month."
 msgstr ""
 
+#: assets/js/blocks-editor.js:258
 msgid "Number of posts per tab"
 msgstr ""
 
+#: assets/js/blocks-editor.js:268
 msgid "Optional. Leave empty to use the site default."
+msgstr ""
+
+# --- Block metadata (block.json) — translated server-side via translate_settings_using_i18n_schema() ---
+
+#: blocks/view-count/block.json
+msgctxt "block title"
+msgid "View Count"
+msgstr ""
+
+#: blocks/view-count/block.json
+msgctxt "block description"
+msgid "Display the tracked view count for the current (or a specific) post."
+msgstr ""
+
+#: blocks/view-count/block.json blocks/view-list/block.json blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "views"
+msgstr ""
+
+#: blocks/view-count/block.json
+msgctxt "block keyword"
+msgid "count"
+msgstr ""
+
+#: blocks/view-count/block.json blocks/view-list/block.json
+msgctxt "block keyword"
+msgid "popular"
+msgstr ""
+
+#: blocks/view-count/block.json blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "trending"
+msgstr ""
+
+#: blocks/view-list/block.json
+msgctxt "block title"
+msgid "Popular Posts List"
+msgstr ""
+
+#: blocks/view-list/block.json
+msgctxt "block description"
+msgid "Display a list of the most viewed posts, with optional category/tag filtering."
+msgstr ""
+
+#: blocks/view-list/block.json
+msgctxt "block keyword"
+msgid "list"
+msgstr ""
+
+#: blocks/view-list/block.json
+msgctxt "block keyword"
+msgid "most viewed"
+msgstr ""
+
+#: blocks/view-ranking/block.json
+msgctxt "block title"
+msgid "View Ranking (Tabbed)"
+msgstr ""
+
+#: blocks/view-ranking/block.json
+msgctxt "block description"
+msgid "Display a tabbed ranking widget (All Time, Today, This Week, ...) of the most viewed posts."
+msgstr ""
+
+#: blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "ranking"
+msgstr ""
+
+#: blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "tabs"
 msgstr ""

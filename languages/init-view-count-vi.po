@@ -1,445 +1,735 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Init View Count 1.21\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
+"POT-Creation-Date: 2026-08-04T06:24:10+00:00\n"
 "Language: vi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#. Plugin Name of the plugin
+#: init-view-count.php includes/abilities-api.php:36 includes/blocks.php:33
+#: includes/dashboard-widget.php:12 includes/settings-page.php:7
+#: includes/shortcodes.php:275
 msgid "Init View Count"
 msgstr "Init View Count"
 
-msgid "Init View Count – Minimal, Accurate, Extensible"
-msgstr "Init View Count – Tối giản, Chính xác, Mở rộng dễ dàng"
-
-msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
-msgstr "Plugin nhẹ để theo dõi lượt xem bài viết thực bằng cách phát hiện cuộn trang & thời gian, xếp hạng thông minh và hỗ trợ shortcode linh hoạt."
-
-msgid "Init View Count Settings"
-msgstr "Cài đặt Init View Count"
-
-msgid "Settings"
-msgstr "Cài đặt"
-
-msgid "Settings saved."
-msgstr "Đã lưu cài đặt."
-
-msgid "Post types to track views"
-msgstr "Các loại bài viết cần theo dõi lượt xem"
-
-msgid "Enable daily views?"
-msgstr "Bật theo dõi lượt xem theo ngày?"
-
-msgid "Enable weekly views?"
-msgstr "Bật theo dõi lượt xem theo tuần?"
-
-msgid "Enable monthly views?"
-msgstr "Bật theo dõi lượt xem theo tháng?"
-
-msgid "Delay before counting (ms)"
-msgstr "Thời gian trễ trước khi tính lượt xem (ms)"
-
-msgid "Scroll percent required"
-msgstr "Phần trăm cuộn trang yêu cầu"
-
-msgid "Enable scroll check?"
-msgstr "Bật kiểm tra cuộn trang?"
-
-msgid "Storage method"
-msgstr "Phương thức lưu trữ"
-
-msgid "Session Storage"
-msgstr "Bộ nhớ phiên (Session)"
-
-msgid "Local Storage"
-msgstr "Bộ nhớ cục bộ (Local)"
-
-msgid "Disable plugin CSS?"
-msgstr "Tắt CSS của plugin?"
-
-msgid "Save Settings"
-msgstr "Lưu cài đặt"
-
-msgid "All Time"
-msgstr "Tất cả"
-
-msgid "Today"
-msgstr "Hôm nay"
-
-msgid "This Week"
-msgstr "Tuần này"
-
-msgid "This Month"
-msgstr "Tháng này"
-
-msgid "Yesterday"
-msgstr "Hôm qua"
-
-msgid "Last Week"
-msgstr "Tuần trước"
-
-msgid "Last Month"
-msgstr "Tháng trước"
-
-msgid "No data found."
-msgstr "Không có dữ liệu."
-
-msgid "Failed to load data."
-msgstr "Lỗi khi tải dữ liệu."
-
-msgid "Disable built-in CSS output."
-msgstr "Tắt CSS mặc định của plugin."
-
-msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
-msgstr "Chọn nếu bạn muốn tự kiểm soát hoàn toàn phần giao diện. Plugin sẽ không tự thêm bất kỳ CSS nào."
-
-msgid "Popular Posts"
-msgstr "Bài viết nổi bật"
-
-msgid "views"
-msgstr "lượt xem"
-
-msgid "Copy"
-msgstr "Sao chép"
-
-msgid "Copied!"
-msgstr "Đã sao chép!"
-
-msgid "Close"
-msgstr "Đóng"
-
-msgid "Shortcode Preview"
-msgstr "Xem trước Shortcode"
-
-msgid "Shortcode Builder"
-msgstr "Trình tạo Shortcode"
-
-msgid "Type"
-msgstr "Loại"
-
-msgid "Title"
-msgstr "Tiêu đề"
-
-msgid "Number of Posts"
-msgstr "Số lượng bài viết"
-
-msgid "Template"
-msgstr "Giao diện"
-
-msgid "View Range"
-msgstr "Khoảng thời gian"
-
-msgid "Post Type"
-msgstr "Loại bài viết"
-
-msgid "Category"
-msgstr "Chuyên mục"
-
-msgid "Tag"
-msgstr "Thẻ"
-
-msgid "Order By"
-msgstr "Sắp xếp theo"
-
-msgid "Order Direction"
-msgstr "Thứ tự sắp xếp"
-
-msgid "Custom CSS class"
-msgstr "Class CSS tùy chỉnh"
-
-msgid "Field"
-msgstr "Trường dữ liệu"
-
-msgid "Format"
-msgstr "Định dạng"
-
-msgid "Show Time Diff"
-msgstr "Hiển thị thời gian đăng"
-
-msgid "Tabs"
-msgstr "Các tab"
-
-msgid "Posted %s ago"
-msgstr "Đăng %s trước"
-
-msgid "Batch view tracking"
-msgstr "Gộp lượt xem"
-
-msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
-msgstr "Số lượt xem cần gom lại trước khi gửi lên server. Đặt là 1 để theo dõi theo thời gian thực. Giá trị cao hơn sẽ giảm số lượng request, nhưng có thể mất lượt xem nếu người dùng rời khỏi trang trước khi gửi."
-
-msgid "Invalid post ID."
-msgstr "ID bài viết không hợp lệ."
-
-msgid "Not enabled for view counting."
-msgstr "Chưa được bật đếm lượt xem."
-
-msgid "Invalid or expired security token."
-msgstr "Mã bảo mật không hợp lệ hoặc đã hết hạn."
-
-msgid "Enable strict IP check?"
-msgstr "Bật kiểm tra IP nghiêm ngặt?"
-
-msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
-msgstr "Thêm lớp bảo vệ chống bot hoặc yêu cầu giả mạo gửi thẳng đến endpoint đếm view. Hữu ích nếu bạn phát hiện lưu lượng bất thường không bị chặn bởi countdown hoặc kiểm tra cuộn trang."
-
-msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
-msgstr "Lưu danh sách IP đã mã hóa gần đây theo từng bài viết bằng transient để ngăn lượt xem lặp lại từ cùng một IP trong khoảng thời gian ngắn."
-
-msgid "Require REST nonce verification?"
-msgstr "Yêu cầu xác thực nonce REST?"
-
-msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
-msgstr "Yêu cầu mỗi request gửi đến endpoint /count phải kèm nonce REST hợp lệ của WordPress (X-WP-Nonce)."
-
-msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
-msgstr "Chặn các request POST giả mạo gửi thẳng đến endpoint mà không load trang trước."
-
-msgid "Warning:"
-msgstr "Lưu ý:"
-
-msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
-msgstr "Nonce của WordPress hết hạn sau khoảng 12-24 giờ. Nếu site dùng full-page cache với thời gian sống dài, các trang đã cache sẽ tiếp tục mang theo nonce cũ đã hết hạn, khiến việc đếm view âm thầm ngừng hoạt động trên các trang đó cho đến khi cache được làm mới. Nên để tắt tùy chọn này nếu site cache trang trong thời gian dài, hoặc đảm bảo cache được xóa/làm mới ít nhất mỗi ngày một lần."
-
-msgid "Enable dashboard widget?"
-msgstr "Bật widget bảng xếp hạng?"
-
-msgid "Display top view ranking inside WordPress Dashboard."
-msgstr "Hiển thị bảng xếp hạng lượt xem trong Bảng tin WordPress."
-
-msgid "Uncheck to hide the widget for all users."
-msgstr "Bỏ chọn để ẩn widget với tất cả người dùng."
-
-msgid "Count and store views per day"
-msgstr "Đếm và lưu lượt xem theo ngày"
-
-msgid "Track total views by week"
-msgstr "Theo dõi tổng lượt xem theo tuần"
-
-msgid "Track total views by month"
-msgstr "Theo dõi tổng lượt xem theo tháng"
-
-msgid "Only count views after user scrolls past required percent"
-msgstr "Chỉ đếm khi người dùng cuộn vượt qua phần trăm yêu cầu"
-
-msgid "Auto-insert shortcode into post content?"
-msgstr "Tự động chèn shortcode vào nội dung bài viết?"
-
-msgid "Do not auto-insert (manual shortcode only)"
-msgstr "Không tự chèn (chỉ dùng shortcode thủ công)"
-
-msgid "Insert before content"
-msgstr "Chèn trước nội dung"
-
-msgid "Insert after content"
-msgstr "Chèn sau nội dung"
-
-msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
-msgstr "Chỉ áp dụng cho các post type đã bật đếm view. Lập trình viên luôn có thể chèn thủ công bằng shortcode."
-
-msgid "Show Icon"
-msgstr "Hiện biểu tượng"
-
-msgid "Enable Schema.org"
-msgstr "Bật hỗ trợ Schema.org"
-
-msgid "Custom Class"
-msgstr "Lớp CSS tùy chỉnh"
-
-msgid "Disable Trending?"
-msgstr "Tắt tính năng Trending?"
-
-msgid "Completely turn off trending calculations and outputs."
-msgstr "Tắt hoàn toàn việc tính toán và hiển thị Trending."
-
-msgid "Check this to hard-disable trending."
-msgstr "Đánh dấu để vô hiệu hóa Trending."
+#. Plugin URI of the plugin
+#: init-view-count.php
+msgid "https://inithtml.com/plugin/init-view-count/"
+msgstr ""
+
+#. Description of the plugin
+#: init-view-count.php
+msgid ""
+"Lightweight plugin to track real post views with scroll & delay detection, "
+"smart ranking, and flexible shortcodes."
+msgstr ""
+"Plugin nhẹ để theo dõi lượt xem bài viết thực bằng cách phát hiện cuộn trang "
+"& thời gian, xếp hạng thông minh và hỗ trợ shortcode linh hoạt."
+
+#. Author of the plugin
+#: init-view-count.php
+msgid "Init HTML"
+msgstr ""
+
+#. Author URI of the plugin
+#: init-view-count.php
+msgid "https://inithtml.com/"
+msgstr ""
 
 # --- Abilities API + Block Editor (v1.23) ---
-#: includes/abilities-api.php:36
-msgid "Read-only abilities for querying tracked post view counts and popular posts."
-msgstr "Các ability chỉ đọc để truy vấn lượt xem bài viết đã theo dõi và các bài viết phổ biến."
+#: includes/abilities-api.php:37
+msgid ""
+"Read-only abilities for querying tracked post view counts and popular posts."
+msgstr ""
+"Các ability chỉ đọc để truy vấn lượt xem bài viết đã theo dõi và các bài "
+"viết phổ biến."
 
-#: includes/abilities-api.php:55
+#: includes/abilities-api.php:56
 msgid "Get Post Views"
 msgstr "Lấy lượt xem bài viết"
 
-#: includes/abilities-api.php:56
-msgid "Returns the tracked view count for a single post (total, day, week, or month). Read-only, does not increment the counter."
-msgstr "Trả về lượt xem đã ghi nhận của 1 bài viết (tổng, ngày, tuần hoặc tháng). Chỉ đọc, không làm tăng bộ đếm."
+#: includes/abilities-api.php:57
+msgid ""
+"Returns the tracked view count for a single post (total, day, week, or "
+"month). Read-only, does not increment the counter."
+msgstr ""
+"Trả về lượt xem đã ghi nhận của 1 bài viết (tổng, ngày, tuần hoặc tháng). "
+"Chỉ đọc, không làm tăng bộ đếm."
 
-#: includes/abilities-api.php:63
+#: includes/abilities-api.php:64
 msgid "The ID of the post to look up."
 msgstr "ID của bài viết cần tra cứu."
 
-#: includes/abilities-api.php:68
+#: includes/abilities-api.php:69
 msgid "Which counter to read."
 msgstr "Bộ đếm nào cần đọc."
 
-#: includes/abilities-api.php:80
+#: includes/abilities-api.php:81
 msgid "The post ID that was looked up."
 msgstr "ID bài viết đã được tra cứu."
 
-#: includes/abilities-api.php:84
+#: includes/abilities-api.php:85
 msgid "The counter field that was returned."
 msgstr "Trường bộ đếm đã được trả về."
 
-#: includes/abilities-api.php:88
+#: includes/abilities-api.php:89
 msgid "Raw view count."
 msgstr "Số lượt xem thô (chưa định dạng)."
 
-#: includes/abilities-api.php:92
+#: includes/abilities-api.php:93
 msgid "Locale-formatted view count (e.g. \"1,234\")."
 msgstr "Lượt xem đã định dạng theo ngôn ngữ (VD: \"1.234\")."
 
-#: includes/abilities-api.php:96
+#: includes/abilities-api.php:97
 msgid "Abbreviated view count (e.g. \"1.2K\")."
 msgstr "Lượt xem rút gọn (VD: \"1,2 N\")."
 
-#: includes/abilities-api.php:116
+#: includes/abilities-api.php:117
 msgid "Get Top Viewed Posts"
 msgstr "Lấy danh sách bài viết xem nhiều nhất"
 
-#: includes/abilities-api.php:117
-msgid "Returns a ranked list of the most viewed posts for a given time range (total, day, week, month, or trending). Wraps the same data used by the [init_view_ranking] shortcode and the GET /top REST route."
-msgstr "Trả về danh sách xếp hạng các bài viết xem nhiều nhất theo khoảng thời gian (tổng, ngày, tuần, tháng, hoặc trending). Dùng lại đúng dữ liệu của shortcode [init_view_ranking] và REST route GET /top."
+#: includes/abilities-api.php:118
+msgid ""
+"Returns a ranked list of the most viewed posts for a given time range "
+"(total, day, week, month, or trending). Wraps the same data used by the "
+"[init_view_ranking] shortcode and the GET /top REST route."
+msgstr ""
+"Trả về danh sách xếp hạng các bài viết xem nhiều nhất theo khoảng thời gian "
+"(tổng, ngày, tuần, tháng, hoặc trending). Dùng lại đúng dữ liệu của "
+"shortcode [init_view_ranking] và REST route GET /top."
 
-#: includes/abilities-api.php:124
+#: includes/abilities-api.php:125
 msgid "How many posts to return."
 msgstr "Số lượng bài viết cần trả về."
 
-#: includes/abilities-api.php:131
+#: includes/abilities-api.php:132
 msgid "Pagination page number."
 msgstr "Số trang phân trang."
 
-#: includes/abilities-api.php:138
+#: includes/abilities-api.php:139
 msgid "Post types to include."
 msgstr "Các loại bài viết cần bao gồm."
 
-#: includes/abilities-api.php:143
+#: includes/abilities-api.php:144
 msgid "Time range to rank by."
 msgstr "Khoảng thời gian dùng để xếp hạng."
 
-#: includes/abilities-api.php:149
-msgid "\"minimal\" returns only id/title/link; \"full\" includes excerpt, thumbnail, category, etc."
-msgstr "\"minimal\" chỉ trả về id/tiêu đề/link; \"full\" bao gồm cả tóm tắt, ảnh đại diện, chuyên mục, v.v."
+#: includes/abilities-api.php:150
+msgid ""
+"\"minimal\" returns only id/title/link; \"full\" includes excerpt, "
+"thumbnail, category, etc."
+msgstr ""
+"\"minimal\" chỉ trả về id/tiêu đề/link; \"full\" bao gồm cả tóm tắt, ảnh đại "
+"diện, chuyên mục, v.v."
 
-#: includes/abilities-api.php:155
+#: includes/abilities-api.php:156
 msgid "Optional taxonomy slug to filter by."
 msgstr "Slug taxonomy tùy chọn để lọc theo."
 
-#: includes/abilities-api.php:159
+#: includes/abilities-api.php:160
 msgid "Comma-separated term slugs or IDs, used together with \"tax\"."
-msgstr "Danh sách slug hoặc ID term, cách nhau bởi dấu phẩy, dùng chung với \"tax\"."
+msgstr ""
+"Danh sách slug hoặc ID term, cách nhau bởi dấu phẩy, dùng chung với \"tax\"."
 
-#: includes/abilities-api.php:163
+#: includes/abilities-api.php:164
 msgid "Bypass the 5-minute result cache."
 msgstr "Bỏ qua cache kết quả 5 phút."
 
-#: includes/abilities-api.php:175
+#: includes/abilities-api.php:176
 msgid "Post ID."
 msgstr "ID bài viết."
 
-#: includes/abilities-api.php:179
+#: includes/abilities-api.php:180
 msgid "Post title."
 msgstr "Tiêu đề bài viết."
 
-#: includes/abilities-api.php:183
+#: includes/abilities-api.php:184
 msgid "Post permalink."
 msgstr "Đường dẫn tĩnh của bài viết."
 
-#: includes/abilities-api.php:187
+#: includes/abilities-api.php:188
 msgid "View count for the requested range."
 msgstr "Lượt xem theo khoảng thời gian đã yêu cầu."
 
-#: includes/abilities-api.php:223
+#: includes/abilities-api.php:224
 msgid "Invalid or non-published post ID."
 msgstr "ID bài viết không hợp lệ hoặc chưa được xuất bản."
 
-#: includes/abilities-api.php:264
+#: includes/abilities-api.php:265
 msgid "The view count REST layer is not available."
 msgstr "Lớp REST của view count hiện không khả dụng."
 
+#: includes/rest-api.php:45
+msgid "Invalid or expired security token."
+msgstr "Mã bảo mật không hợp lệ hoặc đã hết hạn."
+
+#: includes/rest-api.php:125
+msgid "Invalid post ID."
+msgstr "ID bài viết không hợp lệ."
+
+#: includes/rest-api.php:138
+msgid "Not enabled for view counting."
+msgstr "Chưa được bật đếm lượt xem."
+
+#: includes/settings-page.php:6 includes/settings-page.php:75
+msgid "Init View Count Settings"
+msgstr "Cài đặt Init View Count"
+
+#: includes/settings-page.php:67
+msgid "Settings saved."
+msgstr "Đã lưu cài đặt."
+
+#: includes/settings-page.php:80
+msgid "Post types to track views"
+msgstr "Các loại bài viết cần theo dõi lượt xem"
+
+#: includes/settings-page.php:93
+msgid "Auto-insert shortcode into post content?"
+msgstr "Tự động chèn shortcode vào nội dung bài viết?"
+
+#: includes/settings-page.php:99
+msgid "Do not auto-insert (manual shortcode only)"
+msgstr "Không tự chèn (chỉ dùng shortcode thủ công)"
+
+#: includes/settings-page.php:104
+msgid "Insert before content"
+msgstr "Chèn trước nội dung"
+
+#: includes/settings-page.php:109
+msgid "Insert after content"
+msgstr "Chèn sau nội dung"
+
+#: includes/settings-page.php:113
+msgid ""
+"Only applies to post types where view count is enabled. Developers can "
+"always insert shortcode manually."
+msgstr ""
+"Chỉ áp dụng cho các post type đã bật đếm view. Lập trình viên luôn có thể "
+"chèn thủ công bằng shortcode."
+
+#: includes/settings-page.php:118
+msgid "Enable daily views?"
+msgstr "Bật theo dõi lượt xem theo ngày?"
+
+#: includes/settings-page.php:122
+msgid "Count and store views per day"
+msgstr "Đếm và lưu lượt xem theo ngày"
+
+#: includes/settings-page.php:127
+msgid "Enable weekly views?"
+msgstr "Bật theo dõi lượt xem theo tuần?"
+
+#: includes/settings-page.php:131
+msgid "Track total views by week"
+msgstr "Theo dõi tổng lượt xem theo tuần"
+
+#: includes/settings-page.php:136
+msgid "Enable monthly views?"
+msgstr "Bật theo dõi lượt xem theo tháng?"
+
+#: includes/settings-page.php:140
+msgid "Track total views by month"
+msgstr "Theo dõi tổng lượt xem theo tháng"
+
+#: includes/settings-page.php:145
+msgid "Delay before counting (ms)"
+msgstr "Thời gian trễ trước khi tính lượt xem (ms)"
+
+#: includes/settings-page.php:149
+msgid "Scroll percent required"
+msgstr "Phần trăm cuộn trang yêu cầu"
+
+#: includes/settings-page.php:153
+msgid "Enable scroll check?"
+msgstr "Bật kiểm tra cuộn trang?"
+
+#: includes/settings-page.php:157
+msgid "Only count views after user scrolls past required percent"
+msgstr "Chỉ đếm khi người dùng cuộn vượt qua phần trăm yêu cầu"
+
+#: includes/settings-page.php:162
+msgid "Storage method"
+msgstr "Phương thức lưu trữ"
+
+#: includes/settings-page.php:167
+msgid "Session Storage"
+msgstr "Bộ nhớ phiên (Session)"
+
+#: includes/settings-page.php:171
+msgid "Local Storage"
+msgstr "Bộ nhớ cục bộ (Local)"
+
+#: includes/settings-page.php:177
+msgid "Batch view tracking"
+msgstr "Gộp lượt xem"
+
+#: includes/settings-page.php:183
+msgid ""
+"Number of views to collect before sending to server. Set to 1 for real-time "
+"tracking. Higher values reduce server requests but may miss some views if "
+"user leaves early."
+msgstr ""
+"Số lượt xem cần gom lại trước khi gửi lên server. Đặt là 1 để theo dõi theo "
+"thời gian thực. Giá trị cao hơn sẽ giảm số lượng request, nhưng có thể mất "
+"lượt xem nếu người dùng rời khỏi trang trước khi gửi."
+
+#: includes/settings-page.php:188
+msgid "Enable strict IP check?"
+msgstr "Bật kiểm tra IP nghiêm ngặt?"
+
+#: includes/settings-page.php:192
+msgid ""
+"Stores a hashed list of recent IPs per post in a transient to prevent "
+"repeated views from the same IP within a short time window."
+msgstr ""
+"Lưu danh sách IP đã mã hóa gần đây theo từng bài viết bằng transient để ngăn "
+"lượt xem lặp lại từ cùng một IP trong khoảng thời gian ngắn."
+
+#: includes/settings-page.php:195
+msgid ""
+"Adds extra protection against bots or fake requests directly posting to the "
+"tracking endpoint. Useful if you see unusual traffic not blocked by "
+"countdown or scroll check."
+msgstr ""
+"Thêm lớp bảo vệ chống bot hoặc yêu cầu giả mạo gửi thẳng đến endpoint đếm "
+"view. Hữu ích nếu bạn phát hiện lưu lượng bất thường không bị chặn bởi "
+"countdown hoặc kiểm tra cuộn trang."
+
+#: includes/settings-page.php:200
+msgid "Require REST nonce verification?"
+msgstr "Yêu cầu xác thực nonce REST?"
+
+#: includes/settings-page.php:204
+msgid ""
+"Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /"
+"count endpoint."
+msgstr ""
+"Yêu cầu mỗi request gửi đến endpoint /count phải kèm nonce REST hợp lệ của "
+"WordPress (X-WP-Nonce)."
+
+#: includes/settings-page.php:207
+msgid ""
+"Blocks fake POST requests sent directly to the endpoint without loading the "
+"page first."
+msgstr ""
+"Chặn các request POST giả mạo gửi thẳng đến endpoint mà không load trang "
+"trước."
+
+#: includes/settings-page.php:210
+msgid "Warning:"
+msgstr "Lưu ý:"
+
+#: includes/settings-page.php:211
+msgid ""
+"A WordPress nonce expires after roughly 12-24 hours. If you use full-page "
+"caching with a long lifetime, cached pages will keep serving an old, expired "
+"nonce, and view counting will silently stop working on those pages until the "
+"cache is refreshed. Leave this off on sites with long-lived page caching, or "
+"make sure the cache is purged/refreshed at least once a day."
+msgstr ""
+"Nonce của WordPress hết hạn sau khoảng 12-24 giờ. Nếu site dùng full-page "
+"cache với thời gian sống dài, các trang đã cache sẽ tiếp tục mang theo nonce "
+"cũ đã hết hạn, khiến việc đếm view âm thầm ngừng hoạt động trên các trang đó "
+"cho đến khi cache được làm mới. Nên để tắt tùy chọn này nếu site cache trang "
+"trong thời gian dài, hoặc đảm bảo cache được xóa/làm mới ít nhất mỗi ngày "
+"một lần."
+
+#: includes/settings-page.php:216
+msgid "Enable dashboard widget?"
+msgstr "Bật widget bảng xếp hạng?"
+
+#: includes/settings-page.php:220
+msgid "Display top view ranking inside WordPress Dashboard."
+msgstr "Hiển thị bảng xếp hạng lượt xem trong Bảng tin WordPress."
+
+#: includes/settings-page.php:223
+msgid "Uncheck to hide the widget for all users."
+msgstr "Bỏ chọn để ẩn widget với tất cả người dùng."
+
+#: includes/settings-page.php:228
+msgid "Disable plugin CSS?"
+msgstr "Tắt CSS của plugin?"
+
+#: includes/settings-page.php:232
+msgid "Disable built-in CSS output."
+msgstr "Tắt CSS mặc định của plugin."
+
+#: includes/settings-page.php:235
+msgid ""
+"Check this if you want to fully control the styling yourself. The plugin "
+"will not enqueue any CSS."
+msgstr ""
+"Chọn nếu bạn muốn tự kiểm soát hoàn toàn phần giao diện. Plugin sẽ không tự "
+"thêm bất kỳ CSS nào."
+
+#: includes/settings-page.php:240
+msgid "Disable Trending?"
+msgstr "Tắt tính năng Trending?"
+
+#: includes/settings-page.php:246
+msgid "Completely turn off trending calculations and outputs."
+msgstr "Tắt hoàn toàn việc tính toán và hiển thị Trending."
+
+#: includes/settings-page.php:249
+msgid "Check this to hard-disable trending."
+msgstr "Đánh dấu để vô hiệu hóa Trending."
+
+#: includes/settings-page.php:254
+msgid "Save Settings"
+msgstr "Lưu cài đặt"
+
+#: includes/settings-page.php:257 includes/shortcodes.php:274
+msgid "Shortcode Builder"
+msgstr "Trình tạo Shortcode"
+
+#: includes/shortcodes.php:9 includes/shortcodes.php:280
+#: assets/js/blocks-editor.js:142
+msgid "Popular Posts"
+msgstr "Bài viết nổi bật"
+
+#. translators: %s is a human-readable time difference like "3 days"
+#: includes/shortcodes.php:164
+msgid "Posted %s ago"
+msgstr "Đăng %s trước"
+
+#: includes/shortcodes.php:194
+msgid "No data found."
+msgstr "Không có dữ liệu."
+
+#: includes/shortcodes.php:195
+msgid "Failed to load data."
+msgstr "Lỗi khi tải dữ liệu."
+
+#: includes/shortcodes.php:196
+msgid "views"
+msgstr "lượt xem"
+
+#: includes/shortcodes.php:204 assets/js/blocks-editor.js:183
+msgid "All Time"
+msgstr "Tất cả"
+
+#: includes/shortcodes.php:205 assets/js/blocks-editor.js:64
+#: assets/js/blocks-editor.js:184
+msgid "Today"
+msgstr "Hôm nay"
+
+#: includes/shortcodes.php:206 assets/js/blocks-editor.js:65
+#: assets/js/blocks-editor.js:185
+msgid "This Week"
+msgstr "Tuần này"
+
+#: includes/shortcodes.php:207 assets/js/blocks-editor.js:66
+#: assets/js/blocks-editor.js:186
+msgid "This Month"
+msgstr "Tháng này"
+
+#: includes/shortcodes.php:208
+msgid "Yesterday"
+msgstr "Hôm qua"
+
+#: includes/shortcodes.php:209
+msgid "Last Week"
+msgstr "Tuần trước"
+
+#: includes/shortcodes.php:210
+msgid "Last Month"
+msgstr "Tháng trước"
+
+#: includes/shortcodes.php:270
+msgid "Copy"
+msgstr "Sao chép"
+
+#: includes/shortcodes.php:271
+msgid "Copied!"
+msgstr "Đã sao chép!"
+
+#: includes/shortcodes.php:272
+msgid "Close"
+msgstr "Đóng"
+
+#: includes/shortcodes.php:273
+msgid "Shortcode Preview"
+msgstr "Xem trước Shortcode"
+
+#: includes/shortcodes.php:276
+msgid "Init View List"
+msgstr ""
+
+#: includes/shortcodes.php:277
+msgid "Init View Ranking"
+msgstr ""
+
+#: includes/shortcodes.php:278
+msgid "Type"
+msgstr "Loại"
+
+#: includes/shortcodes.php:279 assets/js/blocks-editor.js:141
+msgid "Title"
+msgstr "Tiêu đề"
+
+#: includes/shortcodes.php:281
+msgid "Number of Posts"
+msgstr "Số lượng bài viết"
+
+#: includes/shortcodes.php:282 assets/js/blocks-editor.js:167
+msgid "Template"
+msgstr "Giao diện"
+
+#: includes/shortcodes.php:283
+msgid "View Range"
+msgstr "Khoảng thời gian"
+
+#: includes/shortcodes.php:284
+msgid "Post Type"
+msgstr "Loại bài viết"
+
+#: includes/shortcodes.php:285
+msgid "Category"
+msgstr "Chuyên mục"
+
+#: includes/shortcodes.php:286
+msgid "Tag"
+msgstr "Thẻ"
+
+#: includes/shortcodes.php:287
+msgid "Order By"
+msgstr "Sắp xếp theo"
+
+#: includes/shortcodes.php:288
+msgid "Order Direction"
+msgstr "Thứ tự sắp xếp"
+
+#: includes/shortcodes.php:289
+msgid "Custom CSS class"
+msgstr "Class CSS tùy chỉnh"
+
+#: includes/shortcodes.php:290 assets/js/blocks-editor.js:60
+msgid "Field"
+msgstr "Trường dữ liệu"
+
+#: includes/shortcodes.php:291 assets/js/blocks-editor.js:73
+msgid "Format"
+msgstr "Định dạng"
+
+#: includes/shortcodes.php:292
+msgid "Show Time Diff"
+msgstr "Hiển thị thời gian đăng"
+
+#: includes/shortcodes.php:293 assets/js/blocks-editor.js:250
+msgid "Tabs"
+msgstr "Các tab"
+
+#: includes/shortcodes.php:294
+msgid "Show Icon"
+msgstr "Hiện biểu tượng"
+
+#: includes/shortcodes.php:295
+msgid "Enable Schema.org"
+msgstr "Bật hỗ trợ Schema.org"
+
+#: includes/shortcodes.php:296
+msgid "Custom Class"
+msgstr "Lớp CSS tùy chỉnh"
+
+#: init-view-count.php:98
+msgid "Settings"
+msgstr "Cài đặt"
+
+#: assets/js/blocks-editor.js:48
 msgid "View Count Settings"
 msgstr "Cài đặt View Count"
 
+#: assets/js/blocks-editor.js:50
 msgid "Post ID (0 = current post)"
 msgstr "ID bài viết (0 = bài viết hiện tại)"
 
-msgid "Leave as 0 to always show the view count of whichever post/page this block is on."
+#: assets/js/blocks-editor.js:51
+msgid ""
+"Leave as 0 to always show the view count of whichever post/page this block "
+"is on."
 msgstr "Để 0 để luôn hiển thị lượt xem của bài viết/trang đang chứa block này."
 
+#: assets/js/blocks-editor.js:63
 msgid "Total"
 msgstr "Tổng cộng"
 
+#: assets/js/blocks-editor.js:76
 msgid "Formatted (1,234)"
 msgstr "Đã định dạng (1.234)"
 
+#: assets/js/blocks-editor.js:77
 msgid "Short (1.2K)"
 msgstr "Rút gọn (1,2 N)"
 
+#: assets/js/blocks-editor.js:78
 msgid "Raw"
 msgstr "Thô"
 
+#: assets/js/blocks-editor.js:85
 msgid "Show time since published"
 msgstr "Hiện thời gian kể từ khi đăng"
 
+#: assets/js/blocks-editor.js:92
 msgid "Show eye icon"
 msgstr "Hiện icon con mắt"
 
+#: assets/js/blocks-editor.js:99
 msgid "Enable Schema.org markup"
 msgstr "Bật markup Schema.org"
 
+#: assets/js/blocks-editor.js:139
 msgid "List Settings"
 msgstr "Cài đặt danh sách"
 
+#: assets/js/blocks-editor.js:143
 msgid "Leave empty to use the default title."
 msgstr "Để trống để dùng tiêu đề mặc định."
 
+#: assets/js/blocks-editor.js:150
 msgid "Number of posts"
 msgstr "Số lượng bài viết"
 
+#: assets/js/blocks-editor.js:159 assets/js/blocks-editor.js:267
 msgid "Post type"
 msgstr "Loại bài viết"
 
+#: assets/js/blocks-editor.js:160
 msgid "Post type slug, e.g. \"post\" or a custom post type."
 msgstr "Slug loại bài viết, VD: \"post\" hoặc 1 custom post type."
 
+#: assets/js/blocks-editor.js:170
 msgid "Sidebar"
 msgstr "Sidebar"
 
+#: assets/js/blocks-editor.js:171
 msgid "Grid"
 msgstr "Lưới"
 
+#: assets/js/blocks-editor.js:172
 msgid "Details"
 msgstr "Chi tiết"
 
+#: assets/js/blocks-editor.js:173
 msgid "Full"
 msgstr "Đầy đủ"
 
+#: assets/js/blocks-editor.js:180
 msgid "View range"
 msgstr "Khoảng thời gian xem"
 
+#: assets/js/blocks-editor.js:193
 msgid "Category (slug)"
 msgstr "Chuyên mục (slug)"
 
+#: assets/js/blocks-editor.js:200
 msgid "Tag (slug)"
 msgstr "Thẻ (slug)"
 
+#: assets/js/blocks-editor.js:207
 msgid "Empty state text"
 msgstr "Văn bản khi không có dữ liệu"
 
+#: assets/js/blocks-editor.js:208
 msgid "Shown when no posts match. Leave empty to render nothing."
 msgstr "Hiện khi không có bài viết nào phù hợp. Để trống để không hiện gì."
 
+#: assets/js/blocks-editor.js:248
 msgid "Ranking Settings"
 msgstr "Cài đặt xếp hạng"
 
-msgid "Comma-separated: total, day, week, month, yesterday, last_week, last_month."
-msgstr "Cách nhau bởi dấu phẩy: total, day, week, month, yesterday, last_week, last_month."
+#: assets/js/blocks-editor.js:251
+msgid ""
+"Comma-separated: total, day, week, month, yesterday, last_week, last_month."
+msgstr ""
+"Cách nhau bởi dấu phẩy: total, day, week, month, yesterday, last_week, "
+"last_month."
 
+#: assets/js/blocks-editor.js:258
 msgid "Number of posts per tab"
 msgstr "Số bài viết mỗi tab"
 
+#: assets/js/blocks-editor.js:268
 msgid "Optional. Leave empty to use the site default."
 msgstr "Tùy chọn. Để trống để dùng mặc định của site."
+
+# --- Block metadata (block.json) — translated server-side via translate_settings_using_i18n_schema() ---
+#: blocks/view-count/block.json
+msgctxt "block title"
+msgid "View Count"
+msgstr "Số lượt xem"
+
+#: blocks/view-count/block.json
+msgctxt "block description"
+msgid "Display the tracked view count for the current (or a specific) post."
+msgstr "Hiển thị số lượt xem đã ghi nhận của bài viết hiện tại (hoặc một bài viết cụ thể)."
+
+#: blocks/view-count/block.json blocks/view-list/block.json
+#: blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "views"
+msgstr "lượt xem"
+
+#: blocks/view-count/block.json
+msgctxt "block keyword"
+msgid "count"
+msgstr "đếm"
+
+#: blocks/view-count/block.json blocks/view-list/block.json
+msgctxt "block keyword"
+msgid "popular"
+msgstr "phổ biến"
+
+#: blocks/view-count/block.json blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "trending"
+msgstr "thịnh hành"
+
+#: blocks/view-list/block.json
+msgctxt "block title"
+msgid "Popular Posts List"
+msgstr "Danh sách bài viết phổ biến"
+
+#: blocks/view-list/block.json
+msgctxt "block description"
+msgid ""
+"Display a list of the most viewed posts, with optional category/tag "
+"filtering."
+msgstr "Hiển thị danh sách các bài viết được xem nhiều nhất, có thể lọc theo chuyên mục/thẻ."
+
+#: blocks/view-list/block.json
+msgctxt "block keyword"
+msgid "list"
+msgstr "danh sách"
+
+#: blocks/view-list/block.json
+msgctxt "block keyword"
+msgid "most viewed"
+msgstr "xem nhiều nhất"
+
+#: blocks/view-ranking/block.json
+msgctxt "block title"
+msgid "View Ranking (Tabbed)"
+msgstr "Bảng xếp hạng lượt xem (dạng tab)"
+
+#: blocks/view-ranking/block.json
+msgctxt "block description"
+msgid ""
+"Display a tabbed ranking widget (All Time, Today, This Week, ...) of the "
+"most viewed posts."
+msgstr "Hiển thị bảng xếp hạng bài viết xem nhiều nhất dạng tab (Toàn thời gian, Hôm nay, Tuần này, ...)."
+
+#: blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "ranking"
+msgstr "xếp hạng"
+
+#: blocks/view-ranking/block.json
+msgctxt "block keyword"
+msgid "tabs"
+msgstr "tab"
+
+#~ msgid "Init View Count – Minimal, Accurate, Extensible"
+#~ msgstr "Init View Count – Tối giản, Chính xác, Mở rộng dễ dàng"
