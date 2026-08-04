@@ -3,13 +3,13 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 1.22
+ * Version: 2.0.0
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
  * Domain Path: /languages
- * Requires at least: 5.9
- * Tested up to: 7.0
+ * Requires at least: 6.9
+ * Tested up to: 7.1
  * Requires PHP: 7.4
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@
 defined('ABSPATH') || exit;
 
 // === Constants ===
-define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION',   '1.22');
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION',   '2.0.0');
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG',      'init-view-count');
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_DIR',       plugin_dir_path(__FILE__));
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_URL',       plugin_dir_url(__FILE__));
@@ -31,6 +31,8 @@ require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/reset-schedule.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/shortcodes.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/hooks.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/settings-page.php';
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/abilities-api.php';
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/blocks.php';
 
 if ( is_admin() ) {
     require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/dashboard-widget.php';

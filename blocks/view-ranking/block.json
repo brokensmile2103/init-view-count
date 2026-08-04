@@ -1,0 +1,34 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "init-view-count/view-ranking",
+    "title": "View Ranking (Tabbed)",
+    "category": "init-view-count",
+    "icon": "chart-bar",
+    "description": "Display a tabbed ranking widget (All Time, Today, This Week, ...) of the most viewed posts.",
+    "keywords": ["views", "ranking", "trending", "tabs"],
+    "textdomain": "init-view-count",
+    "attributes": {
+        "tabs": {
+            "type": "string",
+            "default": "total,day,week,month"
+        },
+        "number": {
+            "type": "number",
+            "default": 5
+        },
+        "postType": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "supports": {
+        "html": false,
+        "spacing": {
+            "margin": true
+        }
+    },
+    "editorScript": "init-view-count-blocks-editor",
+    "style": "init-plugin-suite-view-count-style",
+    "render": "file:./render.php"
+}

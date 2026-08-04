@@ -254,3 +254,192 @@ msgstr "Tắt hoàn toàn việc tính toán và hiển thị Trending."
 
 msgid "Check this to hard-disable trending."
 msgstr "Đánh dấu để vô hiệu hóa Trending."
+
+# --- Abilities API + Block Editor (v1.23) ---
+#: includes/abilities-api.php:36
+msgid "Read-only abilities for querying tracked post view counts and popular posts."
+msgstr "Các ability chỉ đọc để truy vấn lượt xem bài viết đã theo dõi và các bài viết phổ biến."
+
+#: includes/abilities-api.php:55
+msgid "Get Post Views"
+msgstr "Lấy lượt xem bài viết"
+
+#: includes/abilities-api.php:56
+msgid "Returns the tracked view count for a single post (total, day, week, or month). Read-only, does not increment the counter."
+msgstr "Trả về lượt xem đã ghi nhận của 1 bài viết (tổng, ngày, tuần hoặc tháng). Chỉ đọc, không làm tăng bộ đếm."
+
+#: includes/abilities-api.php:63
+msgid "The ID of the post to look up."
+msgstr "ID của bài viết cần tra cứu."
+
+#: includes/abilities-api.php:68
+msgid "Which counter to read."
+msgstr "Bộ đếm nào cần đọc."
+
+#: includes/abilities-api.php:80
+msgid "The post ID that was looked up."
+msgstr "ID bài viết đã được tra cứu."
+
+#: includes/abilities-api.php:84
+msgid "The counter field that was returned."
+msgstr "Trường bộ đếm đã được trả về."
+
+#: includes/abilities-api.php:88
+msgid "Raw view count."
+msgstr "Số lượt xem thô (chưa định dạng)."
+
+#: includes/abilities-api.php:92
+msgid "Locale-formatted view count (e.g. \"1,234\")."
+msgstr "Lượt xem đã định dạng theo ngôn ngữ (VD: \"1.234\")."
+
+#: includes/abilities-api.php:96
+msgid "Abbreviated view count (e.g. \"1.2K\")."
+msgstr "Lượt xem rút gọn (VD: \"1,2 N\")."
+
+#: includes/abilities-api.php:116
+msgid "Get Top Viewed Posts"
+msgstr "Lấy danh sách bài viết xem nhiều nhất"
+
+#: includes/abilities-api.php:117
+msgid "Returns a ranked list of the most viewed posts for a given time range (total, day, week, month, or trending). Wraps the same data used by the [init_view_ranking] shortcode and the GET /top REST route."
+msgstr "Trả về danh sách xếp hạng các bài viết xem nhiều nhất theo khoảng thời gian (tổng, ngày, tuần, tháng, hoặc trending). Dùng lại đúng dữ liệu của shortcode [init_view_ranking] và REST route GET /top."
+
+#: includes/abilities-api.php:124
+msgid "How many posts to return."
+msgstr "Số lượng bài viết cần trả về."
+
+#: includes/abilities-api.php:131
+msgid "Pagination page number."
+msgstr "Số trang phân trang."
+
+#: includes/abilities-api.php:138
+msgid "Post types to include."
+msgstr "Các loại bài viết cần bao gồm."
+
+#: includes/abilities-api.php:143
+msgid "Time range to rank by."
+msgstr "Khoảng thời gian dùng để xếp hạng."
+
+#: includes/abilities-api.php:149
+msgid "\"minimal\" returns only id/title/link; \"full\" includes excerpt, thumbnail, category, etc."
+msgstr "\"minimal\" chỉ trả về id/tiêu đề/link; \"full\" bao gồm cả tóm tắt, ảnh đại diện, chuyên mục, v.v."
+
+#: includes/abilities-api.php:155
+msgid "Optional taxonomy slug to filter by."
+msgstr "Slug taxonomy tùy chọn để lọc theo."
+
+#: includes/abilities-api.php:159
+msgid "Comma-separated term slugs or IDs, used together with \"tax\"."
+msgstr "Danh sách slug hoặc ID term, cách nhau bởi dấu phẩy, dùng chung với \"tax\"."
+
+#: includes/abilities-api.php:163
+msgid "Bypass the 5-minute result cache."
+msgstr "Bỏ qua cache kết quả 5 phút."
+
+#: includes/abilities-api.php:175
+msgid "Post ID."
+msgstr "ID bài viết."
+
+#: includes/abilities-api.php:179
+msgid "Post title."
+msgstr "Tiêu đề bài viết."
+
+#: includes/abilities-api.php:183
+msgid "Post permalink."
+msgstr "Đường dẫn tĩnh của bài viết."
+
+#: includes/abilities-api.php:187
+msgid "View count for the requested range."
+msgstr "Lượt xem theo khoảng thời gian đã yêu cầu."
+
+#: includes/abilities-api.php:223
+msgid "Invalid or non-published post ID."
+msgstr "ID bài viết không hợp lệ hoặc chưa được xuất bản."
+
+#: includes/abilities-api.php:264
+msgid "The view count REST layer is not available."
+msgstr "Lớp REST của view count hiện không khả dụng."
+
+msgid "View Count Settings"
+msgstr "Cài đặt View Count"
+
+msgid "Post ID (0 = current post)"
+msgstr "ID bài viết (0 = bài viết hiện tại)"
+
+msgid "Leave as 0 to always show the view count of whichever post/page this block is on."
+msgstr "Để 0 để luôn hiển thị lượt xem của bài viết/trang đang chứa block này."
+
+msgid "Total"
+msgstr "Tổng cộng"
+
+msgid "Formatted (1,234)"
+msgstr "Đã định dạng (1.234)"
+
+msgid "Short (1.2K)"
+msgstr "Rút gọn (1,2 N)"
+
+msgid "Raw"
+msgstr "Thô"
+
+msgid "Show time since published"
+msgstr "Hiện thời gian kể từ khi đăng"
+
+msgid "Show eye icon"
+msgstr "Hiện icon con mắt"
+
+msgid "Enable Schema.org markup"
+msgstr "Bật markup Schema.org"
+
+msgid "List Settings"
+msgstr "Cài đặt danh sách"
+
+msgid "Leave empty to use the default title."
+msgstr "Để trống để dùng tiêu đề mặc định."
+
+msgid "Number of posts"
+msgstr "Số lượng bài viết"
+
+msgid "Post type"
+msgstr "Loại bài viết"
+
+msgid "Post type slug, e.g. \"post\" or a custom post type."
+msgstr "Slug loại bài viết, VD: \"post\" hoặc 1 custom post type."
+
+msgid "Sidebar"
+msgstr "Sidebar"
+
+msgid "Grid"
+msgstr "Lưới"
+
+msgid "Details"
+msgstr "Chi tiết"
+
+msgid "Full"
+msgstr "Đầy đủ"
+
+msgid "View range"
+msgstr "Khoảng thời gian xem"
+
+msgid "Category (slug)"
+msgstr "Chuyên mục (slug)"
+
+msgid "Tag (slug)"
+msgstr "Thẻ (slug)"
+
+msgid "Empty state text"
+msgstr "Văn bản khi không có dữ liệu"
+
+msgid "Shown when no posts match. Leave empty to render nothing."
+msgstr "Hiện khi không có bài viết nào phù hợp. Để trống để không hiện gì."
+
+msgid "Ranking Settings"
+msgstr "Cài đặt xếp hạng"
+
+msgid "Comma-separated: total, day, week, month, yesterday, last_week, last_month."
+msgstr "Cách nhau bởi dấu phẩy: total, day, week, month, yesterday, last_week, last_month."
+
+msgid "Number of posts per tab"
+msgstr "Số bài viết mỗi tab"
+
+msgid "Optional. Leave empty to use the site default."
+msgstr "Tùy chọn. Để trống để dùng mặc định của site."

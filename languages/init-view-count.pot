@@ -254,3 +254,192 @@ msgstr ""
 
 msgid "Check this to hard-disable trending."
 msgstr ""
+
+# --- Abilities API + Block Editor (v1.23) ---
+#: includes/abilities-api.php:36
+msgid "Read-only abilities for querying tracked post view counts and popular posts."
+msgstr ""
+
+#: includes/abilities-api.php:55
+msgid "Get Post Views"
+msgstr ""
+
+#: includes/abilities-api.php:56
+msgid "Returns the tracked view count for a single post (total, day, week, or month). Read-only, does not increment the counter."
+msgstr ""
+
+#: includes/abilities-api.php:63
+msgid "The ID of the post to look up."
+msgstr ""
+
+#: includes/abilities-api.php:68
+msgid "Which counter to read."
+msgstr ""
+
+#: includes/abilities-api.php:80
+msgid "The post ID that was looked up."
+msgstr ""
+
+#: includes/abilities-api.php:84
+msgid "The counter field that was returned."
+msgstr ""
+
+#: includes/abilities-api.php:88
+msgid "Raw view count."
+msgstr ""
+
+#: includes/abilities-api.php:92
+msgid "Locale-formatted view count (e.g. \"1,234\")."
+msgstr ""
+
+#: includes/abilities-api.php:96
+msgid "Abbreviated view count (e.g. \"1.2K\")."
+msgstr ""
+
+#: includes/abilities-api.php:116
+msgid "Get Top Viewed Posts"
+msgstr ""
+
+#: includes/abilities-api.php:117
+msgid "Returns a ranked list of the most viewed posts for a given time range (total, day, week, month, or trending). Wraps the same data used by the [init_view_ranking] shortcode and the GET /top REST route."
+msgstr ""
+
+#: includes/abilities-api.php:124
+msgid "How many posts to return."
+msgstr ""
+
+#: includes/abilities-api.php:131
+msgid "Pagination page number."
+msgstr ""
+
+#: includes/abilities-api.php:138
+msgid "Post types to include."
+msgstr ""
+
+#: includes/abilities-api.php:143
+msgid "Time range to rank by."
+msgstr ""
+
+#: includes/abilities-api.php:149
+msgid "\"minimal\" returns only id/title/link; \"full\" includes excerpt, thumbnail, category, etc."
+msgstr ""
+
+#: includes/abilities-api.php:155
+msgid "Optional taxonomy slug to filter by."
+msgstr ""
+
+#: includes/abilities-api.php:159
+msgid "Comma-separated term slugs or IDs, used together with \"tax\"."
+msgstr ""
+
+#: includes/abilities-api.php:163
+msgid "Bypass the 5-minute result cache."
+msgstr ""
+
+#: includes/abilities-api.php:175
+msgid "Post ID."
+msgstr ""
+
+#: includes/abilities-api.php:179
+msgid "Post title."
+msgstr ""
+
+#: includes/abilities-api.php:183
+msgid "Post permalink."
+msgstr ""
+
+#: includes/abilities-api.php:187
+msgid "View count for the requested range."
+msgstr ""
+
+#: includes/abilities-api.php:223
+msgid "Invalid or non-published post ID."
+msgstr ""
+
+#: includes/abilities-api.php:264
+msgid "The view count REST layer is not available."
+msgstr ""
+
+msgid "View Count Settings"
+msgstr ""
+
+msgid "Post ID (0 = current post)"
+msgstr ""
+
+msgid "Leave as 0 to always show the view count of whichever post/page this block is on."
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Formatted (1,234)"
+msgstr ""
+
+msgid "Short (1.2K)"
+msgstr ""
+
+msgid "Raw"
+msgstr ""
+
+msgid "Show time since published"
+msgstr ""
+
+msgid "Show eye icon"
+msgstr ""
+
+msgid "Enable Schema.org markup"
+msgstr ""
+
+msgid "List Settings"
+msgstr ""
+
+msgid "Leave empty to use the default title."
+msgstr ""
+
+msgid "Number of posts"
+msgstr ""
+
+msgid "Post type"
+msgstr ""
+
+msgid "Post type slug, e.g. \"post\" or a custom post type."
+msgstr ""
+
+msgid "Sidebar"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
+msgid "Full"
+msgstr ""
+
+msgid "View range"
+msgstr ""
+
+msgid "Category (slug)"
+msgstr ""
+
+msgid "Tag (slug)"
+msgstr ""
+
+msgid "Empty state text"
+msgstr ""
+
+msgid "Shown when no posts match. Leave empty to render nothing."
+msgstr ""
+
+msgid "Ranking Settings"
+msgstr ""
+
+msgid "Comma-separated: total, day, week, month, yesterday, last_week, last_month."
+msgstr ""
+
+msgid "Number of posts per tab"
+msgstr ""
+
+msgid "Optional. Leave empty to use the site default."
+msgstr ""

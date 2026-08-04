@@ -1,10 +1,10 @@
 === Init View Count – AI-Powered, Trending, REST API ===
 Contributors: brokensmile.2103
 Tags: post views, view counter, trending posts, REST API, shortcode
-Requires at least: 5.9
-Tested up to: 7.0
+Requires at least: 6.9
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.22
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,8 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Shapes cached and updated efficiently with minimal overhead
 - Safe reset action to rebuild patterns automatically
 - Fully integrated with Trending Engine v3 for uplift-based scoring
+- Native Block Editor (Gutenberg) support with 3 dedicated blocks, no build step required
+- Abilities API support (WordPress 6.9+) — read-only abilities for AI agents and automation tools
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
 
@@ -248,7 +250,10 @@ Yes. There is an option in the plugin’s settings to disable the default styles
 Yes. Since it uses JavaScript + REST for counting, page caching doesn't interfere. However, REST responses (`/top`) are cached using transients.
 
 = Can I use it in block editor / Gutenberg? =  
-Yes. Just insert a Shortcode block and paste `[init_view_count]` or `[init_view_list]` as needed.
+Yes — since version 1.23 there are 3 native blocks (search "View Count", "Popular Posts List", "View Ranking" in the block inserter, under the "Init View Count" category), each with its own settings panel and live preview. You can still use the classic Shortcode block with `[init_view_count]` / `[init_view_list]` / `[init_view_ranking]` if you prefer.
+
+= What is Abilities API support and do I need it? =  
+Since version 1.23, on WordPress 6.9+ the plugin registers two **read-only** Abilities (`init-view-count/get-post-views` and `init-view-count/get-top-posts`) via the core Abilities API, so AI agents and automation tools can discover and query view-count data in a standardized way. This is entirely optional and has no effect on sites without the Abilities API (WordPress below 6.9) or on how the plugin otherwise works — no view/increment/reset ability is exposed.
 
 = Does it track bots? =  
 No. Since counting only happens after scroll and delay via JavaScript, bots like Googlebot are naturally excluded.
@@ -273,16 +278,25 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 
 == Changelog ==
 
+= 2.0.0 – August 4, 2026 =
+- **Breaking change: `Requires at least` is now WordPress 6.9.** This major version bump reflects two significant new features added in this release — Abilities API support and native Block Editor support (see below)
+- New: **Abilities API support** (WordPress 6.9+). Registers two read-only abilities under the `init-view-count` category so AI agents and automation tools can discover and query view-count data through the standardized `wp_register_ability()` registry, without needing to know the plugin's REST routes:
+  - `init-view-count/get-post-views` — returns the tracked view count for a single post (total/day/week/month)
+  - `init-view-count/get-top-posts` — returns a ranked list of the most viewed posts (wraps the exact same logic as `GET /top` and the `[init_view_ranking]` shortcode, so results always match)
+  - No write/destructive abilities are registered, by design — nothing can increment or reset view counts through this API
+- New: **Block Editor (Gutenberg) support** with 3 dynamic blocks matching the existing shortcodes 1:1 — View Count, Popular Posts List, and View Ranking (Tabbed). Each block is a thin PHP wrapper (`render.php`, via the `render` field in `block.json`) that builds the same shortcode tag and calls `do_shortcode()`, so there is no duplicated display logic and output always matches the shortcode. The editor script is plain vanilla JavaScript (no build step, no JSX) using `ServerSideRender` for a live preview directly in the editor
+- `Tested up to: 7.1`
+
 = 1.22 – August 4, 2026 =
-- Bug fix: sticky posts were no longer being excluded from view-based rankings. `GET /top` (and by extension the `[init_view_ranking]` shortcode, which consumes it) and the hourly Trending Engine calculation could show a sticky post at the top of the list regardless of its actual view count, since the underlying `WP_Query` calls were missing `ignore_sticky_posts`. All ranking queries now explicitly ignore sticky posts, consistent with `[init_view_list]`, which already did this correctly.
-- Performance: the scroll-progress listener in the front-end tracking script (`script.js`) is now throttled with `requestAnimationFrame` instead of running its calculation on every single `scroll` event, and is automatically removed once the scroll threshold is reached — reduces main-thread work on long pages and low-end mobile devices. The listener is also registered as `passive` to avoid blocking scroll rendering. Also fixed a theoretical division-by-zero edge case when a page's content is shorter than the viewport.
+- Bug fix: sticky posts were no longer being excluded from view-based rankings. `GET /top` (and by extension the `[init_view_ranking]` shortcode, which consumes it) and the hourly Trending Engine calculation could show a sticky post at the top of the list regardless of its actual view count, since the underlying `WP_Query` calls were missing `ignore_sticky_posts`. All ranking queries now explicitly ignore sticky posts, consistent with `[init_view_list]`, which already did this correctly
+- Performance: the scroll-progress listener in the front-end tracking script (`script.js`) is now throttled with `requestAnimationFrame` instead of running its calculation on every single `scroll` event, and is automatically removed once the scroll threshold is reached — reduces main-thread work on long pages and low-end mobile devices. The listener is also registered as `passive` to avoid blocking scroll rendering. Also fixed a theoretical division-by-zero edge case when a page's content is shorter than the viewport
 
 = 1.21 – July 17, 2026 =
-- New optional setting: **Require REST nonce verification?** (Settings → Init View Count). Off by default. When enabled, `POST /count` requires a valid `X-WP-Nonce` header and rejects the request with `403` otherwise, helping block direct spam POSTs to the endpoint that skip loading the page first.
-  - The nonce is only added to the localized config, and the client only sends the header, when this setting is turned on — zero overhead otherwise.
-  - `GET /top` is intentionally excluded, since it's a read-only, public-by-design endpoint.
-  - Documented trade-off: WordPress nonces expire after ~12-24h, so sites using long-lived full-page caching may see view counting silently stop working on stale cached pages until the cache refreshes. See the Settings page description and the FAQ for details.
-- i18n: added missing English source strings (`Invalid post ID.`, `Not enabled for view counting.`) plus all new strings from this release to `languages/init-view-count.pot`, with ready-made Vietnamese translations in `languages/init-view-count-vi.po` / `.mo`.
+- New optional setting: **Require REST nonce verification?** (Settings → Init View Count). Off by default. When enabled, `POST /count` requires a valid `X-WP-Nonce` header and rejects the request with `403` otherwise, helping block direct spam POSTs to the endpoint that skip loading the page first
+  - The nonce is only added to the localized config, and the client only sends the header, when this setting is turned on — zero overhead otherwise
+  - `GET /top` is intentionally excluded, since it's a read-only, public-by-design endpoint
+  - Documented trade-off: WordPress nonces expire after ~12-24h, so sites using long-lived full-page caching may see view counting silently stop working on stale cached pages until the cache refreshes. See the Settings page description and the FAQ for details
+- i18n: added missing English source strings (`Invalid post ID.`, `Not enabled for view counting.`) plus all new strings from this release to `languages/init-view-count.pot`, with ready-made Vietnamese translations in `languages/init-view-count-vi.po` / `.mo`
 
 = 1.20 – July 16, 2026 =
 - Performance & accuracy overhaul for the `/count` REST endpoint:

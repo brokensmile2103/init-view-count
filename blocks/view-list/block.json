@@ -1,0 +1,54 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "init-view-count/view-list",
+    "title": "Popular Posts List",
+    "category": "init-view-count",
+    "icon": "list-view",
+    "description": "Display a list of the most viewed posts, with optional category/tag filtering.",
+    "keywords": ["views", "popular", "list", "most viewed"],
+    "textdomain": "init-view-count",
+    "attributes": {
+        "number": {
+            "type": "number",
+            "default": 10
+        },
+        "postType": {
+            "type": "string",
+            "default": "post"
+        },
+        "template": {
+            "type": "string",
+            "default": "sidebar"
+        },
+        "title": {
+            "type": "string",
+            "default": ""
+        },
+        "range": {
+            "type": "string",
+            "default": "total"
+        },
+        "category": {
+            "type": "string",
+            "default": ""
+        },
+        "tag": {
+            "type": "string",
+            "default": ""
+        },
+        "emptyText": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "supports": {
+        "html": false,
+        "spacing": {
+            "margin": true
+        }
+    },
+    "editorScript": "init-view-count-blocks-editor",
+    "style": "init-plugin-suite-view-count-style",
+    "render": "file:./render.php"
+}
