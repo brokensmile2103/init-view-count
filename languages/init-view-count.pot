@@ -2,16 +2,16 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 2.0.0\n"
+"Project-Id-Version: Init View Count 2.0.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-04T06:24:10+00:00\n"
+"POT-Creation-Date: 2026-08-29T15:10:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.11.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: init-view-count\n"
 
 #. Plugin Name of the plugin
@@ -20,7 +20,7 @@ msgstr ""
 #: includes/blocks.php:33
 #: includes/dashboard-widget.php:12
 #: includes/settings-page.php:7
-#: includes/shortcodes.php:275
+#: includes/shortcodes.php:252
 msgid "Init View Count"
 msgstr ""
 
@@ -152,344 +152,357 @@ msgstr ""
 msgid "Invalid or expired security token."
 msgstr ""
 
-#: includes/rest-api.php:125
+#: includes/rest-api.php:64
 msgid "Invalid post ID."
 msgstr ""
 
-#: includes/rest-api.php:138
+#: includes/rest-api.php:77
 msgid "Not enabled for view counting."
 msgstr ""
 
 #: includes/settings-page.php:6
-#: includes/settings-page.php:75
+#: includes/settings-page.php:88
 msgid "Init View Count Settings"
 msgstr ""
 
-#: includes/settings-page.php:67
+#: includes/settings-page.php:80
 msgid "Settings saved."
 msgstr ""
 
-#: includes/settings-page.php:80
+#: includes/settings-page.php:93
 msgid "Post types to track views"
 msgstr ""
 
-#: includes/settings-page.php:93
+#: includes/settings-page.php:106
 msgid "Auto-insert shortcode into post content?"
 msgstr ""
 
-#: includes/settings-page.php:99
+#: includes/settings-page.php:112
 msgid "Do not auto-insert (manual shortcode only)"
 msgstr ""
 
-#: includes/settings-page.php:104
+#: includes/settings-page.php:117
 msgid "Insert before content"
 msgstr ""
 
-#: includes/settings-page.php:109
+#: includes/settings-page.php:122
 msgid "Insert after content"
 msgstr ""
 
-#: includes/settings-page.php:113
+#: includes/settings-page.php:126
 msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
 msgstr ""
 
-#: includes/settings-page.php:118
+#: includes/settings-page.php:131
 msgid "Enable daily views?"
 msgstr ""
 
-#: includes/settings-page.php:122
+#: includes/settings-page.php:135
 msgid "Count and store views per day"
 msgstr ""
 
-#: includes/settings-page.php:127
+#: includes/settings-page.php:140
 msgid "Enable weekly views?"
 msgstr ""
 
-#: includes/settings-page.php:131
+#: includes/settings-page.php:144
 msgid "Track total views by week"
 msgstr ""
 
-#: includes/settings-page.php:136
+#: includes/settings-page.php:149
 msgid "Enable monthly views?"
 msgstr ""
 
-#: includes/settings-page.php:140
+#: includes/settings-page.php:153
 msgid "Track total views by month"
 msgstr ""
 
-#: includes/settings-page.php:145
+#: includes/settings-page.php:158
 msgid "Delay before counting (ms)"
 msgstr ""
 
-#: includes/settings-page.php:149
+#. translators: 1: minimum delay in ms, 2: maximum delay in ms
+#: includes/settings-page.php:169
+#, php-format
+msgid "Minimum %1$dms, maximum %2$dms. 0 is not allowed to avoid counting views before the page has actually rendered."
+msgstr ""
+
+#: includes/settings-page.php:178
 msgid "Scroll percent required"
 msgstr ""
 
-#: includes/settings-page.php:153
+#. translators: 1: minimum scroll percent, 2: maximum scroll percent
+#: includes/settings-page.php:189
+#, php-format
+msgid "Minimum %1$d%%, maximum %2$d%%. 0 is not allowed as it would bypass the scroll check entirely."
+msgstr ""
+
+#: includes/settings-page.php:198
 msgid "Enable scroll check?"
 msgstr ""
 
-#: includes/settings-page.php:157
+#: includes/settings-page.php:202
 msgid "Only count views after user scrolls past required percent"
 msgstr ""
 
-#: includes/settings-page.php:162
+#: includes/settings-page.php:207
 msgid "Storage method"
 msgstr ""
 
-#: includes/settings-page.php:167
+#: includes/settings-page.php:212
 msgid "Session Storage"
 msgstr ""
 
-#: includes/settings-page.php:171
+#: includes/settings-page.php:216
 msgid "Local Storage"
 msgstr ""
 
-#: includes/settings-page.php:177
+#: includes/settings-page.php:222
 msgid "Batch view tracking"
 msgstr ""
 
-#: includes/settings-page.php:183
+#: includes/settings-page.php:228
 msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr ""
 
-#: includes/settings-page.php:188
+#: includes/settings-page.php:233
 msgid "Enable strict IP check?"
 msgstr ""
 
-#: includes/settings-page.php:192
+#: includes/settings-page.php:237
 msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
 msgstr ""
 
-#: includes/settings-page.php:195
+#: includes/settings-page.php:240
 msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
 msgstr ""
 
-#: includes/settings-page.php:200
+#: includes/settings-page.php:245
 msgid "Require REST nonce verification?"
 msgstr ""
 
-#: includes/settings-page.php:204
+#: includes/settings-page.php:249
 msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
 msgstr ""
 
-#: includes/settings-page.php:207
+#: includes/settings-page.php:252
 msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
 msgstr ""
 
-#: includes/settings-page.php:210
+#: includes/settings-page.php:255
 msgid "Warning:"
 msgstr ""
 
-#: includes/settings-page.php:211
+#: includes/settings-page.php:256
 msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
 msgstr ""
 
-#: includes/settings-page.php:216
+#: includes/settings-page.php:261
 msgid "Enable dashboard widget?"
 msgstr ""
 
-#: includes/settings-page.php:220
+#: includes/settings-page.php:265
 msgid "Display top view ranking inside WordPress Dashboard."
 msgstr ""
 
-#: includes/settings-page.php:223
+#: includes/settings-page.php:268
 msgid "Uncheck to hide the widget for all users."
 msgstr ""
 
-#: includes/settings-page.php:228
+#: includes/settings-page.php:273
 msgid "Disable plugin CSS?"
 msgstr ""
 
-#: includes/settings-page.php:232
+#: includes/settings-page.php:277
 msgid "Disable built-in CSS output."
 msgstr ""
 
-#: includes/settings-page.php:235
+#: includes/settings-page.php:280
 msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
 msgstr ""
 
-#: includes/settings-page.php:240
+#: includes/settings-page.php:285
 msgid "Disable Trending?"
 msgstr ""
 
-#: includes/settings-page.php:246
+#: includes/settings-page.php:291
 msgid "Completely turn off trending calculations and outputs."
 msgstr ""
 
-#: includes/settings-page.php:249
+#: includes/settings-page.php:294
 msgid "Check this to hard-disable trending."
 msgstr ""
 
-#: includes/settings-page.php:254
+#: includes/settings-page.php:299
 msgid "Save Settings"
 msgstr ""
 
-#: includes/settings-page.php:257
-#: includes/shortcodes.php:274
+#: includes/settings-page.php:302
+#: includes/shortcodes.php:251
 msgid "Shortcode Builder"
 msgstr ""
 
 #: includes/shortcodes.php:9
-#: includes/shortcodes.php:280
+#: includes/shortcodes.php:257
 #: assets/js/blocks-editor.js:142
 msgid "Popular Posts"
 msgstr ""
 
 #. translators: %s is a human-readable time difference like "3 days"
-#: includes/shortcodes.php:164
+#: includes/shortcodes.php:167
+#, php-format
 msgid "Posted %s ago"
 msgstr ""
 
-#: includes/shortcodes.php:194
+#: includes/shortcodes.php:197
 msgid "No data found."
 msgstr ""
 
-#: includes/shortcodes.php:195
+#: includes/shortcodes.php:198
 msgid "Failed to load data."
 msgstr ""
 
-#: includes/shortcodes.php:196
+#: includes/shortcodes.php:199
 msgid "views"
 msgstr ""
 
-#: includes/shortcodes.php:204
+#: includes/shortcodes.php:207
 #: assets/js/blocks-editor.js:183
 msgid "All Time"
 msgstr ""
 
-#: includes/shortcodes.php:205
+#: includes/shortcodes.php:208
 #: assets/js/blocks-editor.js:64
 #: assets/js/blocks-editor.js:184
 msgid "Today"
 msgstr ""
 
-#: includes/shortcodes.php:206
+#: includes/shortcodes.php:209
 #: assets/js/blocks-editor.js:65
 #: assets/js/blocks-editor.js:185
 msgid "This Week"
 msgstr ""
 
-#: includes/shortcodes.php:207
+#: includes/shortcodes.php:210
 #: assets/js/blocks-editor.js:66
 #: assets/js/blocks-editor.js:186
 msgid "This Month"
 msgstr ""
 
-#: includes/shortcodes.php:208
+#: includes/shortcodes.php:211
 msgid "Yesterday"
 msgstr ""
 
-#: includes/shortcodes.php:209
+#: includes/shortcodes.php:212
 msgid "Last Week"
 msgstr ""
 
-#: includes/shortcodes.php:210
+#: includes/shortcodes.php:213
 msgid "Last Month"
 msgstr ""
 
-#: includes/shortcodes.php:270
+#: includes/shortcodes.php:247
 msgid "Copy"
 msgstr ""
 
-#: includes/shortcodes.php:271
+#: includes/shortcodes.php:248
 msgid "Copied!"
 msgstr ""
 
-#: includes/shortcodes.php:272
+#: includes/shortcodes.php:249
 msgid "Close"
 msgstr ""
 
-#: includes/shortcodes.php:273
+#: includes/shortcodes.php:250
 msgid "Shortcode Preview"
 msgstr ""
 
-#: includes/shortcodes.php:276
+#: includes/shortcodes.php:253
 msgid "Init View List"
 msgstr ""
 
-#: includes/shortcodes.php:277
+#: includes/shortcodes.php:254
 msgid "Init View Ranking"
 msgstr ""
 
-#: includes/shortcodes.php:278
+#: includes/shortcodes.php:255
 msgid "Type"
 msgstr ""
 
-#: includes/shortcodes.php:279
+#: includes/shortcodes.php:256
 #: assets/js/blocks-editor.js:141
 msgid "Title"
 msgstr ""
 
-#: includes/shortcodes.php:281
+#: includes/shortcodes.php:258
 msgid "Number of Posts"
 msgstr ""
 
-#: includes/shortcodes.php:282
+#: includes/shortcodes.php:259
 #: assets/js/blocks-editor.js:167
 msgid "Template"
 msgstr ""
 
-#: includes/shortcodes.php:283
+#: includes/shortcodes.php:260
 msgid "View Range"
 msgstr ""
 
-#: includes/shortcodes.php:284
+#: includes/shortcodes.php:261
 msgid "Post Type"
 msgstr ""
 
-#: includes/shortcodes.php:285
+#: includes/shortcodes.php:262
 msgid "Category"
 msgstr ""
 
-#: includes/shortcodes.php:286
+#: includes/shortcodes.php:263
 msgid "Tag"
 msgstr ""
 
-#: includes/shortcodes.php:287
+#: includes/shortcodes.php:264
 msgid "Order By"
 msgstr ""
 
-#: includes/shortcodes.php:288
+#: includes/shortcodes.php:265
 msgid "Order Direction"
 msgstr ""
 
-#: includes/shortcodes.php:289
+#: includes/shortcodes.php:266
 msgid "Custom CSS class"
 msgstr ""
 
-#: includes/shortcodes.php:290
+#: includes/shortcodes.php:267
 #: assets/js/blocks-editor.js:60
 msgid "Field"
 msgstr ""
 
-#: includes/shortcodes.php:291
+#: includes/shortcodes.php:268
 #: assets/js/blocks-editor.js:73
 msgid "Format"
 msgstr ""
 
-#: includes/shortcodes.php:292
+#: includes/shortcodes.php:269
 msgid "Show Time Diff"
 msgstr ""
 
-#: includes/shortcodes.php:293
+#: includes/shortcodes.php:270
 #: assets/js/blocks-editor.js:250
 msgid "Tabs"
 msgstr ""
 
-#: includes/shortcodes.php:294
+#: includes/shortcodes.php:271
 msgid "Show Icon"
 msgstr ""
 
-#: includes/shortcodes.php:295
+#: includes/shortcodes.php:272
 msgid "Enable Schema.org"
 msgstr ""
 
-#: includes/shortcodes.php:296
+#: includes/shortcodes.php:273
 msgid "Custom Class"
 msgstr ""
 
-#: init-view-count.php:98
+#: init-view-count.php:120
 msgid "Settings"
 msgstr ""
 
@@ -606,8 +619,6 @@ msgstr ""
 msgid "Optional. Leave empty to use the site default."
 msgstr ""
 
-# --- Block metadata (block.json) — translated server-side via translate_settings_using_i18n_schema() ---
-
 #: blocks/view-count/block.json
 msgctxt "block title"
 msgid "View Count"
@@ -618,7 +629,9 @@ msgctxt "block description"
 msgid "Display the tracked view count for the current (or a specific) post."
 msgstr ""
 
-#: blocks/view-count/block.json blocks/view-list/block.json blocks/view-ranking/block.json
+#: blocks/view-count/block.json
+#: blocks/view-list/block.json
+#: blocks/view-ranking/block.json
 msgctxt "block keyword"
 msgid "views"
 msgstr ""
@@ -628,12 +641,14 @@ msgctxt "block keyword"
 msgid "count"
 msgstr ""
 
-#: blocks/view-count/block.json blocks/view-list/block.json
+#: blocks/view-count/block.json
+#: blocks/view-list/block.json
 msgctxt "block keyword"
 msgid "popular"
 msgstr ""
 
-#: blocks/view-count/block.json blocks/view-ranking/block.json
+#: blocks/view-count/block.json
+#: blocks/view-ranking/block.json
 msgctxt "block keyword"
 msgid "trending"
 msgstr ""
