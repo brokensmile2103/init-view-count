@@ -92,7 +92,10 @@ add_shortcode('init_view_list', function ($atts) {
 
 function init_plugin_suite_view_count_render_template($path, $vars = []) {
     if (!file_exists($path)) return;
-    extract($vars);
+    // Không dùng extract($vars) (WPCS: WordPress.PHP.DontExtract) — chỉ có đúng 1 nơi gọi
+    // hàm này với key cố định 'item' (xem shortcodes.php), nên gán tường minh cho rõ ràng
+    // và tránh cảnh báo lint, dù không có input người dùng nào lọt vào key ở đây.
+    $item = $vars['item'] ?? null;
     include $path;
 }
 
@@ -218,32 +221,6 @@ add_shortcode('init_view_ranking', function ($atts) {
     include $template;
     return ob_get_clean();
 });
-
-function init_plugin_suite_view_count_format_thousands($num) {
-    if ($num < 1000) {
-        return (string) $num;
-    }
-
-    $locale = get_locale();
-    $suffixes = str_starts_with($locale, 'vi')
-        ? ['N', 'Tr', 'T', 'TT']  // Nghìn, Triệu, Tỷ, Nghìn tỷ
-        : ['K', 'M', 'B', 'T'];   // Thousand, Million, Billion, Trillion
-
-    $i = 0;
-    while ($num >= 1000 && $i < count($suffixes)) {
-        $num /= 1000;
-        $i++;
-    }
-
-    // Tự format: luôn dùng dấu chấm cho thập phân, không dấu ngăn cách nghìn
-    if ($num - floor($num) > 0) {
-        $value = number_format($num, 1, '.', '');
-    } else {
-        $value = number_format($num, 0, '.', '');
-    }
-
-    return $value . ' ' . $suffixes[$i - 1];
-}
 
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
     if ( ! current_user_can( 'manage_options' ) ) {

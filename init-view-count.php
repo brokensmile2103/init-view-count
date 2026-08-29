@@ -3,7 +3,7 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
@@ -18,13 +18,24 @@
 defined('ABSPATH') || exit;
 
 // === Constants ===
-define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION',   '2.0.0');
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION',   '2.0.1');
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG',      'init-view-count');
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_DIR',       plugin_dir_path(__FILE__));
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_URL',       plugin_dir_url(__FILE__));
 define('INIT_PLUGIN_SUITE_VIEW_COUNT_NAMESPACE', 'initvico/v1');
 
+// Giới hạn an toàn cho "delay before counting" và "scroll percent required".
+// 0ms/0% là giá trị nhạy cảm (đếm view gần như ngay lập tức, dễ dính bot/prefetch,
+// hoặc vô hiệu hoá luôn tính năng scroll-check) nên luôn ép về giá trị tối thiểu hợp lý.
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN', 100);      // 100ms
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX', 600000);   // 10 phút
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN', 1);       // 1%
+define('INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX', 100);     // 100%
+
 // === Include core files ===
+// utils.php cần require TRƯỚC TIÊN vì rest-api.php, settings-page.php,
+// shortcodes.php, abilities-api.php... đều gọi trực tiếp các hàm helper trong đó.
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/utils.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/rest-api.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/traffic-shape.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/reset-schedule.php';
@@ -72,8 +83,19 @@ add_action('wp_enqueue_scripts', function () {
     $config = [
         'post_id'       => $post_id,
         'restUrl'       => esc_url(rest_url(INIT_PLUGIN_SUITE_VIEW_COUNT_NAMESPACE)),
-        'delay'         => (int) get_option('init_plugin_suite_view_count_delay', 15000),
-        'scrollPercent' => (int) get_option('init_plugin_suite_view_count_scroll_percent', 75),
+        // Clamp lại ở đây (không chỉ lúc save) để phòng trường hợp option trong DB
+        // đang mang giá trị cũ (VD: 0) từ trước khi có giới hạn này, hoặc bị sửa
+        // trực tiếp qua WP-CLI/DB thay vì qua trang Settings.
+        'delay'         => init_plugin_suite_view_count_clamp_int(
+            get_option('init_plugin_suite_view_count_delay', 15000),
+            INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN,
+            INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX
+        ),
+        'scrollPercent' => init_plugin_suite_view_count_clamp_int(
+            get_option('init_plugin_suite_view_count_scroll_percent', 75),
+            INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN,
+            INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX
+        ),
         'scrollEnabled' => ((int) get_option('init_plugin_suite_view_count_scroll_enabled', 1) === 1),
         'storage'       => get_option('init_plugin_suite_view_count_storage', 'session'),
         'batch'         => max(1, (int) get_option('init_plugin_suite_view_count_batch', 1)),

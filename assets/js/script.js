@@ -7,10 +7,18 @@
     const viewedKey = `viewed_${postId}`;
     if (storage.getItem(viewedKey)) return;
 
-    const batch = Math.max(1, parseInt(config.batch || '1', 10));
-    const delay = parseInt(config.delay || '15000', 10);
+    // Dùng Number.isFinite thay vì `config.x || fallback`: với toán tử `||`,
+    // giá trị hợp lệ nhưng falsy (0) sẽ bị nuốt mất và luôn rơi về fallback,
+    // khiến admin không thể đặt delay/scroll percent về giá trị nhỏ thật sự.
+    const parseConfigInt = (value, fallback) => {
+        const n = parseInt(value, 10);
+        return Number.isFinite(n) ? n : fallback;
+    };
+
+    const batch = Math.max(1, parseConfigInt(config.batch, 1));
+    const delay = Math.max(0, parseConfigInt(config.delay, 15000));
     const scrollRequired = !!config.scrollEnabled;
-    const scrollPercent = parseInt(config.scrollPercent || '75', 10);
+    const scrollPercent = parseConfigInt(config.scrollPercent, 75);
 
     const queueKey = 'init_view_count_queue';
     let scrollPassed = !scrollRequired;
@@ -25,26 +33,36 @@
     if (scrollRequired) {
         let scrollTicking = false;
 
+        const evaluateScroll = () => {
+            const scrollY = window.scrollY;
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            // Trang ngắn hơn viewport (không có gì để cuộn) coi như đã "cuộn" 100%,
+            // vì user không thể tạo ra sự kiện scroll trên trang không có scrollbar.
+            const scrolledPercent = scrollHeight > 0 ? (scrollY / scrollHeight) * 100 : 100;
+
+            if (scrolledPercent >= scrollPercent) {
+                scrollPassed = true;
+                window.removeEventListener('scroll', onScroll);
+                checkAndSendView();
+            }
+        };
+
         const onScroll = () => {
             if (scrollTicking) return;
             scrollTicking = true;
 
             requestAnimationFrame(() => {
                 scrollTicking = false;
-
-                const scrollY = window.scrollY;
-                const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-                const scrolledPercent = scrollHeight > 0 ? (scrollY / scrollHeight) * 100 : 100;
-
-                if (scrolledPercent >= scrollPercent) {
-                    scrollPassed = true;
-                    window.removeEventListener('scroll', onScroll);
-                    checkAndSendView();
-                }
+                evaluateScroll();
             });
         };
 
         window.addEventListener('scroll', onScroll, { passive: true });
+
+        // Check ngay 1 lần sau khi layout ổn định, để cover trường hợp trang
+        // không đủ dài để cuộn (không có sự kiện 'scroll' nào được bắn ra cả)
+        // hoặc user đã load trang ở vị trí cuộn sẵn (VD: quay lại bằng nút Back).
+        requestAnimationFrame(evaluateScroll);
     }
 
     function checkAndSendView() {

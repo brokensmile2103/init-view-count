@@ -22,8 +22,21 @@ function init_plugin_suite_view_count_render_settings_page() {
         }
         update_option('init_plugin_suite_view_count_auto_insert', $auto_insert_position);
 
+        // 0ms/0% là giá trị nhạy cảm (xem giải thích ở khai báo constant trong file chính)
+        // nên luôn ép về khoảng an toàn [MIN, MAX] trước khi lưu.
         $delay = isset($_POST['init_plugin_suite_view_count_delay']) ? absint($_POST['init_plugin_suite_view_count_delay']) : 15000;
+        $delay = init_plugin_suite_view_count_clamp_int(
+            $delay,
+            INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN,
+            INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX
+        );
+
         $scroll_percent = isset($_POST['init_plugin_suite_view_count_scroll_percent']) ? absint($_POST['init_plugin_suite_view_count_scroll_percent']) : 75;
+        $scroll_percent = init_plugin_suite_view_count_clamp_int(
+            $scroll_percent,
+            INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN,
+            INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX
+        );
         $scroll_enabled = isset($_POST['init_plugin_suite_view_count_scroll_enabled']) ? 1 : 0;
 
         $storage = isset($_POST['init_plugin_suite_view_count_storage']) ? sanitize_text_field(wp_unslash($_POST['init_plugin_suite_view_count_storage'])) : 'session';
@@ -143,11 +156,43 @@ function init_plugin_suite_view_count_render_settings_page() {
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Delay before counting (ms)', 'init-view-count'); ?></th>
-                    <td><input type="number" name="init_plugin_suite_view_count_delay" value="<?php echo esc_attr(get_option('init_plugin_suite_view_count_delay', 15000)); ?>" /></td>
+                    <td>
+                        <input type="number" name="init_plugin_suite_view_count_delay"
+                               value="<?php echo esc_attr(get_option('init_plugin_suite_view_count_delay', 15000)); ?>"
+                               min="<?php echo esc_attr(INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN); ?>"
+                               max="<?php echo esc_attr(INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX); ?>"
+                               step="100" />
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: 1: minimum delay in ms, 2: maximum delay in ms */
+                                esc_html__('Minimum %1$dms, maximum %2$dms. 0 is not allowed to avoid counting views before the page has actually rendered.', 'init-view-count'),
+                                (int) INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN,
+                                (int) INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX
+                            );
+                            ?>
+                        </p>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Scroll percent required', 'init-view-count'); ?></th>
-                    <td><input type="number" name="init_plugin_suite_view_count_scroll_percent" value="<?php echo esc_attr(get_option('init_plugin_suite_view_count_scroll_percent', 75)); ?>" /></td>
+                    <td>
+                        <input type="number" name="init_plugin_suite_view_count_scroll_percent"
+                               value="<?php echo esc_attr(get_option('init_plugin_suite_view_count_scroll_percent', 75)); ?>"
+                               min="<?php echo esc_attr(INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN); ?>"
+                               max="<?php echo esc_attr(INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX); ?>"
+                               step="1" />
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: 1: minimum scroll percent, 2: maximum scroll percent */
+                                esc_html__('Minimum %1$d%%, maximum %2$d%%. 0 is not allowed as it would bypass the scroll check entirely.', 'init-view-count'),
+                                (int) INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN,
+                                (int) INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX
+                            );
+                            ?>
+                        </p>
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Enable scroll check?', 'init-view-count'); ?></th>

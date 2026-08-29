@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -277,6 +277,15 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 2.0.1 – August 29, 2026 =
+- Bug fix: on a site where the admin had never opened and saved Settings → Init View Count at least once, the day/week/month view counters would keep incrementing normally (that code path defaults to "enabled" when the option doesn't exist yet) but would **never be reset** by the daily cron (that code path had no default and treated the missing option as "disabled"). Reading `_init_view_day_count` directly would show it growing forever instead of rolling over into `_init_view_day_yesterday`. All reads of the day/week/month enable options now consistently default to enabled, matching the REST counting logic and the settings page's default-checked checkboxes
+- Bug fix: setting **"Delay before counting"** to `0` did not actually count views immediately — it silently fell back to the default (15000ms) or, depending on the browser, sometimes did not count at all. Same issue affected **"Scroll percent required"** set to `0`. Root cause was a `value || fallback` pattern in the front-end script, which treats a valid `0` as falsy and always substitutes the default. Both options are now validated on save, enforced again at output time (so sites that already had `0` stored take effect without needing to re-save), and parsed correctly in the front-end script
+- Bug fix: on pages shorter than the viewport (nothing to scroll), the scroll-percent check could never pass, because the scroll threshold was only ever evaluated inside the `scroll` event handler, and no `scroll` event fires when there is nothing to scroll. The script now also evaluates the scroll condition once immediately after the page settles, in addition to on scroll
+- Change: **"Delay before counting"** is now clamped to a 100ms–600000ms (10 min) range, and **"Scroll percent required"** to a 1%–100% range. `0` is intentionally disallowed for both: a 0ms delay risks counting views before the page has actually rendered, and a 0% scroll requirement would silently disable the scroll check entirely
+- Performance: the daily cron reset (`init_plugin_suite_view_count_reset_counts` — rolls today's/this week's/this month's view counts into yesterday/last-week/last-month and clears the counters, across every publicly-registered post type, no configuration needed) used to loop `get_post_meta()` + `update_post_meta()` + `delete_post_meta()` per post per counter, which on sites with many posts could mean tens of thousands of individual DB queries in a single cron run. It now performs the same rollover in batched, direct SQL (500 posts per query by default, filterable via `init_plugin_suite_view_count_reset_batch_size`), cutting query count from O(number of posts) to O(number of batches), then flushes the object cache for affected posts in one pass — using the object cache's batch-delete method when the active cache backend supports it (WordPress core does, since 6.0), and falling back to individual cache-delete calls otherwise for compatibility with third-party object cache drop-ins (Redis, Memcached, etc.) that may not implement it. Behavior is unchanged: every eligible post still ends up with a "previous period" value (0 if it had no views), preserving correct results in `GET /top?range=yesterday|last_week|last_month`; verified against the previous per-post logic across 1,000+ randomized scenarios before release
+- Internal: extracted shared helper functions (`init_plugin_suite_view_count_atomic_increment()`, `init_plugin_suite_view_count_flush_meta_cache()`, IP-detection helpers, the K/M/B number formatter, and the new integer-clamping helper) out of `rest-api.php` and `shortcodes.php` into a new `includes/utils.php`, loaded first. No behavior change, purely a code-organization cleanup
+- Internal: replaced `extract()` in the internal template-rendering helper with an explicit variable assignment for WPCS compliance (`WordPress.PHP.DontExtract`); the helper is only ever called with a single fixed key, so behavior is unchanged
 
 = 2.0.0 – August 4, 2026 =
 - **Breaking change: `Requires at least` is now WordPress 6.9.** This major version bump reflects two significant new features added in this release — Abilities API support and native Block Editor support (see below)

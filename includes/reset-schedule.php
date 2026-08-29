@@ -83,81 +83,110 @@ function init_plugin_suite_view_count_reset_counts() {
     // Lấy danh sách post
     $posts = get_posts($args);
     if (empty($posts)) {
-        // Vẫn bắn after hook với summary rỗng
+        // Vẫn bắn after hook với summary rỗng.
+        // LƯU Ý: luôn truyền default=1 cho 3 option enable_day/week/month — nếu admin CHƯA TỪNG
+        // lưu trang Settings ít nhất 1 lần, các option này KHÔNG tồn tại trong DB, và get_option()
+        // không có default sẽ trả về false, khiến reset bị coi là tắt trong khi phần đếm view
+        // (rest-api.php) vẫn coi là BẬT theo default — view cứ cộng nhưng không bao giờ được reset.
+        // Phải khớp default=1 với rest-api.php và với checkbox trong settings-page.php (cũng default 1).
         $summary = [
             'total_posts'      => 0,
-            'reset_day'        => (bool) get_option('init_plugin_suite_view_count_enable_day'),
-            'reset_week'       => (bool) (get_option('init_plugin_suite_view_count_enable_week') && $should_reset_week),
-            'reset_month'      => (bool) (get_option('init_plugin_suite_view_count_enable_month') && $should_reset_month),
+            'reset_day'        => (bool) get_option('init_plugin_suite_view_count_enable_day', 1),
+            'reset_week'       => (bool) (get_option('init_plugin_suite_view_count_enable_week', 1) && $should_reset_week),
+            'reset_month'      => (bool) (get_option('init_plugin_suite_view_count_enable_month', 1) && $should_reset_month),
             'affected_posts'   => 0,
         ];
         do_action('init_plugin_suite_view_count_after_reset_counts', $summary, $context);
         return;
     }
 
-    // Tùy chọn bật tắt (giữ nguyên logic cũ)
-    $enable_day   = (bool) get_option('init_plugin_suite_view_count_enable_day');
-    $enable_week  = (bool) get_option('init_plugin_suite_view_count_enable_week');
-    $enable_month = (bool) get_option('init_plugin_suite_view_count_enable_month');
+    // Tùy chọn bật tắt — PHẢI dùng default=1, khớp với rest-api.php (chỗ +1 view) và với
+    // checkbox mặc định "đã tick" trong settings-page.php. Nếu bỏ default ở đây (như bản cũ),
+    // site nào chưa từng lưu Settings sẽ bị: view vẫn cộng bình thường nhưng KHÔNG BAO GIỜ reset.
+    $enable_day   = (bool) get_option('init_plugin_suite_view_count_enable_day', 1);
+    $enable_week  = (bool) get_option('init_plugin_suite_view_count_enable_week', 1);
+    $enable_month = (bool) get_option('init_plugin_suite_view_count_enable_month', 1);
 
-    $affected = 0;
+    // Kế hoạch reset áp dụng CHUNG cho mọi post trong lượt chạy này — bật/tắt day/week/month
+    // là setting toàn site, không đổi theo từng post_id, nên chỉ cần tính 1 lần (bản cũ tính
+    // lại y hệt giá trị này trong mỗi vòng lặp, lãng phí không cần thiết).
+    $reset_week    = ($enable_week  && $should_reset_week);
+    $reset_month   = ($enable_month && $should_reset_month);
+    $per_post_plan = [
+        'day'   => $enable_day,
+        'week'  => $reset_week,
+        'month' => $reset_month,
+    ];
 
+    /**
+     * 3) PRE RESET (mỗi post)
+     * Vẫn bắn action riêng cho TỪNG post để giữ đúng hợp đồng hook như bản cũ (bên ngoài có
+     * thể log/side-effect theo từng post trước khi dữ liệu bị đổi). Bước này không chạm DB
+     * (trừ khi listener bên ngoài tự làm), nên không phải nguồn gây chậm.
+     */
     foreach ($posts as $post_id) {
-        // Kế hoạch reset cho post này (đẩy ra hook pre_reset_post)
-        $per_post_plan = [
-            'day'   => $enable_day,
-            'week'  => ($enable_week  && $should_reset_week),
-            'month' => ($enable_month && $should_reset_month),
-        ];
-
-        /**
-         * 3) PRE RESET (mỗi post)
-         * Cho phép plugin khác log lại giá trị cũ, đếm tổng, hoặc thực hiện side-effect.
-         */
         do_action('init_plugin_suite_view_count_pre_reset_post', $post_id, $per_post_plan, $context);
-
-        // Day → push to "yesterday" then delete today
-        if ($per_post_plan['day']) {
-            $meta_day      = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id);
-            $meta_day_prev = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_day_yesterday', $post_id);
-
-            $day_val = (int) get_post_meta($post_id, $meta_day, true);
-            update_post_meta($post_id, $meta_day_prev, $day_val);
-
-            delete_post_meta($post_id, $meta_day);
-        }
-
-        // Week → push to "last week" then delete this week
-        if ($per_post_plan['week']) {
-            $meta_week      = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id);
-            $meta_week_prev = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_week_last', $post_id);
-
-            $week_val = (int) get_post_meta($post_id, $meta_week, true);
-            update_post_meta($post_id, $meta_week_prev, $week_val);
-
-            delete_post_meta($post_id, $meta_week);
-        }
-
-        // Month → push to "last month" then delete this month
-        if ($per_post_plan['month']) {
-            $meta_month      = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id);
-            $meta_month_prev = apply_filters('init_plugin_suite_view_count_meta_key', '_init_view_month_last', $post_id);
-
-            $month_val = (int) get_post_meta($post_id, $meta_month, true);
-            update_post_meta($post_id, $meta_month_prev, $month_val);
-
-            delete_post_meta($post_id, $meta_month);
-        }
-
-        $affected++;
     }
+
+    /**
+     * Rollover hàng loạt bằng SQL theo batch (xem init_plugin_suite_view_count_bulk_rollover_meta())
+     * thay cho việc lặp get_post_meta()/update_post_meta()/delete_post_meta() trên TỪNG post —
+     * cách cũ có thể tốn 3–6 query/post/loại (day/week/month), tức hàng chục nghìn query cho
+     * 1 lần chạy cron trên site nhiều bài viết. Cách mới đưa số query về mức O(số batch) thay vì
+     * O(số post), trong khi vẫn tôn trọng filter 'init_plugin_suite_view_count_meta_key' theo
+     * từng post và vẫn đảm bảo mọi post đều có prev-key (kể cả giá trị 0).
+     */
+    $touched = [];
+
+    if ($enable_day) {
+        $touched = array_merge($touched, init_plugin_suite_view_count_bulk_rollover_meta(
+            $posts, '_init_view_day_count', '_init_view_day_yesterday'
+        ));
+    }
+
+    if ($reset_week) {
+        $touched = array_merge($touched, init_plugin_suite_view_count_bulk_rollover_meta(
+            $posts, '_init_view_week_count', '_init_view_week_last'
+        ));
+    }
+
+    if ($reset_month) {
+        $touched = array_merge($touched, init_plugin_suite_view_count_bulk_rollover_meta(
+            $posts, '_init_view_month_count', '_init_view_month_last'
+        ));
+    }
+
+    // Toàn bộ thao tác trên chạy bằng SQL thuần (bypass object cache của get/update/delete_post_meta)
+    // → flush cache đúng 1 lần cho tất cả post đã đụng tới.
+    if (!empty($touched)) {
+        $touched = array_values(array_unique(array_map('intval', $touched)));
+
+        // wp_cache_delete_multiple() có từ WordPress 6.0, nhưng bản thân hàm đó chỉ là wrapper
+        // gọi thẳng tới phương thức delete_multiple() trên object $wp_object_cache ĐANG ACTIVE.
+        // Nhiều object cache drop-in bên thứ 3 (Redis Object Cache, W3 Total Cache, Memcached...)
+        // dùng class cache RIÊNG của họ và có thể CHƯA implement method này — gọi thẳng có thể
+        // gây Fatal Error "Call to undefined method ...::delete_multiple()", khiến toàn bộ cron
+        // (kể cả khi bấm "Run Now" trong WP Crontrol) chết ngay lập tức mà không rõ nguyên nhân.
+        // Kiểm tra tồn tại của method trước; nếu không có, fallback về loop wp_cache_delete()
+        // — hàm nền tảng này được MỌI drop-in hỗ trợ, kể cả các bản cũ nhất.
+        global $wp_object_cache;
+        if ( is_object( $wp_object_cache ) && method_exists( $wp_object_cache, 'delete_multiple' ) ) {
+            wp_cache_delete_multiple( $touched, 'post_meta' );
+        } else {
+            foreach ( $touched as $post_id ) {
+                wp_cache_delete( $post_id, 'post_meta' );
+            }
+        }
+    }
+
+    $affected = count($posts);
 
     // Tóm tắt cho after hook
     $summary = [
         'total_posts'      => count($posts),
         'reset_day'        => $enable_day,
-        'reset_week'       => ($enable_week  && $should_reset_week),
-        'reset_month'      => ($enable_month && $should_reset_month),
+        'reset_week'       => $reset_week,
+        'reset_month'      => $reset_month,
         'affected_posts'   => $affected,
     ];
 
@@ -178,6 +207,145 @@ function init_plugin_suite_view_count_reset_counts() {
             do_action('init_plugin_suite_view_count_cron_update_trending');
         }
     }
+}
+
+/**
+ * Rollover hàng loạt (bulk) cho 1 loại đếm (day/week/month): copy giá trị hiện tại sang
+ * meta "kỳ trước" (yesterday/last_week/last_month) rồi xoá giá trị hiện tại — cho TOÀN BỘ
+ * danh sách post truyền vào, bằng SQL thuần theo batch thay vì lặp
+ * get_post_meta()/update_post_meta()/delete_post_meta() trên từng post.
+ *
+ * Vẫn tôn trọng filter 'init_plugin_suite_view_count_meta_key' theo TỪNG POST (site có thể
+ * override tên meta key theo post_id) bằng cách gom post thành từng nhóm theo cặp
+ * (current_key, prev_key) đã resolve, rồi xử lý bulk riêng cho từng nhóm — trường hợp phổ
+ * biến (không ai custom filter) sẽ chỉ có đúng 1 nhóm duy nhất.
+ *
+ * QUAN TRỌNG: đảm bảo MỌI post trong danh sách đều có prev-key được set tường minh (bằng
+ * giá trị hiện tại, hoặc 0 nếu post đó chưa có view nào trong kỳ) — giống hệt hành vi
+ * update_post_meta() luôn-upsert của bản cũ. Lý do: các truy vấn WP_Query dùng
+ * 'orderby' => 'meta_value_num' theo prev-key (xem GET /top?range=yesterday|last_week|last_month
+ * trong rest-api.php) sẽ LOẠI HẲN những post không có meta row đó ra khỏi kết quả, chứ không
+ * tự hiểu "không có row" là 0. Nếu bỏ sót bước set-0 này, các bài không có view trong kỳ sẽ
+ * biến mất khỏi bảng xếp hạng thay vì đứng cuối bảng như hành vi gốc.
+ *
+ * Giả định: mỗi post chỉ có tối đa 1 row cho mỗi meta_key — đúng với cách plugin luôn ghi
+ * (xem init_plugin_suite_view_count_atomic_increment()); postmeta của WordPress về mặt kỹ
+ * thuật cho phép nhiều row trùng key nên bước (1) luôn dọn sạch prev-key cũ trước khi copy,
+ * để không bao giờ tạo ra row trùng dù dữ liệu có bị lệch chuẩn từ trước.
+ *
+ * @param int[]  $post_ids    Danh sách post ID cần rollover.
+ * @param string $current_tpl Tên meta key hiện tại (chưa qua filter), VD '_init_view_day_count'.
+ * @param string $prev_tpl    Tên meta key "kỳ trước" (chưa qua filter), VD '_init_view_day_yesterday'.
+ * @return int[] Danh sách post_id đã bị đụng tới (post_status/type đã lọc sẵn từ $post_ids), để caller flush cache.
+ */
+function init_plugin_suite_view_count_bulk_rollover_meta(array $post_ids, $current_tpl, $prev_tpl) {
+    global $wpdb;
+
+    if (empty($post_ids)) {
+        return [];
+    }
+
+    // Resolve meta key thật sự cho từng post (tôn trọng filter theo post_id), gom nhóm theo
+    // cặp (current_key, prev_key). apply_filters() không chạm DB nên vòng lặp này rất rẻ.
+    $groups = [];
+    foreach ($post_ids as $post_id) {
+        $post_id     = (int) $post_id;
+        $current_key = (string) apply_filters('init_plugin_suite_view_count_meta_key', $current_tpl, $post_id);
+        $prev_key    = (string) apply_filters('init_plugin_suite_view_count_meta_key', $prev_tpl, $post_id);
+        $group_key   = $current_key . '|' . $prev_key;
+
+        if (!isset($groups[$group_key])) {
+            $groups[$group_key] = [
+                'current_key' => $current_key,
+                'prev_key'    => $prev_key,
+                'ids'         => [],
+            ];
+        }
+
+        $groups[$group_key]['ids'][] = $post_id;
+    }
+
+    $touched    = [];
+    $batch_size = apply_filters('init_plugin_suite_view_count_reset_batch_size', 500);
+
+    foreach ($groups as $group) {
+        $current_key = $group['current_key'];
+        $prev_key    = $group['prev_key'];
+
+        foreach (array_chunk($group['ids'], $batch_size) as $chunk) {
+            $placeholders = implode(',', array_fill(0, count($chunk), '%d'));
+
+            // Ghi chú chung cho toàn bộ khối SQL bên dưới: $placeholders và $values_sql CHỈ
+            // BAO GIỜ chứa chuỗi giữ chỗ ('%d', hoặc '(%d, %s, %d)') lặp lại theo số lượng
+            // phần tử — không hề chèn trực tiếp giá trị/input người dùng vào SQL text. Toàn bộ
+            // giá trị thật (meta key, post_id, meta_value) đều đi qua tham số thứ 2 của
+            // $wpdb->prepare(), đúng chuẩn khuyến nghị của WordPress cho câu IN (...) động
+            // (xem: https://developer.wordpress.org/reference/classes/wpdb/prepare/).
+            // PHPCS không phân tích tĩnh được nội dung của các biến này nên báo nhầm các sniff
+            // PreparedSQL/PreparedSQLPlaceholders — tắt có chủ đích, kèm giải thích, cho từng
+            // câu query bên dưới thay vì tắt sniff toàn cục.
+
+            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+            // Post nào trong lô đang CÓ view ở kỳ hiện tại (tức đang có row current-key).
+            $existing_ids = array_map('intval', $wpdb->get_col($wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id IN ($placeholders)",
+                array_merge([$current_key], $chunk)
+            )));
+
+            // 1) Dọn sạch prev-key cũ của cả lô trước khi copy, để không bao giờ tạo row trùng
+            //    (postmeta không có unique index trên post_id+meta_key).
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id IN ($placeholders)",
+                array_merge([$prev_key], $chunk)
+            ));
+            // phpcs:enable
+
+            // 2) Copy giá trị hiện tại → prev-key, cho các post đang có view kỳ này.
+            if (!empty($existing_ids)) {
+                // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                $wpdb->query($wpdb->prepare(
+                    "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value)
+                     SELECT post_id, %s, meta_value FROM {$wpdb->postmeta}
+                     WHERE meta_key = %s AND post_id IN ($placeholders)",
+                    array_merge([$prev_key, $current_key], $chunk)
+                ));
+                // phpcs:enable
+            }
+
+            // 3) Với post KHÔNG có view kỳ này, set prev-key = 0 tường minh (xem giải thích
+            //    "QUAN TRỌNG" ở đầu hàm — bắt buộc để post vẫn xuất hiện, với giá trị 0,
+            //    trong các truy vấn orderby=meta_value_num theo prev-key).
+            $missing_ids = array_values(array_diff($chunk, $existing_ids));
+            if (!empty($missing_ids)) {
+                $values_sql = implode(',', array_fill(0, count($missing_ids), '(%d, %s, %d)'));
+                $args = [];
+                foreach ($missing_ids as $missing_id) {
+                    $args[] = $missing_id;
+                    $args[] = $prev_key;
+                    $args[] = 0;
+                }
+                // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                $wpdb->query($wpdb->prepare(
+                    "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES $values_sql",
+                    $args
+                ));
+                // phpcs:enable
+            }
+
+            // 4) Xoá giá trị hiện tại — reset về "chưa có view" cho kỳ mới, y hệt
+            //    delete_post_meta() của bản cũ.
+            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id IN ($placeholders)",
+                array_merge([$current_key], $chunk)
+            ));
+            // phpcs:enable
+
+            $touched = array_merge($touched, $chunk);
+        }
+    }
+
+    return $touched;
 }
 
 // === CRON: UPDATE TRENDING ===
