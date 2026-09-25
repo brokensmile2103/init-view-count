@@ -3,13 +3,50 @@
     const postId = config.post_id;
     if (!postId) return;
 
-    const storage = config.storage === 'local' ? localStorage : sessionStorage;
+    // Truy cập localStorage/sessionStorage có thể NÉM LỖI (Safari private mode, trình duyệt
+    // chặn cookie/storage, iframe sandbox...). Bản cũ gọi thẳng → script dừng ngay và không
+    // bao giờ đếm view. Nay bọc an toàn, fallback về bộ nhớ tạm trong trang.
+    const memoryStore = {};
+    const safeStorage = (type) => {
+        let store = null;
+        try {
+            store = window[type];
+            const probe = '__init_view_count__';
+            store.setItem(probe, '1');
+            store.removeItem(probe);
+        } catch (e) {
+            store = null;
+        }
+
+        return {
+            getItem(key) {
+                if (store) {
+                    try { return store.getItem(key); } catch (e) {}
+                }
+                return Object.prototype.hasOwnProperty.call(memoryStore, key) ? memoryStore[key] : null;
+            },
+            setItem(key, value) {
+                if (store) {
+                    try { store.setItem(key, value); return; } catch (e) {}
+                }
+                memoryStore[key] = String(value);
+            },
+            removeItem(key) {
+                if (store) {
+                    try { store.removeItem(key); } catch (e) {}
+                }
+                delete memoryStore[key];
+            }
+        };
+    };
+
+    const storage = safeStorage(config.storage === 'local' ? 'localStorage' : 'sessionStorage');
+    const queueStorage = safeStorage('localStorage');
     const viewedKey = `viewed_${postId}`;
     if (storage.getItem(viewedKey)) return;
 
     // Dùng Number.isFinite thay vì `config.x || fallback`: với toán tử `||`,
-    // giá trị hợp lệ nhưng falsy (0) sẽ bị nuốt mất và luôn rơi về fallback,
-    // khiến admin không thể đặt delay/scroll percent về giá trị nhỏ thật sự.
+    // giá trị hợp lệ nhưng falsy (0) sẽ bị nuốt mất và luôn rơi về fallback.
     const parseConfigInt = (value, fallback) => {
         const n = parseInt(value, 10);
         return Number.isFinite(n) ? n : fallback;
@@ -36,8 +73,7 @@
         const evaluateScroll = () => {
             const scrollY = window.scrollY;
             const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-            // Trang ngắn hơn viewport (không có gì để cuộn) coi như đã "cuộn" 100%,
-            // vì user không thể tạo ra sự kiện scroll trên trang không có scrollbar.
+            // Trang ngắn hơn viewport (không có gì để cuộn) coi như đã "cuộn" 100%.
             const scrolledPercent = scrollHeight > 0 ? (scrollY / scrollHeight) * 100 : 100;
 
             if (scrolledPercent >= scrollPercent) {
@@ -59,16 +95,14 @@
 
         window.addEventListener('scroll', onScroll, { passive: true });
 
-        // Check ngay 1 lần sau khi layout ổn định, để cover trường hợp trang
-        // không đủ dài để cuộn (không có sự kiện 'scroll' nào được bắn ra cả)
-        // hoặc user đã load trang ở vị trí cuộn sẵn (VD: quay lại bằng nút Back).
+        // Check ngay 1 lần sau khi layout ổn định (trang quá ngắn, hoặc load ở vị trí cuộn sẵn).
         requestAnimationFrame(evaluateScroll);
     }
 
     function checkAndSendView() {
         if (!scrollPassed || !timePassed || alreadyTriggered) return;
         alreadyTriggered = true;
-        storage.setItem(viewedKey, "1");
+        storage.setItem(viewedKey, '1');
 
         if (batch === 1) {
             sendView([postId], postId);
@@ -77,22 +111,32 @@
 
         let queue = [];
         try {
-            queue = JSON.parse(localStorage.getItem(queueKey) || '[]');
+            queue = JSON.parse(queueStorage.getItem(queueKey) || '[]');
         } catch (e) {}
+        if (!Array.isArray(queue)) queue = [];
 
         if (!queue.includes(postId)) {
             queue.push(postId);
-            localStorage.setItem(queueKey, JSON.stringify(queue));
         }
 
         if (queue.length >= batch) {
-            localStorage.removeItem(queueKey);
-            sendView(queue, postId);
+            // Chỉ gửi đúng số lượng server chấp nhận (server cắt bớt phần vượt batch);
+            // phần còn dư (VD: admin vừa giảm batch) được giữ lại cho lần gửi sau thay vì bị mất.
+            const toSend = queue.slice(0, batch);
+            const rest = queue.slice(batch);
+            if (rest.length) {
+                queueStorage.setItem(queueKey, JSON.stringify(rest));
+            } else {
+                queueStorage.removeItem(queueKey);
+            }
+            sendView(toSend, postId);
+        } else {
+            queueStorage.setItem(queueKey, JSON.stringify(queue));
         }
     }
 
     function sendView(postIds, currentPostId) {
-        const restUrl = (InitViewCountSettings && InitViewCountSettings.restUrl) || '/wp-json/initvico/v1';
+        const restUrl = (config.restUrl || '/wp-json/initvico/v1').replace(/\/+$/, '');
         const headers = { 'Content-Type': 'application/json' };
         if (config.nonce) {
             headers['X-WP-Nonce'] = config.nonce;
@@ -101,17 +145,20 @@
         fetch(`${restUrl}/count`, {
             method: 'POST',
             headers: headers,
+            credentials: 'same-origin',
+            // keepalive: request vẫn được gửi đi nếu người dùng rời trang đúng lúc view vừa đủ điều kiện.
+            keepalive: true,
             body: JSON.stringify({ post_id: postIds.length === 1 ? postIds[0] : postIds })
         })
         .then(res => res.json())
         .then(data => {
             const entries = Array.isArray(data) ? data : [data];
             const matched = entries.find(entry =>
-                entry && entry.post_id == currentPostId && !isNaN(parseInt(entry.total))
+                entry && entry.post_id == currentPostId && !isNaN(parseInt(entry.total, 10))
             );
 
             if (matched) {
-                updateViewUI(parseInt(matched.total), currentPostId);
+                updateViewUI(parseInt(matched.total, 10), currentPostId);
             } else {
                 console.warn('[InitVC] No match found in response for post:', currentPostId);
             }
@@ -120,20 +167,23 @@
     }
 
     function updateViewUI(total, postId) {
-        const el = document.querySelector(`.init-plugin-suite-view-count-number[data-id="${postId}"]`);
-        if (!el) return;
+        // Cập nhật MỌI chỗ đang hiển thị view của bài này (VD: auto-insert + block/widget).
+        const els = document.querySelectorAll(`.init-plugin-suite-view-count-number[data-id="${postId}"]`);
+        if (!els.length) return;
 
-        const current = parseInt(el.dataset.view || '0', 10);
         const to = parseInt(total || '0', 10);
+        if (isNaN(to)) return;
 
-        if (!isNaN(to)) {
+        els.forEach(el => {
+            const current = parseInt(el.dataset.view || '0', 10);
+
             if (current !== to) {
                 animateCount(el, current, to);
             } else {
                 el.textContent = formatNumber(to);
             }
             el.dataset.view = to;
-        }
+        });
     }
 
     function animateCount(el, from, to) {
@@ -154,7 +204,8 @@
         }, stepTime);
     }
 
+    // Hành vi có chủ đích: sau khi đếm xong luôn hiện con số CHÍNH XÁC (VD "1.2 K" → "1.235").
     function formatNumber(x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 })();

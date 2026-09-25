@@ -1,6 +1,10 @@
 (function (global) {
     function initShortcodeBuilder({ shortcode, config }) {
-        const i18n = global.InitShortcodeBuilder?.i18n || {};
+        // Script được localize với tên InitViewCountShortcodeBuilder (bản cũ đọc nhầm InitShortcodeBuilder
+        // nên các nhãn Copy/Close/Shortcode Preview không bao giờ được dịch).
+        const i18n = (global.InitViewCountShortcodeBuilder && global.InitViewCountShortcodeBuilder.i18n)
+            || (global.InitShortcodeBuilder && global.InitShortcodeBuilder.i18n)
+            || {};
         const t = (key, fallback) => i18n[key] || fallback;
 
         let modal = document.getElementById('init-shortcode-modal');
@@ -23,6 +27,8 @@
 
         const closeBtn = document.createElement('button');
         closeBtn.id = 'init-shortcode-close-top';
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', t('close', 'Close'));
         closeBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24"><path d="m21 21-9-9m0 0L3 3m9 9 9-9m-9 9-9 9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         closeBtn.style = `
             position:absolute;top:10px;right:10px;
@@ -50,7 +56,9 @@
             const th = document.createElement('th');
             const td = document.createElement('td');
 
-            th.innerHTML = `<label>${attr.label}</label>`;
+            const label = document.createElement('label');
+            label.textContent = attr.label;
+            th.appendChild(label);
 
             if (attr.type === 'select') {
                 const select = document.createElement('select');
@@ -90,7 +98,9 @@
 
         // Preview textarea
         const previewLabel = document.createElement('label');
-        previewLabel.innerHTML = `<strong>${t('shortcode_preview', 'Shortcode Preview')}:</strong>`;
+        const previewStrong = document.createElement('strong');
+        previewStrong.textContent = `${t('shortcode_preview', 'Shortcode Preview')}:`;
+        previewLabel.appendChild(previewStrong);
         const preview = document.createElement('textarea');
         preview.id = 'shortcode-preview';
         preview.className = 'widefat';
@@ -105,11 +115,13 @@
         const actions = document.createElement('p');
         const copyBtn = document.createElement('button');
         copyBtn.id = 'copy-shortcode';
+        copyBtn.type = 'button';
         copyBtn.className = 'button button-primary';
         copyBtn.textContent = t('copy', 'Copy');
 
         const closeBottomBtn = document.createElement('button');
         closeBottomBtn.id = 'close-shortcode';
+        closeBottomBtn.type = 'button';
         closeBottomBtn.className = 'button';
         closeBottomBtn.textContent = t('close', 'Close');
 
@@ -146,7 +158,8 @@
 
         // Field listeners
         content.querySelectorAll('[data-key]').forEach(el => {
-            el.addEventListener('input', e => {
+            const eventName = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+            el.addEventListener(eventName, () => {
                 const key = el.getAttribute('data-key');
                 if (el.type === 'checkbox') {
                     state[key] = el.checked;
@@ -158,12 +171,25 @@
         });
 
         // Copy to clipboard
+        // navigator.clipboard chỉ có trên HTTPS/localhost → fallback execCommand cho wp-admin chạy HTTP.
+        const showCopied = () => {
+            const original = t('copy', 'Copy');
+            copyBtn.textContent = t('copied', 'Copied!');
+            setTimeout(() => (copyBtn.textContent = original), 2000);
+        };
+        const legacyCopy = () => {
+            preview.focus();
+            preview.select();
+            try {
+                if (document.execCommand('copy')) showCopied();
+            } catch (e) {}
+        };
         copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(preview.value).then(() => {
-                const original = t('copy', 'Copy');
-                copyBtn.textContent = t('copied', 'Copied!');
-                setTimeout(() => (copyBtn.textContent = original), 2000);
-            });
+            if (navigator.clipboard && global.isSecureContext) {
+                navigator.clipboard.writeText(preview.value).then(showCopied).catch(legacyCopy);
+            } else {
+                legacyCopy();
+            }
         });
 
         updatePreview();

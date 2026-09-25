@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,16 @@ Adjust cache time (in seconds) for `/top` results.
 **Applies to:** REST `/top`  
 **Params:** `int $ttl`, `WP_REST_Request $request`
 
+**`init_plugin_suite_view_count_api_top_max_number`**  
+Maximum number of items `/top` returns per request (default `100`).  
+**Applies to:** REST `/top`  
+**Params:** `int $max`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_ip_headers`**  
+List of `$_SERVER` keys checked, in order, to detect the visitor IP for Strict IP check.  
+**Applies to:** REST `/count` (Strict IP check)  
+**Params:** `array $headers`
+
 **`init_plugin_suite_view_count_top_post_types`**  
 Customize the list of post types returned by the `/top` endpoint.  
 **Applies to:** REST `/top`  
@@ -277,6 +287,39 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 2.0.2 – September 26, 2026 =
+- Security: the `init_plugin_suite_view_count_shape_reset` admin-post action (clears learned Traffic Shape data) had no capability check and no nonce, so any logged-in user (even a Subscriber), or a CSRF link, could wipe the learned data. It now requires `manage_options` and a valid nonce. A **Reset traffic shape data** button (with nonce) has been added to Settings → Init View Count. Custom links must now be built with `wp_nonce_url( admin_url( 'admin-post.php?action=init_plugin_suite_view_count_shape_reset' ), 'init_plugin_suite_view_count_shape_reset' )`
+- Security: `GET /top` now only accepts post types that exist and are publicly viewable (`is_post_type_viewable()`), so the public endpoint can no longer expose titles/excerpts of internal post types such as `wp_block`. The `init_plugin_suite_view_count_top_post_types` filter still runs afterwards, so developers can explicitly add other types. `number` is capped at 100 (filterable via the new `init_plugin_suite_view_count_api_top_max_number` filter). An array passed as `terms` no longer causes a PHP fatal error
+- Security: the `[init_view_ranking]` front-end script now builds items with DOM APIs (`textContent`) instead of injecting API strings into `innerHTML`, and only allows `http(s)` links/images
+- Bug fix: on sites with a negative UTC offset (the Americas, etc.) the daily reset computed the day of week/month from a timestamp that had the timezone offset applied twice, so at 00:01 it thought it was still the previous day — weekly counters were reset on Tuesday instead of Monday and monthly counters on the 2nd instead of the 1st. All date math now uses real Unix timestamps with `wp_date()`. The `$now` value passed to the existing hooks/filters is unchanged
+- Bug fix: the daily reset event now re-aligns itself to 00:01 site time after daylight-saving changes (WP-Cron's `daily` recurrence is a fixed 24h and used to drift to 23:01 or 01:01). Sites without DST are never touched
+- Bug fix (Trending): post age was computed as "local timestamp minus GMT timestamp", adding the site's UTC offset to every post's age (e.g. +7 hours on GMT+7 sites), which skewed freshness boost and time decay. Age is now computed from real Unix timestamps. Old `trending_last_calculation` values stored in local time are handled safely on upgrade
+- Bug fix (Trending): hot topics passed `term_taxonomy_id` values to `get_term()` as if they were term IDs. The two are not always equal (split/merged terms, migrated sites), so "hot" boosts could be attributed to the wrong category/tag. The query now returns term IDs and taxonomies directly
+- Bug fix (Trending): the EWMA momentum component was stored in the non-persistent object cache, so on sites without Redis/Memcached it never carried over between runs and effectively did nothing. It now works on every site
+- Bug fix: `[init_view_count time="true"]` showed "Posted 7 hours ago" for a just-published post on GMT+7 sites (GMT timestamp compared against a local timestamp)
+- Bug fix: a single `POST /count` request containing the same post ID several times (e.g. `[5,5,5]`) incremented that post several times. Duplicate IDs in one request are now ignored
+- Bug fix: `[init_view_ranking]` only initialised the first ranking block on a page; additional rankings stayed on the loading skeleton forever. Every ranking block is now initialised, and each keeps its own `post_type`
+- Bug fix: the ranking script fell back to `/wp-json/` when the tracking script was not on the page (archive pages, the Dashboard widget), which broke on sites installed in a subdirectory or without pretty permalinks. The correct REST URL is now always provided
+- Bug fix: the view-count tracking script stopped completely when the browser blocked `localStorage`/`sessionStorage` (Safari private mode, strict privacy settings). Storage access is now guarded with an in-page fallback
+- Bug fix: block `className` values with multiple classes (e.g. `foo bar`) were merged into `foobar`; `[init_view_count class="..."]` now accepts multiple classes too
+- Bug fix: block attributes containing square brackets or quotes (e.g. a list title `Top [2026]`) broke the generated shortcode. Blocks now call the shortcode callback directly with an attribute array (core `pre_do_shortcode_tag`/`do_shortcode_tag` filters still apply)
+- Bug fix: auto-insert now only adds the view counter to the content of the post actually being viewed, not to other posts' content rendered on the same page, and not to excerpts generated from content (e.g. SEO meta descriptions)
+- Bug fix: the front-end tracker now uses the queried post ID instead of `get_the_ID()`, so a theme/plugin that runs a secondary query before `wp_head` without resetting it can no longer make views count toward the wrong post
+- Bug fix: the Shortcode Builder read the wrong localized object name, so "Copy", "Close" and "Shortcode Preview" were never translated. Copy now also works on non-HTTPS admin screens
+- Bug fix: `init_plugin_suite_view_count_format_thousands()` could output `1000.0 K` (for 999,950) and `2.0 K`; it now outputs `1 M` and `2 K`
+- Bug fix: turning on **Disable Trending** now also hides previously calculated trending data from `GET /top`, as the setting describes
+- Performance: `POST /count` now increments all counters of a post (total/day/week/month) with a single atomic `UPDATE` instead of one query per counter — 2 queries per view instead of 5 in the common case. First-view inserts and stale-cache situations are still handled atomically
+- Performance: the daily rollover now only writes rows that actually change. Posts with no views in the period whose "previous period" value is already 0 (the vast majority on large sites) are no longer deleted and re-inserted every day; existing rows are updated in place. In testing on 42 posts, a typical day went from 126 inserts + 129 deletes to 3 updates + 3 deletes. The end result in the database is identical to the previous version (verified against the old logic with randomized data)
+- Performance: the hourly Trending calculation primes post, term and meta caches up front, reads comment counts from the post object, stores EWMA/score-cap/streak state in a single non-autoloaded option instead of hundreds of per-post transients, and the MMR diversity re-rank is now O(limit × n) instead of O(limit² × n) with identical output. In testing, one run went from ~590 queries to ~30
+- Performance: `GET /top` primes featured-image caches in one query; its cache key ignores parameter order and cache-buster parameters (`_`, `no_cache`); `[init_view_list]` also primes featured images
+- Performance: front-end scripts are loaded with the `defer` strategy; `fetch` uses `keepalive` so a view is still sent if the visitor leaves right as it qualifies
+- Improvement: batch mode keeps queued IDs beyond the batch size for the next send instead of dropping them; the view number updates in every place the post's counter appears on the page
+- Improvement: the View Count block uses the block context `postId` (Query Loop, FSE templates) when Post ID is 0
+- Improvement: new filter `init_plugin_suite_view_count_ip_headers` to restrict which headers are trusted for Strict IP check (e.g. only `REMOTE_ADDR` on servers not behind a proxy/CDN)
+- Improvement: cron events are removed on plugin deactivation; uninstall now also removes the yesterday/last week/last month meta, all plugin options and transients (including cached `/top` results, which the previous uninstall could not find), and runs on every site of a multisite network
+- i18n: regenerated `init-view-count.pot` with WP-CLI; new strings translated in `init-view-count-vi.po`/`.mo`
+- Code quality: all PHP files now pass WordPress Coding Standards (`WordPress-Extra`) with zero errors and warnings
 
 = 2.0.1 – August 29, 2026 =
 - Bug fix: on a site where the admin had never opened and saved Settings → Init View Count at least once, the day/week/month view counters would keep incrementing normally (that code path defaults to "enabled" when the option doesn't exist yet) but would **never be reset** by the daily cron (that code path had no default and treated the missing option as "disabled"). Reading `_init_view_day_count` directly would show it growing forever instead of rolling over into `_init_view_day_yesterday`. All reads of the day/week/month enable options now consistently default to enabled, matching the REST counting logic and the settings page's default-checked checkboxes

@@ -1,5 +1,7 @@
 <?php
-if (!defined('ABSPATH')) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // ============================================================================
 // Block Editor integration
@@ -14,7 +16,7 @@ if (!defined('ABSPATH')) exit;
 // dùng ServerSideRender để preview ngay trong Block Editor.
 // ============================================================================
 
-add_filter('block_categories_all', 'init_plugin_suite_view_count_block_category', 10, 2);
+add_filter( 'block_categories_all', 'init_plugin_suite_view_count_block_category', 10, 2 );
 /**
  * Thêm 1 category riêng trong block inserter cho gọn, thay vì rơi vào "Widgets".
  *
@@ -25,20 +27,20 @@ add_filter('block_categories_all', 'init_plugin_suite_view_count_block_category'
  * @return array
  */
 // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-function init_plugin_suite_view_count_block_category($categories, $editor_context) {
-    return array_merge(
-        [
-            [
-                'slug'  => 'init-view-count',
-                'title' => __('Init View Count', 'init-view-count'),
-                'icon'  => 'chart-line',
-            ],
-        ],
-        $categories
-    );
+function init_plugin_suite_view_count_block_category( $categories, $editor_context ) {
+	return array_merge(
+		array(
+			array(
+				'slug'  => 'init-view-count',
+				'title' => __( 'Init View Count', 'init-view-count' ),
+				'icon'  => 'chart-line',
+			),
+		),
+		$categories
+	);
 }
 
-add_action('init', 'init_plugin_suite_view_count_register_style_handle', 5);
+add_action( 'init', 'init_plugin_suite_view_count_register_style_handle', 5 );
 /**
  * Đăng ký (không enqueue) handle CSS front-end, để block.json của cả 3 block
  * có thể tham chiếu qua "style" — WordPress sẽ tự enqueue đúng lúc, đúng chỗ
@@ -49,53 +51,53 @@ add_action('init', 'init_plugin_suite_view_count_register_style_handle', 5);
  * @return void
  */
 function init_plugin_suite_view_count_register_style_handle() {
-    if (get_option('init_plugin_suite_view_count_disable_style')) {
-        return;
-    }
+	if ( get_option( 'init_plugin_suite_view_count_disable_style' ) ) {
+		return;
+	}
 
-    wp_register_style(
-        'init-plugin-suite-view-count-style',
-        INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/css/style.css',
-        [],
-        INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION
-    );
+	wp_register_style(
+		'init-plugin-suite-view-count-style',
+		INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/css/style.css',
+		array(),
+		INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION
+	);
 }
 
-add_action('init', 'init_plugin_suite_view_count_register_blocks', 10);
+add_action( 'init', 'init_plugin_suite_view_count_register_blocks', 10 );
 /**
  * Đăng ký script cho Block Editor và 3 block type.
  *
  * @return void
  */
 function init_plugin_suite_view_count_register_blocks() {
-    if (!function_exists('register_block_type')) {
-        return;
-    }
+	if ( ! function_exists( 'register_block_type' ) ) {
+		return;
+	}
 
-    wp_register_script(
-        'init-view-count-blocks-editor',
-        INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/js/blocks-editor.js',
-        [
-            'wp-blocks',
-            'wp-element',
-            'wp-block-editor',
-            'wp-components',
-            'wp-i18n',
-            'wp-server-side-render',
-        ],
-        INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION,
-        true
-    );
+	wp_register_script(
+		'init-view-count-blocks-editor',
+		INIT_PLUGIN_SUITE_VIEW_COUNT_URL . 'assets/js/blocks-editor.js',
+		array(
+			'wp-blocks',
+			'wp-element',
+			'wp-block-editor',
+			'wp-components',
+			'wp-i18n',
+			'wp-server-side-render',
+		),
+		INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION,
+		true
+	);
 
-    if (function_exists('wp_set_script_translations')) {
-        wp_set_script_translations(
-            'init-view-count-blocks-editor',
-            'init-view-count',
-            INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'languages'
-        );
-    }
+	if ( function_exists( 'wp_set_script_translations' ) ) {
+		wp_set_script_translations(
+			'init-view-count-blocks-editor',
+			'init-view-count',
+			INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'languages'
+		);
+	}
 
-    register_block_type(INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'blocks/view-count');
-    register_block_type(INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'blocks/view-list');
-    register_block_type(INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'blocks/view-ranking');
+	register_block_type( INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'blocks/view-count' );
+	register_block_type( INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'blocks/view-list' );
+	register_block_type( INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'blocks/view-ranking' );
 }
