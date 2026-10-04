@@ -161,8 +161,10 @@ function init_plugin_suite_view_count_count_callback( $request ) {
 		init_plugin_suite_view_count_atomic_increment_many( $post_id, $keys );
 
 		// Toàn bộ meta key của post này vừa được ghi bằng SQL thuần (bypass cache) →
-		// chỉ cần xoá cache đúng 1 lần cho post này.
-		init_plugin_suite_view_count_flush_meta_cache( $post_id );
+		// chỉ cần xoá cache đúng 1 lần cho post này. Khi bật "giảm tần suất làm mới cache
+		// lượt xem" trong Settings, lần xoá này được giới hạn tối đa 1 lần/khoảng thời gian
+		// cho mỗi post (DB vẫn luôn chính xác, chỉ số hiển thị từ cache có thể chậm hơn).
+		init_plugin_suite_view_count_maybe_flush_meta_cache( $post_id );
 
 		do_action( 'init_plugin_suite_view_count_after_counted', $post_id, $updated, $request );
 

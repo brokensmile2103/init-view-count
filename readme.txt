@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,6 +32,7 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Fully integrated with Trending Engine v3 for uplift-based scoring
 - Native Block Editor (Gutenberg) support with 3 dedicated blocks, no build step required
 - Abilities API support (WordPress 6.9+) — read-only abilities for AI agents and automation tools
+- Optional "Reduce view count cache refreshes" mode for busy sites running a persistent object cache (Redis, Memcached)
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
 
@@ -64,9 +65,10 @@ GitHub repository: [https://github.com/brokensmile2103/init-view-count](https://
 == Shortcodes ==
 
 === [init_view_count] ===  
-Shows current view count for a post. Only works inside a post loop.
+Shows the view count of the current post, or of any post via the `id` attribute.
 
 **Attributes:**
+- `id`: Post ID to display (default: the current post)
 - `field`: `total` (default), `day`, `week`, `month` – which counter to display
 - `format`: `formatted` (default), `raw`, or `short` – controls number formatting
 - `time`: `true` to show time diff from post date (e.g. "3 days ago")
@@ -78,7 +80,7 @@ Shows current view count for a post. Only works inside a post loop.
 Show list of most viewed posts.
 
 **Attributes:**
-- `number`: Number of posts to show (default: 5)
+- `number`: Number of posts to show (default: 10)
 - `page`: Show a specific page of results (default: 1)
 - `post_type`: Type of post (default: post)
 - `template`: `sidebar` (default), `full`, `grid`, `details` (can be overridden)
@@ -95,8 +97,9 @@ Show list of most viewed posts.
 Show tabbed ranking of most viewed posts. Uses REST API and JavaScript for dynamic loading. Optimized for SPA/headless usage.
 
 **Attributes:**
-- `tabs`: Comma-separated list of ranges. Available: `total`, `day`, `week`, `month` (default: all)
+- `tabs`: Comma-separated list of ranges. Available: `total`, `day`, `week`, `month`, `yesterday`, `last_week`, `last_month` (default: `total,day,week,month`)
 - `number`: Number of posts per tab (default: 5)
+- `post_type`: Comma-separated post type(s) to rank (default: `post` and `page`)
 - `class`: Custom class for outer wrapper
 
 This shortcode automatically enqueues required JS and uses skeleton loaders while fetching data.
@@ -121,10 +124,10 @@ Optional: if "Require REST nonce verification?" is enabled in plugin settings, t
 Retrieve the most viewed posts, ranked by view count.
 
 **Parameters:**
-- `range` — *(string)* `total`, `day`, `week`, `month`. Defaults to `total`.
-- `post_type` — *(string)* Post type to query. Defaults to `post`.
-- `number` — *(int)* Number of posts to return. Default: `5`.
-- `page` — *(int)* Pagination offset. Default: `1`.
+- `range` — *(string)* `total`, `day`, `week`, `month`, `yesterday`, `last_week`, `last_month`, `trending`. Defaults to `total`.
+- `post_type` — *(string)* Comma-separated post type(s) to query. Only existing, publicly viewable post types are accepted. Defaults to `post` and `page`.
+- `number` — *(int)* Number of posts to return. Default: `5`, maximum `100` (filterable via `init_plugin_suite_view_count_api_top_max_number`).
+- `page` — *(int)* Page number. Default: `1`.
 - `fields` — *(string)* `minimal` (id, title, link) or `full` (includes excerpt, thumbnail, type, date, etc.)
 - `tax` — *(string)* Optional. Taxonomy slug (e.g. `category`).
 - `terms` — *(string)* Comma-separated term slugs or IDs.
@@ -176,6 +179,11 @@ List of `$_SERVER` keys checked, in order, to detect the visitor IP for Strict I
 **Applies to:** REST `/count` (Strict IP check)  
 **Params:** `array $headers`
 
+**`init_plugin_suite_view_count_meta_flush_interval`**  
+Minimum number of seconds between two refreshes of a post's meta cache after counting views, when **Reduce view count cache refreshes** is enabled and a persistent object cache is active. Return `0` to refresh after every view.  
+**Applies to:** REST `/count`  
+**Params:** `int $interval` (already clamped to the 10–600 range of the setting)
+
 **`init_plugin_suite_view_count_top_post_types`**  
 Customize the list of post types returned by the `/top` endpoint.  
 **Applies to:** REST `/top`  
@@ -216,10 +224,15 @@ Override the list of post types used by the Trending cron calculation.
 **Applies to:** Cron Trending  
 **Params:** `array $post_types`  
 
-**`init_plugin_suite_view_count_trending_component_weights`**
-Adjust weights for Trending score components.
+**`init_plugin_suite_view_count_trending_component_weights`**  
+Adjust weights for Trending score components.  
 **Applies to:** Trending algorithm  
-**Params:** `array $weights` (`velocity`, `engagement`, `freshness`, `momentum`)
+**Params:** `array $weights` (`velocity`, `engagement`, `freshness`, `momentum`, `uplift`, `ewma`, `fatigue`, `explore`, `mmr`)
+
+**`init_plugin_suite_view_count_shape_sample_rate`**  
+Sample rate N used when **Sample Traffic Shape writes** is enabled: traffic shape data is recorded from 1 in N view requests, each sample weighted N times. Return `1` to record every request.  
+**Applies to:** Traffic Shape Learner  
+**Params:** `int $rate` (already clamped to the 2–100 range of the setting)
 
 == Template Override ==
 
@@ -239,7 +252,7 @@ Yes. Just set `post_type="your_custom_type"` in the shortcode or REST query.
 Init View Count uses both **time delay** and **scroll detection** via JavaScript, and stores viewed post IDs in either sessionStorage or localStorage (your choice).
 
 = Is the view count updated immediately? =  
-Yes. When the scroll+delay conditions are met, the count is updated via REST API and saved using `update_post_meta()`.
+Yes, by default. When the scroll+delay conditions are met, the count is sent via REST API and saved with a single atomic database update. If you enable **Reduce view count cache refreshes**, views are still written to the database immediately, but the numbers displayed on your site may lag behind by up to the configured interval (see below).
 
 = What meta key is used to store views? =  
 By default:  
@@ -260,10 +273,10 @@ Yes. There is an option in the plugin’s settings to disable the default styles
 Yes. Since it uses JavaScript + REST for counting, page caching doesn't interfere. However, REST responses (`/top`) are cached using transients.
 
 = Can I use it in block editor / Gutenberg? =  
-Yes — since version 1.23 there are 3 native blocks (search "View Count", "Popular Posts List", "View Ranking" in the block inserter, under the "Init View Count" category), each with its own settings panel and live preview. You can still use the classic Shortcode block with `[init_view_count]` / `[init_view_list]` / `[init_view_ranking]` if you prefer.
+Yes — since version 2.0.0 there are 3 native blocks (search "View Count", "Popular Posts List", "View Ranking" in the block inserter, under the "Init View Count" category), each with its own settings panel and live preview. You can still use the classic Shortcode block with `[init_view_count]` / `[init_view_list]` / `[init_view_ranking]` if you prefer.
 
 = What is Abilities API support and do I need it? =  
-Since version 1.23, on WordPress 6.9+ the plugin registers two **read-only** Abilities (`init-view-count/get-post-views` and `init-view-count/get-top-posts`) via the core Abilities API, so AI agents and automation tools can discover and query view-count data in a standardized way. This is entirely optional and has no effect on sites without the Abilities API (WordPress below 6.9) or on how the plugin otherwise works — no view/increment/reset ability is exposed.
+Since version 2.0.0, on WordPress 6.9+ the plugin registers two **read-only** Abilities (`init-view-count/get-post-views` and `init-view-count/get-top-posts`) via the core Abilities API, so AI agents and automation tools can discover and query view-count data in a standardized way. This is entirely optional and has no effect on sites without the Abilities API (WordPress below 6.9) or on how the plugin otherwise works — no view/increment/reset ability is exposed.
 
 = Does it track bots? =  
 No. Since counting only happens after scroll and delay via JavaScript, bots like Googlebot are naturally excluded.
@@ -273,6 +286,15 @@ Yes. Use `'meta_key' => '_init_view_count'` and `'orderby' => 'meta_value_num'` 
 
 = Can I reduce the number of view requests sent to the server? =
 Yes. You can enable batch view tracking in the plugin settings. Instead of sending one request per view, views will be stored in the browser and sent in a group once the threshold is reached.
+
+= Should I enable "Reduce view count cache refreshes"? =
+Only if your site uses a persistent object cache (Redis, Memcached, etc.) and gets a lot of traffic. By default, each counted view clears the cached metadata of that post, so a popular post has to reload all of its metadata from the database again and again. With this option on, each post's cache is refreshed at most once per interval (60 seconds by default, 10–600 allowed). Every view is still written to the database right away and nothing is lost — only displayed numbers (shortcodes, blocks, rankings, Trending, the number shown after counting) may be slightly behind. A post that stops receiving views may keep showing a slightly lower number until it gets another view, is updated, or the daily reset runs (when daily views are enabled). Without a persistent object cache the option has no effect, and the settings page tells you so.
+
+= Should I enable "Sample Traffic Shape writes"? =
+Only on busy sites with Trending enabled. The Traffic Shape Learner (which teaches Trending your site's hourly and weekday rhythm) updates a database option on every view request. With sampling on, it records only 1 in every N requests (10 by default, 2–100 allowed) and counts each sample N times, so it writes about N times less often while the expected numbers stay the same. On low-traffic sites the learned pattern becomes noisier, so leave it off there. Post view counts are never sampled.
+
+= Does "Strict IP check" affect performance? =
+A little. It reads a transient on every view request and writes it back every time a view is counted. With a persistent object cache (Redis, Memcached) that happens in memory. Without one, transients live in the `wp_options` table, so each counted view adds up to two extra database writes. On busy sites without a persistent object cache, only enable it if you really need it.
 
 = Should I enable "Require REST nonce verification"? =
 It's optional and off by default. Enabling it makes the `/count` endpoint reject requests that don't carry a valid WordPress REST nonce, which helps block fake POST requests sent directly to the endpoint. However, WordPress nonces expire after roughly 12-24 hours. If your site uses full-page caching with a long TTL, cached pages will keep serving an old nonce and view counting will quietly stop working on those pages until the cache refreshes. Leave it off on sites with long-lived page caching, or make sure the cache is purged/refreshed regularly. The `/top` endpoint is unaffected either way, since it's read-only and public by design.
@@ -287,6 +309,19 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 2.0.3 – October 4, 2026 =
+- New: **Reduce view count cache refreshes** option in Settings → Init View Count (off by default), with a configurable refresh interval (10–600 seconds, default 60). Until now, every counted view cleared the whole meta cache of that post (`wp_cache_delete( $post_id, 'post_meta' )`) — not just the view counters, but every meta value of the post. On sites with a persistent object cache, a popular post therefore had its cache wiped dozens of times per minute, and every page render right after had to reload all of the post's metadata from the database. With this option on, each post's meta cache is refreshed at most once per interval (a per-post lock via `wp_cache_add()`, atomic on Redis/Memcached). Views are still written to the database immediately with the same atomic `UPDATE`, so no view is ever lost or double-counted; only displayed numbers (shortcodes, blocks, rankings, Trending and the number returned after counting) may lag behind by up to the interval. A post that stops receiving views catches up on its next view, when it is updated, or at the daily reset (when daily views are enabled). The option only takes effect when a persistent object cache is active — on sites without one, cached metadata only lives for a single request, behavior stays exactly as before, and the settings page shows a notice explaining this
+- New: filter `init_plugin_suite_view_count_meta_flush_interval` to adjust the refresh interval per site (return `0` to refresh after every view)
+- New: **Sample Traffic Shape writes** option in Settings → Init View Count (off by default), with a configurable sample rate N (2–100, default 10). The Traffic Shape Learner used by Trending did one `get_option()` + `update_option()` on every view request — one extra database write per view, on every site. With sampling on, only 1 in N requests is recorded and each sample counts N times, so writes drop by about N times while the expected hourly bins and daily total stay the same (the daily minimum threshold and the hour/weekday EMA need no change). It also reduces concurrent requests overwriting each other's update of the same option. In a 200,000-request simulation at N = 10, writes went from 200,000 to ~20,000 and the recorded total was within 0.4% of the real one. On low-traffic sites the learned pattern becomes noisier, which the settings page explains. Post view counts are never sampled. Filterable via the new `init_plugin_suite_view_count_shape_sample_rate` filter (return `1` to record every request)
+- New: helper functions `init_plugin_suite_view_count_get_meta_flush_interval()` and `init_plugin_suite_view_count_maybe_flush_meta_cache()` in `includes/utils.php`, and `init_plugin_suite_view_count_get_shape_sample_rate()` in `includes/traffic-shape.php`. `init_plugin_suite_view_count_flush_meta_cache()` is unchanged and still clears the cache unconditionally; the daily reset keeps using it, so rollover always refreshes the cache of affected posts
+- Improvement: **Enable strict IP check?** now explains its performance cost in Settings: it reads a transient on every view request and writes it back on every counted view, which without a persistent object cache means up to two extra `wp_options` writes per counted view
+- Improvement: uninstall also removes the four new options
+- Docs: the FAQ entry "Is the view count updated immediately?" no longer mentions `update_post_meta()` (counts have been saved with a single atomic SQL update since 2.0.2); added FAQ entries for the two new options and for the performance cost of Strict IP check; documented the two new filters
+- Docs: fixed outdated or incorrect information in `readme.txt` — the Block Editor and Abilities API FAQ entries said "since version 1.23" (both shipped in 2.0.0); `[init_view_count]` was described as only working inside a post loop and was missing its `id` attribute; `[init_view_list]` listed a default `number` of 5 (it is 10); `[init_view_ranking]` was missing its `post_type` attribute and the `yesterday`/`last_week`/`last_month` tabs; `GET /top` listed `post` as the default post type (it is `post` and `page`), was missing the `yesterday`/`last_week`/`last_month`/`trending` ranges and the 100-item cap; the `init_plugin_suite_view_count_trending_component_weights` filter listed only 4 of its 9 weights and was rendered on a single line
+- Docs: removed changelog entries for 1.22 and earlier from `readme.txt`; the full history is available at the link below
+- i18n: regenerated `init-view-count.pot` with WP-CLI; new strings translated in `init-view-count-vi.po`/`.mo`
+- Code quality: all PHP files pass WordPress Coding Standards (`WordPress-Extra`) with zero errors and warnings
 
 = 2.0.2 – September 26, 2026 =
 - Security: the `init_plugin_suite_view_count_shape_reset` admin-post action (clears learned Traffic Shape data) had no capability check and no nonce, so any logged-in user (even a Subscriber), or a CSRF link, could wipe the learned data. It now requires `manage_options` and a valid nonce. A **Reset traffic shape data** button (with nonce) has been added to Settings → Init View Count. Custom links must now be built with `wp_nonce_url( admin_url( 'admin-post.php?action=init_plugin_suite_view_count_shape_reset' ), 'init_plugin_suite_view_count_shape_reset' )`
@@ -339,224 +374,7 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 - New: **Block Editor (Gutenberg) support** with 3 dynamic blocks matching the existing shortcodes 1:1 — View Count, Popular Posts List, and View Ranking (Tabbed). Each block is a thin PHP wrapper (`render.php`, via the `render` field in `block.json`) that builds the same shortcode tag and calls `do_shortcode()`, so there is no duplicated display logic and output always matches the shortcode. The editor script is plain vanilla JavaScript (no build step, no JSX) using `ServerSideRender` for a live preview directly in the editor
 - `Tested up to: 7.1`
 
-= 1.22 – August 4, 2026 =
-- Bug fix: sticky posts were no longer being excluded from view-based rankings. `GET /top` (and by extension the `[init_view_ranking]` shortcode, which consumes it) and the hourly Trending Engine calculation could show a sticky post at the top of the list regardless of its actual view count, since the underlying `WP_Query` calls were missing `ignore_sticky_posts`. All ranking queries now explicitly ignore sticky posts, consistent with `[init_view_list]`, which already did this correctly
-- Performance: the scroll-progress listener in the front-end tracking script (`script.js`) is now throttled with `requestAnimationFrame` instead of running its calculation on every single `scroll` event, and is automatically removed once the scroll threshold is reached — reduces main-thread work on long pages and low-end mobile devices. The listener is also registered as `passive` to avoid blocking scroll rendering. Also fixed a theoretical division-by-zero edge case when a page's content is shorter than the viewport
-
-= 1.21 – July 17, 2026 =
-- New optional setting: **Require REST nonce verification?** (Settings → Init View Count). Off by default. When enabled, `POST /count` requires a valid `X-WP-Nonce` header and rejects the request with `403` otherwise, helping block direct spam POSTs to the endpoint that skip loading the page first
-  - The nonce is only added to the localized config, and the client only sends the header, when this setting is turned on — zero overhead otherwise
-  - `GET /top` is intentionally excluded, since it's a read-only, public-by-design endpoint
-  - Documented trade-off: WordPress nonces expire after ~12-24h, so sites using long-lived full-page caching may see view counting silently stop working on stale cached pages until the cache refreshes. See the Settings page description and the FAQ for details
-- i18n: added missing English source strings (`Invalid post ID.`, `Not enabled for view counting.`) plus all new strings from this release to `languages/init-view-count.pot`, with ready-made Vietnamese translations in `languages/init-view-count-vi.po` / `.mo`
-
-= 1.20 – July 16, 2026 =
-- Performance & accuracy overhaul for the `/count` REST endpoint:
-  - View counters (`total`, `day`, `week`, `month`) are now incremented with a direct, atomic SQL `UPDATE ... SET meta_value = meta_value + 1` instead of a read-then-write `get_post_meta()` + `update_post_meta()` pair, removing a race condition that could drop views under concurrent traffic
-  - The value returned to the client is derived locally (`cached value + 1`) instead of re-querying the database after the write, saving a query per counted key
-  - The object cache for a post's meta is now invalidated exactly once per post per request (after all of its keys are updated), instead of once per key
-- Traffic Shape Learner: hourly bin tracking is now buffered per-request and flushed with a single `get_option()`/`update_option()` call on `shutdown`, instead of once per counted post — meaningful reduction in option writes on sites using batch view tracking
-- General hardening pass across the REST API code path (WPCS-compliant direct queries with documented `phpcs:ignore` justifications, no behavior change to existing filters/actions)
-
-= 1.19 – October 2, 2025 =
-- Hotfix: Daily/Weekly/Monthly counters now **enabled by default**
-  - `init_plugin_suite_view_count_enable_day` → default = 1
-  - `init_plugin_suite_view_count_enable_week` → default = 1
-  - `init_plugin_suite_view_count_enable_month` → default = 1
-- Fixes issue where counters stayed disabled unless user manually saved settings
-- No migration required – existing installs automatically respect new defaults
-- Backward compatibility: behavior unchanged if options already set explicitly
-
-= 1.18 – October 1, 2025 =
-- Reset & history tracking:  
-  - Daily, weekly, and monthly reset now archive values into `_init_view_day_yesterday`, `_init_view_week_last`, `_init_view_month_last`  
-  - Enables direct retrieval of “Yesterday”, “Last Week”, and “Last Month” stats  
-  - Fully backward-compatible – existing keys remain unchanged  
-- Shortcode `[init_view_ranking]`:  
-  - New ranges supported: `yesterday`, `last_week`, `last_month`  
-  - Default tabs unchanged (`total,day,week,month`) for compatibility  
-  - Added i18n labels for new ranges (“Yesterday”, “Last Week”, “Last Month”) 
-- REST API (`init_plugin_suite_view_count_top`):  
-  - `range` parameter extended with `yesterday`, `last_week`, `last_month`  
-  - Auto-maps to new meta keys, preserves existing defaults  
-  - Minimal/full field responses and caching remain consistent  
-- Settings & control:  
-  - New option **“Disable Trending”** in settings page  
-  - When enabled: trending engine, shape learner, and all related calculations return no-op  
-  - When disabled (default): trending runs as normal, no behavior change for existing sites  
-- Performance & stability:  
-  - Only 3 additional meta writes per reset cycle  
-  - All new keys pass through `init_plugin_suite_view_count_meta_key` for extensibility  
-  - Trending, shape learner, and caching unaffected unless explicitly disabled  
-- Backward compatibility:  
-  - Existing shortcodes, API calls, and filters continue to work unchanged  
-  - No migration required – new keys auto-populate from next reset cycle  
-
-= 1.17 – August 20, 2025 =
-- Traffic Shape Learner – AI-powered hourly & weekday distribution model:
-  - Collects raw hourly bins per day and rolls them up into site-wide traffic shape
-  - Hour-of-day pattern: updated via EMA with Bayesian prior smoothing (kappa control)
-  - Day-of-week pattern: updated via EMA with stabilized daily totals
-  - Both distributions normalized to mean = 1 for consistent multiplicative scaling
-- Performance & caching:
-  - Learned shapes cached in transient for 2h with filterable TTL
-  - Rollup action protected by object-cache lock to avoid race conditions
-  - Minimal overhead: only 1 write per view increment + 1 rollup per day
-- Filters & extensibility:
-  - `init_plugin_suite_view_count_site_traffic_shape` provides current hour/day shape arrays
-  - Tunable alpha/kappa values via filters for both hour-of-day and weekday models
-  - `init_plugin_suite_view_count_shape_collect_enabled` allows enabling/disabling collection
-- Reset & admin:
-  - New admin-post action `init_plugin_suite_view_count_shape_reset` to clear all learned shape data
-  - Fully safe to run anytime – plugin will rebuild patterns automatically
-- Backward compatibility:
-  - All existing trending and view count filters remain intact
-  - Trending Engine v3 (1.16) automatically integrates with learned shapes for uplift calculation
-- Trending Engine improvements:
-  - Multi-key fallback (day → week → month → total) ensures enough posts even at start of day
-  - Day-views fallback estimation from week/month averages prevents empty scores at early hours
-  - Optimized CRON queries: skip week/month/total lookups if daily data already sufficient
-  - Debug payload now includes `views_day_used` and fallback flags for transparency
-
-= 1.16 – August 16, 2025 =
-- Trending Engine v3 – AI-powered uplift & momentum detection:
-  - Seasonality-aware uplift: compares actual views against expected traffic shape (hour-of-day, day-of-week) for true anomalies
-  - EWMA momentum with acceleration: smoother trend detection, keeps natural growth without noise
-  - Anti-gaming protection: robust ratio checks (day vs month/total) and capped score growth per run
-  - Exposure fatigue: reduces dominance of posts that stay at the top too long, keeps feed fresh
-  - MMR re-ranking: maximized marginal relevance for better diversity across categories and tags
-  - Explore/exploit logic: occasional boost for promising new posts with strong uplift signals
-- Performance & caching:
-  - Cached EWMA velocity per post with 12h TTL, minimal overhead
-  - Site traffic shape cached for 2h with filterable override hook
-  - Added transient-based streak tracking for fatigue multiplier
-- Debug & transparency:
-  - Extended debug payload includes uplift_raw, expected_views, ewma_val, acc, fatigue_streak
-  - New action `init_plugin_suite_view_count_trending_debug_row` available for developers to log detailed trending rows
-- Fully backward-compatible:
-  - Existing filters remain intact (`init_plugin_suite_view_count_trending_component_weights`, `init_plugin_suite_view_count_meta_key`)
-  - Default weights added for uplift, ewma, fatigue, explore, and mmr with safe multipliers
-
-= 1.15 – August 8, 2025 =
-- Trending Engine v2 – optimized for performance and stability:
-  - Added cache lock (object cache) to prevent race conditions when cron overlaps
-  - Soft-cap scoring using an exponential formula for smooth limits (avoids hard caps)
-  - Optimized O(n) diversity filter with auto fill-back to always return enough items
-  - Improved hot topics SQL for ONLY_FULL_GROUP_BY compatibility and timezone safety with post_date_gmt
-  - Reduced N+1 queries by caching author_id, categories, and tags per post
-- New filters for Trending:
-  - `init_plugin_suite_view_count_trending_post_types` – limit/override post types (e.g., only `manga`)
-  - `init_plugin_suite_view_count_trending_component_weights` – adjust weights for velocity, engagement, freshness, momentum
-- Sanitize & fallback: normalized post types from settings, auto-remove `attachment`, safe fallback when empty
-- Engagement smoothing: improved stability when daily views are low
-
-= 1.14 – July 24, 2025 =
-- Introduced a powerful hybrid trending algorithm with hourly updates
-- Trending score is calculated based on five dynamic components:
-  - View velocity (per hour, adjusted by recent growth patterns)
-  - Time decay (natural dropoff over time, with extended half-life)
-  - Engagement quality (comments, likes, shares per view)
-  - Content freshness boost (heavier weight for new posts)
-  - Category/tag momentum (boost for trending topics in the last 24 hours)
-- Trending list is automatically cached and refreshed every hour
-- Added diversity filter to ensure balanced results across authors and categories:
-  - Max 2 posts per author and 3 per category if diversity allows
-  - Automatically lifts limits if not enough authors/categories to fill the top list
-- Fully filterable and compatible with all public post types, taxonomies, and view tracking logic
-
-= 1.13 – July 13, 2025 =
-- Added `init_plugin_suite_view_count_top_post_types` filter to allow overriding `post_type` in top view REST API route
-- Useful for restricting or customizing results (e.g., only `manga`, `article`, etc.)
-
-= 1.12 – July 8, 2025 =
-- Shortcode `[init_view_count]` now supports `id="..."` attribute to display the view count of any post (not just the current one)
-- Allows showing view counts for related posts, custom queries, or manually selected IDs
-- Fully backward-compatible: if `id` is omitted, the current post will be used as before
-
-= 1.11 – June 30, 2025 =
-- Shortcode `[init_view_ranking]` now supports `post_type="..."` to filter rankings by custom post type
-- JS file `ranking.js` updated to pass `post_type` to REST API and cache results per tab and type
-- Removed redundant function `init_plugin_suite_view_count_human_time_diff()` in favor of core `human_time_diff()`
-- Updated `[init_view_count]` shortcode to use native `human_time_diff()` for publishing time display
-- Updated all templates to use native `human_time_diff()` instead of removed custom function
-
-= 1.10 – June 26, 2025 =
-- Added new `icon="true"` attribute to `[init_view_count]` shortcode to display inline SVG before the view count
-- New setting: "Auto-insert shortcode into post content?" with options to insert before or after post content
-- Auto-insert only applies to post types where view tracking is enabled (manual shortcode use still supported)
-- Added `schema="true"` attribute to `[init_view_count]` to output Schema.org microdata (`InteractionCounter`)
-- Added `class="custom-class"` attribute to allow injecting custom CSS classes into the shortcode wrapper
-- New filter `init_plugin_suite_view_count_default_shortcode` allows developers to override default auto-insert output
-- New filter `init_plugin_suite_view_count_auto_insert_enabled` gives control over whether auto-insert is active per context
-- Fully backward-compatible: all new features are optional and disabled by default
-
-= 1.9 – June 24, 2025 =
-- Replaced all PHP 8+ `match` expressions with backwards-compatible logic using array maps and switches
-- Now fully compatible with PHP 7.4 and above – no syntax errors on legacy environments
-- All changes preserve existing filters like `init_plugin_suite_view_count_meta_key` and template behavior
-- Maintained consistent behavior across REST API endpoints, `[init_view_list]`, and `[init_view_count]` shortcodes
-- Improved code clarity and maintainability without altering plugin output or logic
-
-= 1.8 – June 22, 2025 =
-- Added new "Strict IP check" option to block repeated views from the same IP in a short timeframe
-- Uses hashed IPs and transient-based FIFO cache (default: 75 recent IPs per post)
-- Designed to prevent fake views posted directly to the REST endpoint (e.g., bots, cURL scripts)
-- Fully privacy-safe: does not store raw IPs and automatically expires over time
-- New setting: "Enable strict IP check?" (disabled by default)
-
-= 1.7 – June 21, 2025 =
-- Added Dashboard widget with [init_view_ranking] display
-- Introduced admin-style.css optimized for clean, one-line layout
-- REST API /count now respects the batch limit setting to avoid overload
-
-= 1.6 – June 19, 2025 =
-- Added batch view tracking option to reduce server requests on high-traffic sites
-- Views can be temporarily stored in localStorage and sent in groups
-- New setting: "Batch view tracking" (default = 1 for real-time)
-- Updated JS to support batch logic with scroll + delay detection
-- REST API now accepts multiple post IDs and returns array responses
-- View count updates instantly after tracking, no reload needed
-
-= 1.5 – June 16, 2025 =
-- Added shortcode builder panel to settings screen for easier shortcode generation
-- Introduced new `init-shortcode-builder.js` with full shortcode configuration UI
-- Supports `[init_view_list]`, `[init_view_ranking]`, and `[init_view_count]` shortcodes
-- i18n-ready: all UI strings are fully translatable via `InitViewCountShortcodeBuilder.i18n`
-- Improved JS architecture to separate builder panel from core builder logic
-
-= 1.4 – June 8, 2025 =
-- Introduced "Trending" scoring system based on daily views and post age (views per hour)
-- Trending posts are calculated hourly via cron, optimized for high-traffic and large sites
-- New `range=trending` support added to `/top` REST endpoint with built-in sorting and pagination
-- Shortcode `[init_view_list range="trending"]` now fetches trending posts
-- Internal meta key filtering is fully respected in all ranking and trending logic
-- Improved post meta cleanup for day/week/month reset with filterable keys
-- Prepared shortcode UI and REST responses for enhanced performance and data accuracy
-
-= 1.3 – June 7, 2025 =
-- Added new `[init_view_ranking]` shortcode to display tabbed ranking UI by day/week/month/all-time
-- Shortcode uses lazy-loading via REST API and includes built-in skeleton loaders for smoother UX
-- Fully compatible with headless or SPA environments – optimized to load only when visible
-- All assets are conditionally enqueued: JS loads only when shortcode is used, styles are shared via `style.css`
-
-= 1.2 – June 5, 2025 =
-- Enqueued `style.css` earlier to avoid being printed in the footer
-- Added toggle option to disable plugin’s default CSS in the settings page
-- Applied `init_plugin_suite_view_count_meta_key` consistently across REST API, shortcodes, and background tasks
-- Fixed issue where custom meta key override was ignored in some cases
-
-= 1.1 – May 28, 2025 =
-- Added `page` parameter to `/top` REST endpoint for pagination
-- Added `page` attribute to `[init_view_list]` shortcode for paginated lists
-- Removed infinite scroll trigger for simplicity and better template control
-- Fully compatible with existing templates and theme overrides
-
-= 1.0 – May 18, 2025 =
-- Initial release  
-- REST-based view counter  
-- 4 templates included  
-- Fully extensible with filters/hooks  
-- Shortcodes with layout switching
+View full changelog (all versions): [Init View Count – Changelog](https://en.inithtml.com/plugin/init-view-count/)
 
 == License ==
 

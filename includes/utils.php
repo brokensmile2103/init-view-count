@@ -196,6 +196,80 @@ function init_plugin_suite_view_count_flush_meta_cache_many( array $post_ids ) {
 }
 
 /**
+ * Khoảng thời gian (giây) tối thiểu giữa 2 lần xoá cache post meta của CÙNG 1 post
+ * sau khi đếm view. Trả về 0 nghĩa là KHÔNG giới hạn (xoá cache sau mỗi view như cũ).
+ *
+ * Chỉ trả về giá trị > 0 khi:
+ * - admin bật option "init_plugin_suite_view_count_optimize_meta_flush"; và
+ * - site đang dùng persistent object cache (Redis, Memcached...). Không có persistent
+ *   object cache thì cache post meta chỉ sống trong 1 request, việc xoá gần như không
+ *   tốn gì nên không có gì để tối ưu — giữ nguyên hành vi cũ.
+ *
+ * Kết quả được đọc lại mỗi lần gọi (không memo) vì giá trị có thể đổi trong cùng
+ * request (VD: lưu Settings rồi render lại trang).
+ *
+ * @return int Số giây (0 = tắt giới hạn).
+ */
+function init_plugin_suite_view_count_get_meta_flush_interval() {
+	if ( 1 !== (int) get_option( 'init_plugin_suite_view_count_optimize_meta_flush', 0 ) ) {
+		return 0;
+	}
+
+	if ( ! wp_using_ext_object_cache() ) {
+		return 0;
+	}
+
+	$interval = init_plugin_suite_view_count_clamp_int(
+		get_option( 'init_plugin_suite_view_count_meta_flush_interval', INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_DEFAULT ),
+		INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MIN,
+		INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MAX
+	);
+
+	/**
+	 * Filter khoảng thời gian (giây) giữa 2 lần làm mới cache post meta của 1 post.
+	 * Trả về 0 để tắt giới hạn (làm mới sau mỗi view).
+	 *
+	 * @param int $interval Số giây, đã được ép trong khoảng [MIN, MAX] của Settings.
+	 */
+	return max( 0, (int) apply_filters( 'init_plugin_suite_view_count_meta_flush_interval', $interval ) );
+}
+
+/**
+ * Xoá cache post meta của 1 post sau khi đếm view, có giới hạn tần suất.
+ *
+ * Khi chế độ tối ưu đang tắt (hoặc site không có persistent object cache) → xoá cache
+ * ngay như các bản trước.
+ *
+ * Khi đang bật: mỗi post chỉ bị xoá cache tối đa 1 lần trong mỗi khoảng
+ * init_plugin_suite_view_count_get_meta_flush_interval() giây. Khoá dùng wp_cache_add()
+ * (chỉ thành công khi key CHƯA tồn tại — atomic trên Redis/Memcached), nên view đầu tiên
+ * trong mỗi khung thời gian sẽ xoá cache, các view còn lại trong khung đó bỏ qua.
+ * Nếu drop-in object cache nào đó không làm add() atomic thì tệ nhất là xoá cache
+ * thêm 1 lần — vô hại.
+ *
+ * Lưu ý: dữ liệu trong DATABASE vẫn luôn chính xác (câu UPDATE atomic vẫn chạy mỗi
+ * view); chỉ bản sao trong object cache có thể chậm hơn thực tế tối đa 1 khoảng.
+ *
+ * @param int $post_id Post ID.
+ * @return bool True nếu cache đã được xoá trong lần gọi này.
+ */
+function init_plugin_suite_view_count_maybe_flush_meta_cache( $post_id ) {
+	$post_id = (int) $post_id;
+	if ( ! $post_id ) {
+		return false;
+	}
+
+	$interval = init_plugin_suite_view_count_get_meta_flush_interval();
+
+	if ( $interval > 0 && ! wp_cache_add( 'meta_flush_' . $post_id, 1, 'init_plugin_suite_view_count', $interval ) ) {
+		return false;
+	}
+
+	init_plugin_suite_view_count_flush_meta_cache( $post_id );
+	return true;
+}
+
+/**
  * Kiểm tra IP hiện tại có vừa xem post này gần đây không (chống đếm trùng/bot),
  * dựa trên transient lưu danh sách hash IP theo từng post.
  *

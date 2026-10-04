@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 2.0.2\n"
+"Project-Id-Version: Init View Count 2.0.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-25T18:48:41+00:00\n"
+"POT-Creation-Date: 2026-10-04T07:33:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: init-view-count\n"
@@ -161,203 +161,280 @@ msgid "Not enabled for view counting."
 msgstr ""
 
 #: includes/settings-page.php:10
-#: includes/settings-page.php:107
+#: includes/settings-page.php:133
 msgid "Init View Count Settings"
 msgstr ""
 
-#: includes/settings-page.php:94
+#: includes/settings-page.php:120
 msgid "Settings saved."
 msgstr ""
 
-#: includes/settings-page.php:99
+#: includes/settings-page.php:125
 msgid "Traffic shape data has been reset."
 msgstr ""
 
-#: includes/settings-page.php:112
+#: includes/settings-page.php:138
 msgid "Post types to track views"
 msgstr ""
 
-#: includes/settings-page.php:125
+#: includes/settings-page.php:151
 msgid "Auto-insert shortcode into post content?"
 msgstr ""
 
-#: includes/settings-page.php:131
+#: includes/settings-page.php:157
 msgid "Do not auto-insert (manual shortcode only)"
 msgstr ""
 
-#: includes/settings-page.php:136
+#: includes/settings-page.php:162
 msgid "Insert before content"
 msgstr ""
 
-#: includes/settings-page.php:141
+#: includes/settings-page.php:167
 msgid "Insert after content"
 msgstr ""
 
-#: includes/settings-page.php:145
+#: includes/settings-page.php:171
 msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
 msgstr ""
 
-#: includes/settings-page.php:150
+#: includes/settings-page.php:176
 msgid "Enable daily views?"
 msgstr ""
 
-#: includes/settings-page.php:154
+#: includes/settings-page.php:180
 msgid "Count and store views per day"
 msgstr ""
 
-#: includes/settings-page.php:159
+#: includes/settings-page.php:185
 msgid "Enable weekly views?"
 msgstr ""
 
-#: includes/settings-page.php:163
+#: includes/settings-page.php:189
 msgid "Track total views by week"
 msgstr ""
 
-#: includes/settings-page.php:168
+#: includes/settings-page.php:194
 msgid "Enable monthly views?"
 msgstr ""
 
-#: includes/settings-page.php:172
+#: includes/settings-page.php:198
 msgid "Track total views by month"
 msgstr ""
 
-#: includes/settings-page.php:177
+#: includes/settings-page.php:203
 msgid "Delay before counting (ms)"
 msgstr ""
 
 #. translators: 1: minimum delay in ms, 2: maximum delay in ms
-#: includes/settings-page.php:188
+#: includes/settings-page.php:214
 #, php-format
 msgid "Minimum %1$dms, maximum %2$dms. 0 is not allowed to avoid counting views before the page has actually rendered."
 msgstr ""
 
-#: includes/settings-page.php:197
+#: includes/settings-page.php:223
 msgid "Scroll percent required"
 msgstr ""
 
 #. translators: 1: minimum scroll percent, 2: maximum scroll percent
-#: includes/settings-page.php:208
+#: includes/settings-page.php:234
 #, php-format
 msgid "Minimum %1$d%%, maximum %2$d%%. 0 is not allowed as it would bypass the scroll check entirely."
 msgstr ""
 
-#: includes/settings-page.php:217
+#: includes/settings-page.php:243
 msgid "Enable scroll check?"
 msgstr ""
 
-#: includes/settings-page.php:221
+#: includes/settings-page.php:247
 msgid "Only count views after user scrolls past required percent"
 msgstr ""
 
-#: includes/settings-page.php:226
+#: includes/settings-page.php:252
 msgid "Storage method"
 msgstr ""
 
-#: includes/settings-page.php:231
+#: includes/settings-page.php:257
 msgid "Session Storage"
 msgstr ""
 
-#: includes/settings-page.php:235
+#: includes/settings-page.php:261
 msgid "Local Storage"
 msgstr ""
 
-#: includes/settings-page.php:241
+#: includes/settings-page.php:267
 msgid "Batch view tracking"
 msgstr ""
 
-#: includes/settings-page.php:247
+#: includes/settings-page.php:273
 msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr ""
 
-#: includes/settings-page.php:252
-msgid "Enable strict IP check?"
+#: includes/settings-page.php:278
+msgid "Reduce view count cache refreshes?"
 msgstr ""
 
-#: includes/settings-page.php:256
-msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
+#: includes/settings-page.php:282
+msgid "Refresh the cached metadata of each post at most once per interval, instead of after every single view."
 msgstr ""
 
-#: includes/settings-page.php:259
-msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
+#: includes/settings-page.php:285
+msgid "Refresh interval (seconds)"
 msgstr ""
 
-#: includes/settings-page.php:264
-msgid "Require REST nonce verification?"
-msgstr ""
-
-#: includes/settings-page.php:268
-msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
-msgstr ""
-
-#: includes/settings-page.php:271
-msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
-msgstr ""
-
-#: includes/settings-page.php:274
-msgid "Warning:"
-msgstr ""
-
-#: includes/settings-page.php:275
-msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
-msgstr ""
-
-#: includes/settings-page.php:280
-msgid "Enable dashboard widget?"
-msgstr ""
-
-#: includes/settings-page.php:284
-msgid "Display top view ranking inside WordPress Dashboard."
-msgstr ""
-
-#: includes/settings-page.php:287
-msgid "Uncheck to hide the widget for all users."
-msgstr ""
-
-#: includes/settings-page.php:292
-msgid "Disable plugin CSS?"
-msgstr ""
-
-#: includes/settings-page.php:296
-msgid "Disable built-in CSS output."
-msgstr ""
-
-#: includes/settings-page.php:299
-msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
+#. translators: 1: minimum interval in seconds, 2: maximum interval in seconds
+#: includes/settings-page.php:297
+#, php-format
+msgid "Minimum %1$d seconds, maximum %2$d seconds."
 msgstr ""
 
 #: includes/settings-page.php:304
-msgid "Disable Trending?"
+msgid "On busy sites, refreshing the cache after every view forces popular posts to reload all of their metadata from the database over and over. With this option on, every view is still written to the database immediately and accurately; only the cached copy is refreshed less often."
 msgstr ""
 
-#: includes/settings-page.php:310
-msgid "Completely turn off trending calculations and outputs."
+#: includes/settings-page.php:307
+#: includes/settings-page.php:420
+msgid "Note:"
 msgstr ""
 
-#: includes/settings-page.php:313
-msgid "Check this to hard-disable trending."
+#: includes/settings-page.php:308
+msgid "Displayed view counts (shortcodes, blocks, rankings, Trending and the number shown right after a view is counted) may lag behind the real value by up to the interval above. A post that stops receiving views may keep showing a slightly lower number until it gets another view, is updated, or the daily reset runs (when daily views are enabled)."
 msgstr ""
 
-#: includes/settings-page.php:318
-msgid "Save Settings"
+#: includes/settings-page.php:312
+msgid "A persistent object cache is active on this site, so this option takes effect when enabled."
+msgstr ""
+
+#: includes/settings-page.php:314
+msgid "No persistent object cache detected on this site, so this option currently has no effect."
+msgstr ""
+
+#: includes/settings-page.php:315
+msgid "It only applies when a persistent object cache (Redis, Memcached, etc.) is in use; without one, cached metadata only lives for a single request."
 msgstr ""
 
 #: includes/settings-page.php:321
-msgid "Traffic Shape Learner"
-msgstr ""
-
-#: includes/settings-page.php:323
-msgid "Clears the learned hourly and weekday traffic patterns used by the Trending engine. The patterns will be rebuilt automatically from new views."
+msgid "Enable strict IP check?"
 msgstr ""
 
 #: includes/settings-page.php:325
-msgid "Reset all learned traffic shape data?"
+msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
 msgstr ""
 
 #: includes/settings-page.php:328
-msgid "Reset traffic shape data"
+msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
 msgstr ""
 
 #: includes/settings-page.php:331
+msgid "Performance note:"
+msgstr ""
+
+#: includes/settings-page.php:332
+msgid "This check reads the transient on every view request and writes it back every time a view is counted. Without a persistent object cache (Redis, Memcached, etc.), transients are stored in the wp_options table, so each counted view adds up to two extra database writes. On busy sites without a persistent object cache, only enable it if you really need it."
+msgstr ""
+
+#: includes/settings-page.php:337
+msgid "Require REST nonce verification?"
+msgstr ""
+
+#: includes/settings-page.php:341
+msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
+msgstr ""
+
+#: includes/settings-page.php:344
+msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
+msgstr ""
+
+#: includes/settings-page.php:347
+msgid "Warning:"
+msgstr ""
+
+#: includes/settings-page.php:348
+msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
+msgstr ""
+
+#: includes/settings-page.php:353
+msgid "Enable dashboard widget?"
+msgstr ""
+
+#: includes/settings-page.php:357
+msgid "Display top view ranking inside WordPress Dashboard."
+msgstr ""
+
+#: includes/settings-page.php:360
+msgid "Uncheck to hide the widget for all users."
+msgstr ""
+
+#: includes/settings-page.php:365
+msgid "Disable plugin CSS?"
+msgstr ""
+
+#: includes/settings-page.php:369
+msgid "Disable built-in CSS output."
+msgstr ""
+
+#: includes/settings-page.php:372
+msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
+msgstr ""
+
+#: includes/settings-page.php:377
+msgid "Disable Trending?"
+msgstr ""
+
+#: includes/settings-page.php:383
+msgid "Completely turn off trending calculations and outputs."
+msgstr ""
+
+#: includes/settings-page.php:386
+msgid "Check this to hard-disable trending."
+msgstr ""
+
+#: includes/settings-page.php:391
+msgid "Sample Traffic Shape writes?"
+msgstr ""
+
+#: includes/settings-page.php:395
+msgid "Record traffic shape data from only 1 in every N view requests (each sample counts N times), instead of on every request."
+msgstr ""
+
+#: includes/settings-page.php:398
+msgid "Sample rate (1 in N requests)"
+msgstr ""
+
+#. translators: 1: minimum sample rate, 2: maximum sample rate
+#: includes/settings-page.php:410
+#, php-format
+msgid "Minimum %1$d, maximum %2$d."
+msgstr ""
+
+#: includes/settings-page.php:417
+msgid "The Traffic Shape Learner (used by Trending) updates a database option on every view request. Sampling cuts these writes by about N times. On busy sites the learned hourly and weekday pattern stays essentially the same, because sampled counts are unbiased and the learner only uses relative proportions smoothed over many days."
+msgstr ""
+
+#: includes/settings-page.php:421
+msgid "On low-traffic sites the learned pattern becomes noisier, so only enable this if your site receives a lot of views. Post view counts are never sampled and are not affected. Has no effect when Trending is disabled."
+msgstr ""
+
+#: includes/settings-page.php:426
+msgid "Save Settings"
+msgstr ""
+
+#: includes/settings-page.php:429
+msgid "Traffic Shape Learner"
+msgstr ""
+
+#: includes/settings-page.php:431
+msgid "Clears the learned hourly and weekday traffic patterns used by the Trending engine. The patterns will be rebuilt automatically from new views."
+msgstr ""
+
+#: includes/settings-page.php:433
+msgid "Reset all learned traffic shape data?"
+msgstr ""
+
+#: includes/settings-page.php:436
+msgid "Reset traffic shape data"
+msgstr ""
+
+#: includes/settings-page.php:439
 #: includes/shortcodes.php:373
 msgid "Shortcode Builder"
 msgstr ""
@@ -522,11 +599,11 @@ msgstr ""
 msgid "Custom Class"
 msgstr ""
 
-#: includes/traffic-shape.php:338
+#: includes/traffic-shape.php:379
 msgid "Sorry, you are not allowed to do that."
 msgstr ""
 
-#: init-view-count.php:142
+#: init-view-count.php:155
 msgid "Settings"
 msgstr ""
 

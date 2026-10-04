@@ -91,6 +91,36 @@ function init_plugin_suite_view_count_shape_on_after_counted( $post_id, $updated
 }
 
 /**
+ * Tỷ lệ lấy mẫu khi ghi Traffic Shape: chỉ ghi 1/N request, mỗi lần cộng N lượt.
+ * Trả về 1 nghĩa là KHÔNG lấy mẫu (ghi mọi request như các bản trước).
+ *
+ * Lấy mẫu giữ nguyên kỳ vọng của từng thùng giờ và của tổng trong ngày (mỗi request
+ * có xác suất 1/N được ghi với trọng số N), nên các bước phía sau — ngưỡng
+ * 'init_plugin_suite_view_count_shape_min_daily_total', EMA theo giờ/thứ — không cần
+ * thay đổi. Đánh đổi duy nhất là phương sai tăng: site ít traffic sẽ học shape nhiễu hơn.
+ *
+ * @return int Tỷ lệ N (>= 1).
+ */
+function init_plugin_suite_view_count_get_shape_sample_rate() {
+	if ( 1 !== (int) get_option( 'init_plugin_suite_view_count_shape_sampling', 0 ) ) {
+		return 1;
+	}
+
+	$rate = init_plugin_suite_view_count_clamp_int(
+		get_option( 'init_plugin_suite_view_count_shape_sample_rate', INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_DEFAULT ),
+		INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN,
+		INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX
+	);
+
+	/**
+	 * Filter tỷ lệ lấy mẫu Traffic Shape. Trả về 1 để ghi mọi request.
+	 *
+	 * @param int $rate Tỷ lệ N, đã được ép trong khoảng [MIN, MAX] của Settings.
+	 */
+	return max( 1, (int) apply_filters( 'init_plugin_suite_view_count_shape_sample_rate', $rate ) );
+}
+
+/**
  * Flush toàn bộ số lượt view đã gom được (từ 1 hoặc nhiều post trong cùng
  * 1 request) vào TODAY bins với đúng 1 lần get_option() + 1 lần update_option(),
  * bất kể batch có bao nhiêu post_id.
@@ -103,6 +133,17 @@ function init_plugin_suite_view_count_shape_flush_pending( $increment ) {
 
 	if ( $increment < 1 ) {
 		return;
+	}
+
+	// Lấy mẫu (tuỳ chọn trong Settings): chỉ 1/N request được ghi, với trọng số N.
+	// Mỗi lần ghi là 1 get_option() + 1 update_option() → giảm số lần ghi DB khoảng N lần,
+	// đồng thời giảm luôn việc các request song song ghi đè option của nhau.
+	$sample_rate = init_plugin_suite_view_count_get_shape_sample_rate();
+	if ( $sample_rate > 1 ) {
+		if ( 1 !== wp_rand( 1, $sample_rate ) ) {
+			return;
+		}
+		$increment *= $sample_rate;
 	}
 
 	$now_gmt   = time();

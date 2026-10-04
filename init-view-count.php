@@ -3,7 +3,7 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 2.0.2
+ * Version: 2.0.3
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
@@ -18,7 +18,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // === Constants ===
-define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.2' );
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.3' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG', 'init-view-count' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_URL', plugin_dir_url( __FILE__ ) );
@@ -31,6 +31,19 @@ define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN', 100 );      // 100ms
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX', 600000 );   // 10 phút
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN', 1 );       // 1%
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX', 100 );     // 100%
+
+// Giới hạn cho chế độ "giảm tần suất làm mới cache lượt xem" (đơn vị: giây).
+// Dưới 10s gần như không giảm được gì cho bài hot; trên 10 phút thì số hiển thị
+// chậm quá xa so với thực tế.
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MIN', 10 );      // 10 giây
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MAX', 600 );     // 10 phút
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_DEFAULT', 60 );  // 1 phút
+
+// Giới hạn cho chế độ "lấy mẫu Traffic Shape": ghi 1/N request, mỗi lần cộng N.
+// N = 1 tương đương tắt lấy mẫu; trên 100 thì site vừa phải sẽ bị nhiễu quá nhiều.
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN', 2 );
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX', 100 );
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_DEFAULT', 10 );
 
 // === Include core files ===
 // utils.php cần require TRƯỚC TIÊN vì rest-api.php, settings-page.php,

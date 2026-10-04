@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 2.0.2\n"
+"Project-Id-Version: Init View Count 2.0.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-08-04T06:24:10+00:00\n"
-"PO-Revision-Date: 2026-09-26T09:00:00+00:00\n"
+"PO-Revision-Date: 2026-10-04T09:00:00+00:00\n"
 "Language: vi\n"
 
 #. Plugin Name of the plugin
@@ -158,183 +158,183 @@ msgid "Not enabled for view counting."
 msgstr "Chưa được bật đếm lượt xem."
 
 #: includes/settings-page.php:10
-#: includes/settings-page.php:107
+#: includes/settings-page.php:133
 msgid "Init View Count Settings"
 msgstr "Cài đặt Init View Count"
 
-#: includes/settings-page.php:94
+#: includes/settings-page.php:120
 msgid "Settings saved."
 msgstr "Đã lưu cài đặt."
 
-#: includes/settings-page.php:112
+#: includes/settings-page.php:138
 msgid "Post types to track views"
 msgstr "Các loại bài viết cần theo dõi lượt xem"
 
-#: includes/settings-page.php:125
+#: includes/settings-page.php:151
 msgid "Auto-insert shortcode into post content?"
 msgstr "Tự động chèn shortcode vào nội dung bài viết?"
 
-#: includes/settings-page.php:131
+#: includes/settings-page.php:157
 msgid "Do not auto-insert (manual shortcode only)"
 msgstr "Không tự chèn (chỉ dùng shortcode thủ công)"
 
-#: includes/settings-page.php:136
+#: includes/settings-page.php:162
 msgid "Insert before content"
 msgstr "Chèn trước nội dung"
 
-#: includes/settings-page.php:141
+#: includes/settings-page.php:167
 msgid "Insert after content"
 msgstr "Chèn sau nội dung"
 
-#: includes/settings-page.php:145
+#: includes/settings-page.php:171
 msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
 msgstr "Chỉ áp dụng cho các post type đã bật đếm view. Lập trình viên luôn có thể chèn thủ công bằng shortcode."
 
-#: includes/settings-page.php:150
+#: includes/settings-page.php:176
 msgid "Enable daily views?"
 msgstr "Bật theo dõi lượt xem theo ngày?"
 
-#: includes/settings-page.php:154
+#: includes/settings-page.php:180
 msgid "Count and store views per day"
 msgstr "Đếm và lưu lượt xem theo ngày"
 
-#: includes/settings-page.php:159
+#: includes/settings-page.php:185
 msgid "Enable weekly views?"
 msgstr "Bật theo dõi lượt xem theo tuần?"
 
-#: includes/settings-page.php:163
+#: includes/settings-page.php:189
 msgid "Track total views by week"
 msgstr "Theo dõi tổng lượt xem theo tuần"
 
-#: includes/settings-page.php:168
+#: includes/settings-page.php:194
 msgid "Enable monthly views?"
 msgstr "Bật theo dõi lượt xem theo tháng?"
 
-#: includes/settings-page.php:172
+#: includes/settings-page.php:198
 msgid "Track total views by month"
 msgstr "Theo dõi tổng lượt xem theo tháng"
 
-#: includes/settings-page.php:177
+#: includes/settings-page.php:203
 msgid "Delay before counting (ms)"
 msgstr "Thời gian trễ trước khi tính lượt xem (ms)"
 
 #. translators: 1: minimum delay in ms, 2: maximum delay in ms
-#: includes/settings-page.php:188
+#: includes/settings-page.php:214
 #, php-format
 msgid "Minimum %1$dms, maximum %2$dms. 0 is not allowed to avoid counting views before the page has actually rendered."
 msgstr "Tối thiểu %1$dms, tối đa %2$dms. Không cho phép giá trị 0 để tránh tính lượt xem trước khi trang thực sự hiển thị xong."
 
-#: includes/settings-page.php:197
+#: includes/settings-page.php:223
 msgid "Scroll percent required"
 msgstr "Phần trăm cuộn trang yêu cầu"
 
 #. translators: 1: minimum scroll percent, 2: maximum scroll percent
-#: includes/settings-page.php:208
+#: includes/settings-page.php:234
 #, php-format
 msgid "Minimum %1$d%%, maximum %2$d%%. 0 is not allowed as it would bypass the scroll check entirely."
 msgstr "Tối thiểu %1$d%%, tối đa %2$d%%. Không cho phép giá trị 0 vì sẽ vô hiệu hoá hoàn toàn tính năng kiểm tra cuộn trang."
 
-#: includes/settings-page.php:217
+#: includes/settings-page.php:243
 msgid "Enable scroll check?"
 msgstr "Bật kiểm tra cuộn trang?"
 
-#: includes/settings-page.php:221
+#: includes/settings-page.php:247
 msgid "Only count views after user scrolls past required percent"
 msgstr "Chỉ đếm khi người dùng cuộn vượt qua phần trăm yêu cầu"
 
-#: includes/settings-page.php:226
+#: includes/settings-page.php:252
 msgid "Storage method"
 msgstr "Phương thức lưu trữ"
 
-#: includes/settings-page.php:231
+#: includes/settings-page.php:257
 msgid "Session Storage"
 msgstr "Bộ nhớ phiên (Session)"
 
-#: includes/settings-page.php:235
+#: includes/settings-page.php:261
 msgid "Local Storage"
 msgstr "Bộ nhớ cục bộ (Local)"
 
-#: includes/settings-page.php:241
+#: includes/settings-page.php:267
 msgid "Batch view tracking"
 msgstr "Gộp lượt xem"
 
-#: includes/settings-page.php:247
+#: includes/settings-page.php:273
 msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
 msgstr "Số lượt xem cần gom lại trước khi gửi lên server. Đặt là 1 để theo dõi theo thời gian thực. Giá trị cao hơn sẽ giảm số lượng request, nhưng có thể mất lượt xem nếu người dùng rời khỏi trang trước khi gửi."
 
-#: includes/settings-page.php:252
+#: includes/settings-page.php:321
 msgid "Enable strict IP check?"
 msgstr "Bật kiểm tra IP nghiêm ngặt?"
 
-#: includes/settings-page.php:256
+#: includes/settings-page.php:325
 msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
 msgstr "Lưu danh sách IP đã mã hóa gần đây theo từng bài viết bằng transient để ngăn lượt xem lặp lại từ cùng một IP trong khoảng thời gian ngắn."
 
-#: includes/settings-page.php:259
+#: includes/settings-page.php:328
 msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
 msgstr "Thêm lớp bảo vệ chống bot hoặc yêu cầu giả mạo gửi thẳng đến endpoint đếm view. Hữu ích nếu bạn phát hiện lưu lượng bất thường không bị chặn bởi countdown hoặc kiểm tra cuộn trang."
 
-#: includes/settings-page.php:264
+#: includes/settings-page.php:337
 msgid "Require REST nonce verification?"
 msgstr "Yêu cầu xác thực nonce REST?"
 
-#: includes/settings-page.php:268
+#: includes/settings-page.php:341
 msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
 msgstr "Yêu cầu mỗi request gửi đến endpoint /count phải kèm nonce REST hợp lệ của WordPress (X-WP-Nonce)."
 
-#: includes/settings-page.php:271
+#: includes/settings-page.php:344
 msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
 msgstr "Chặn các request POST giả mạo gửi thẳng đến endpoint mà không load trang trước."
 
-#: includes/settings-page.php:274
+#: includes/settings-page.php:347
 msgid "Warning:"
 msgstr "Lưu ý:"
 
-#: includes/settings-page.php:275
+#: includes/settings-page.php:348
 msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
 msgstr "Nonce của WordPress hết hạn sau khoảng 12-24 giờ. Nếu site dùng full-page cache với thời gian sống dài, các trang đã cache sẽ tiếp tục mang theo nonce cũ đã hết hạn, khiến việc đếm view âm thầm ngừng hoạt động trên các trang đó cho đến khi cache được làm mới. Nên để tắt tùy chọn này nếu site cache trang trong thời gian dài, hoặc đảm bảo cache được xóa/làm mới ít nhất mỗi ngày một lần."
 
-#: includes/settings-page.php:280
+#: includes/settings-page.php:353
 msgid "Enable dashboard widget?"
 msgstr "Bật widget bảng xếp hạng?"
 
-#: includes/settings-page.php:284
+#: includes/settings-page.php:357
 msgid "Display top view ranking inside WordPress Dashboard."
 msgstr "Hiển thị bảng xếp hạng lượt xem trong Bảng tin WordPress."
 
-#: includes/settings-page.php:287
+#: includes/settings-page.php:360
 msgid "Uncheck to hide the widget for all users."
 msgstr "Bỏ chọn để ẩn widget với tất cả người dùng."
 
-#: includes/settings-page.php:292
+#: includes/settings-page.php:365
 msgid "Disable plugin CSS?"
 msgstr "Tắt CSS của plugin?"
 
-#: includes/settings-page.php:296
+#: includes/settings-page.php:369
 msgid "Disable built-in CSS output."
 msgstr "Tắt CSS mặc định của plugin."
 
-#: includes/settings-page.php:299
+#: includes/settings-page.php:372
 msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
 msgstr "Chọn nếu bạn muốn tự kiểm soát hoàn toàn phần giao diện. Plugin sẽ không tự thêm bất kỳ CSS nào."
 
-#: includes/settings-page.php:304
+#: includes/settings-page.php:377
 msgid "Disable Trending?"
 msgstr "Tắt tính năng Trending?"
 
-#: includes/settings-page.php:310
+#: includes/settings-page.php:383
 msgid "Completely turn off trending calculations and outputs."
 msgstr "Tắt hoàn toàn việc tính toán và hiển thị Trending."
 
-#: includes/settings-page.php:313
+#: includes/settings-page.php:386
 msgid "Check this to hard-disable trending."
 msgstr "Đánh dấu để vô hiệu hóa Trending."
 
-#: includes/settings-page.php:318
+#: includes/settings-page.php:426
 msgid "Save Settings"
 msgstr "Lưu cài đặt"
 
-#: includes/settings-page.php:331
+#: includes/settings-page.php:439
 #: includes/shortcodes.php:373
 msgid "Shortcode Builder"
 msgstr "Trình tạo Shortcode"
@@ -495,7 +495,7 @@ msgstr "Bật hỗ trợ Schema.org"
 msgid "Custom Class"
 msgstr "Lớp CSS tùy chỉnh"
 
-#: init-view-count.php:142
+#: init-view-count.php:155
 msgid "Settings"
 msgstr "Cài đặt"
 
@@ -686,23 +686,23 @@ msgctxt "block keyword"
 msgid "tabs"
 msgstr "tab"
 
-#: includes/settings-page.php:99
+#: includes/settings-page.php:125
 msgid "Traffic shape data has been reset."
 msgstr "Đã đặt lại dữ liệu Traffic Shape."
 
-#: includes/settings-page.php:321
+#: includes/settings-page.php:429
 msgid "Traffic Shape Learner"
 msgstr "Traffic Shape Learner (học phân phối traffic)"
 
-#: includes/settings-page.php:323
+#: includes/settings-page.php:431
 msgid "Clears the learned hourly and weekday traffic patterns used by the Trending engine. The patterns will be rebuilt automatically from new views."
 msgstr "Xoá các mẫu phân phối traffic theo giờ và theo thứ mà Trending engine đã học. Các mẫu này sẽ tự động được học lại từ những lượt xem mới."
 
-#: includes/settings-page.php:325
+#: includes/settings-page.php:433
 msgid "Reset all learned traffic shape data?"
 msgstr "Đặt lại toàn bộ dữ liệu traffic shape đã học?"
 
-#: includes/settings-page.php:328
+#: includes/settings-page.php:436
 msgid "Reset traffic shape data"
 msgstr "Đặt lại dữ liệu traffic shape"
 
@@ -710,6 +710,83 @@ msgstr "Đặt lại dữ liệu traffic shape"
 msgid "Post ID (optional)"
 msgstr "ID bài viết (tuỳ chọn)"
 
-#: includes/traffic-shape.php:338
+#: includes/traffic-shape.php:379
 msgid "Sorry, you are not allowed to do that."
 msgstr "Xin lỗi, bạn không có quyền thực hiện thao tác này."
+
+#: includes/settings-page.php:278
+msgid "Reduce view count cache refreshes?"
+msgstr "Giảm tần suất làm mới cache lượt xem?"
+
+#: includes/settings-page.php:282
+msgid "Refresh the cached metadata of each post at most once per interval, instead of after every single view."
+msgstr "Chỉ làm mới cache metadata của mỗi bài viết tối đa một lần trong mỗi khoảng thời gian, thay vì sau từng lượt xem."
+
+#: includes/settings-page.php:285
+msgid "Refresh interval (seconds)"
+msgstr "Khoảng thời gian làm mới (giây)"
+
+#. translators: 1: minimum interval in seconds, 2: maximum interval in seconds
+#: includes/settings-page.php:297
+#, php-format
+msgid "Minimum %1$d seconds, maximum %2$d seconds."
+msgstr "Tối thiểu %1$d giây, tối đa %2$d giây."
+
+#: includes/settings-page.php:304
+msgid "On busy sites, refreshing the cache after every view forces popular posts to reload all of their metadata from the database over and over. With this option on, every view is still written to the database immediately and accurately; only the cached copy is refreshed less often."
+msgstr "Trên site đông truy cập, việc làm mới cache sau mỗi lượt xem buộc các bài viết phổ biến phải tải lại toàn bộ metadata từ database liên tục. Khi bật tùy chọn này, mỗi lượt xem vẫn được ghi vào database ngay lập tức và chính xác; chỉ bản sao trong cache được làm mới thưa hơn."
+
+#: includes/settings-page.php:307
+#: includes/settings-page.php:420
+msgid "Note:"
+msgstr "Lưu ý:"
+
+#: includes/settings-page.php:308
+msgid "Displayed view counts (shortcodes, blocks, rankings, Trending and the number shown right after a view is counted) may lag behind the real value by up to the interval above. A post that stops receiving views may keep showing a slightly lower number until it gets another view, is updated, or the daily reset runs (when daily views are enabled)."
+msgstr "Số lượt xem hiển thị (shortcode, block, bảng xếp hạng, Trending và con số hiện ra ngay sau khi lượt xem được đếm) có thể chậm hơn giá trị thực tế tối đa bằng khoảng thời gian ở trên. Bài viết không còn lượt xem mới có thể tiếp tục hiển thị con số thấp hơn một chút cho đến khi có lượt xem tiếp theo, bài được cập nhật, hoặc khi lần reset hằng ngày chạy (nếu đang bật lượt xem theo ngày)."
+
+#: includes/settings-page.php:312
+msgid "A persistent object cache is active on this site, so this option takes effect when enabled."
+msgstr "Site đang dùng persistent object cache, nên tùy chọn này sẽ có hiệu lực khi được bật."
+
+#: includes/settings-page.php:314
+msgid "No persistent object cache detected on this site, so this option currently has no effect."
+msgstr "Không phát hiện persistent object cache trên site này, nên hiện tại tùy chọn này không có tác dụng."
+
+#: includes/settings-page.php:315
+msgid "It only applies when a persistent object cache (Redis, Memcached, etc.) is in use; without one, cached metadata only lives for a single request."
+msgstr "Tùy chọn chỉ áp dụng khi site dùng persistent object cache (Redis, Memcached…); nếu không có, cache metadata chỉ tồn tại trong một request."
+
+#: includes/settings-page.php:331
+msgid "Performance note:"
+msgstr "Lưu ý về hiệu năng:"
+
+#: includes/settings-page.php:332
+msgid "This check reads the transient on every view request and writes it back every time a view is counted. Without a persistent object cache (Redis, Memcached, etc.), transients are stored in the wp_options table, so each counted view adds up to two extra database writes. On busy sites without a persistent object cache, only enable it if you really need it."
+msgstr "Tính năng này đọc transient ở mỗi request lượt xem và ghi lại mỗi khi một lượt xem được đếm. Nếu không có persistent object cache (Redis, Memcached…), transient được lưu trong bảng wp_options, nên mỗi lượt xem được đếm sẽ tốn thêm tối đa hai lần ghi database. Với site đông truy cập mà không có persistent object cache, chỉ bật khi thật sự cần."
+
+#: includes/settings-page.php:391
+msgid "Sample Traffic Shape writes?"
+msgstr "Lấy mẫu khi ghi Traffic Shape?"
+
+#: includes/settings-page.php:395
+msgid "Record traffic shape data from only 1 in every N view requests (each sample counts N times), instead of on every request."
+msgstr "Chỉ ghi dữ liệu traffic shape từ 1 trong mỗi N request lượt xem (mỗi mẫu được tính N lần), thay vì ghi ở mọi request."
+
+#: includes/settings-page.php:398
+msgid "Sample rate (1 in N requests)"
+msgstr "Tỷ lệ lấy mẫu (1 trên N request)"
+
+#. translators: 1: minimum sample rate, 2: maximum sample rate
+#: includes/settings-page.php:410
+#, php-format
+msgid "Minimum %1$d, maximum %2$d."
+msgstr "Tối thiểu %1$d, tối đa %2$d."
+
+#: includes/settings-page.php:417
+msgid "The Traffic Shape Learner (used by Trending) updates a database option on every view request. Sampling cuts these writes by about N times. On busy sites the learned hourly and weekday pattern stays essentially the same, because sampled counts are unbiased and the learner only uses relative proportions smoothed over many days."
+msgstr "Traffic Shape Learner (được Trending sử dụng) cập nhật một option trong database ở mỗi request lượt xem. Lấy mẫu giúp giảm số lần ghi này khoảng N lần. Trên site đông truy cập, quy luật theo giờ và theo thứ học được gần như không đổi, vì số liệu lấy mẫu không bị lệch và bộ học chỉ dùng tỷ lệ tương đối được làm mượt qua nhiều ngày."
+
+#: includes/settings-page.php:421
+msgid "On low-traffic sites the learned pattern becomes noisier, so only enable this if your site receives a lot of views. Post view counts are never sampled and are not affected. Has no effect when Trending is disabled."
+msgstr "Trên site ít truy cập, quy luật học được sẽ nhiễu hơn, nên chỉ bật khi site có nhiều lượt xem. Số lượt xem của bài viết không bao giờ bị lấy mẫu và không bị ảnh hưởng. Không có tác dụng khi Trending đang tắt."

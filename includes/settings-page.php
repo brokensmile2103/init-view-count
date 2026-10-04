@@ -71,6 +71,19 @@ function init_plugin_suite_view_count_render_settings_page() {
 		$batch_count = max( 1, absint( $_POST['init_plugin_suite_view_count_batch'] ?? 1 ) );
 		update_option( 'init_plugin_suite_view_count_batch', $batch_count );
 
+		$optimize_meta_flush = ! empty( $_POST['init_plugin_suite_view_count_optimize_meta_flush'] ) ? 1 : 0;
+		update_option( 'init_plugin_suite_view_count_optimize_meta_flush', $optimize_meta_flush );
+
+		$meta_flush_interval = isset( $_POST['init_plugin_suite_view_count_meta_flush_interval'] )
+			? absint( $_POST['init_plugin_suite_view_count_meta_flush_interval'] )
+			: INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_DEFAULT;
+		$meta_flush_interval = init_plugin_suite_view_count_clamp_int(
+			$meta_flush_interval,
+			INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MIN,
+			INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MAX
+		);
+		update_option( 'init_plugin_suite_view_count_meta_flush_interval', $meta_flush_interval );
+
 		$strict_ip_check = ! empty( $_POST['init_plugin_suite_view_count_strict_ip_check'] ) ? 1 : 0;
 		update_option( 'init_plugin_suite_view_count_strict_ip_check', $strict_ip_check );
 
@@ -85,6 +98,19 @@ function init_plugin_suite_view_count_render_settings_page() {
 
 		$disable_trending = ! empty( $_POST['init_plugin_suite_view_count_disable_trending'] ) ? 1 : 0;
 		update_option( 'init_plugin_suite_view_count_disable_trending', $disable_trending );
+
+		$shape_sampling = ! empty( $_POST['init_plugin_suite_view_count_shape_sampling'] ) ? 1 : 0;
+		update_option( 'init_plugin_suite_view_count_shape_sampling', $shape_sampling );
+
+		$shape_sample_rate = isset( $_POST['init_plugin_suite_view_count_shape_sample_rate'] )
+			? absint( $_POST['init_plugin_suite_view_count_shape_sample_rate'] )
+			: INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_DEFAULT;
+		$shape_sample_rate = init_plugin_suite_view_count_clamp_int(
+			$shape_sample_rate,
+			INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN,
+			INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX
+		);
+		update_option( 'init_plugin_suite_view_count_shape_sample_rate', $shape_sample_rate );
 
 		// Tắt Trending → dọn luôn danh sách trending đã tính, để không còn hiển thị dữ liệu cũ.
 		if ( 1 === $disable_trending ) {
@@ -249,6 +275,49 @@ function init_plugin_suite_view_count_render_settings_page() {
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'Reduce view count cache refreshes?', 'init-view-count' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="init_plugin_suite_view_count_optimize_meta_flush" <?php checked( get_option( 'init_plugin_suite_view_count_optimize_meta_flush', 0 ) ); ?> />
+							<?php esc_html_e( 'Refresh the cached metadata of each post at most once per interval, instead of after every single view.', 'init-view-count' ); ?>
+						</label>
+						<p>
+							<label for="init_plugin_suite_view_count_meta_flush_interval"><?php esc_html_e( 'Refresh interval (seconds)', 'init-view-count' ); ?></label>
+							<input type="number" id="init_plugin_suite_view_count_meta_flush_interval" name="init_plugin_suite_view_count_meta_flush_interval"
+									class="small-text"
+									value="<?php echo esc_attr( init_plugin_suite_view_count_clamp_int( get_option( 'init_plugin_suite_view_count_meta_flush_interval', INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_DEFAULT ), INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MIN, INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MAX ) ); ?>"
+									min="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MIN ); ?>"
+									max="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MAX ); ?>"
+									step="1" />
+						</p>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: 1: minimum interval in seconds, 2: maximum interval in seconds */
+								esc_html__( 'Minimum %1$d seconds, maximum %2$d seconds.', 'init-view-count' ),
+								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MIN,
+								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_META_FLUSH_MAX
+							);
+							?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'On busy sites, refreshing the cache after every view forces popular posts to reload all of their metadata from the database over and over. With this option on, every view is still written to the database immediately and accurately; only the cached copy is refreshed less often.', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Note:', 'init-view-count' ); ?></strong>
+							<?php esc_html_e( 'Displayed view counts (shortcodes, blocks, rankings, Trending and the number shown right after a view is counted) may lag behind the real value by up to the interval above. A post that stops receiving views may keep showing a slightly lower number until it gets another view, is updated, or the daily reset runs (when daily views are enabled).', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<?php if ( wp_using_ext_object_cache() ) : ?>
+								<?php esc_html_e( 'A persistent object cache is active on this site, so this option takes effect when enabled.', 'init-view-count' ); ?>
+							<?php else : ?>
+								<strong><?php esc_html_e( 'No persistent object cache detected on this site, so this option currently has no effect.', 'init-view-count' ); ?></strong>
+								<?php esc_html_e( 'It only applies when a persistent object cache (Redis, Memcached, etc.) is in use; without one, cached metadata only lives for a single request.', 'init-view-count' ); ?>
+							<?php endif; ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Enable strict IP check?', 'init-view-count' ); ?></th>
 					<td>
 						<label>
@@ -257,6 +326,10 @@ function init_plugin_suite_view_count_render_settings_page() {
 						</label>
 						<p class="description">
 							<?php esc_html_e( 'Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check.', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Performance note:', 'init-view-count' ); ?></strong>
+							<?php esc_html_e( 'This check reads the transient on every view request and writes it back every time a view is counted. Without a persistent object cache (Redis, Memcached, etc.), transients are stored in the wp_options table, so each counted view adds up to two extra database writes. On busy sites without a persistent object cache, only enable it if you really need it.', 'init-view-count' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -311,6 +384,41 @@ function init_plugin_suite_view_count_render_settings_page() {
 						</label>
 						<p class="description">
 							<?php esc_html_e( 'Check this to hard-disable trending.', 'init-view-count' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Sample Traffic Shape writes?', 'init-view-count' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="init_plugin_suite_view_count_shape_sampling" <?php checked( get_option( 'init_plugin_suite_view_count_shape_sampling', 0 ) ); ?> />
+							<?php esc_html_e( 'Record traffic shape data from only 1 in every N view requests (each sample counts N times), instead of on every request.', 'init-view-count' ); ?>
+						</label>
+						<p>
+							<label for="init_plugin_suite_view_count_shape_sample_rate"><?php esc_html_e( 'Sample rate (1 in N requests)', 'init-view-count' ); ?></label>
+							<input type="number" id="init_plugin_suite_view_count_shape_sample_rate" name="init_plugin_suite_view_count_shape_sample_rate"
+									class="small-text"
+									value="<?php echo esc_attr( init_plugin_suite_view_count_clamp_int( get_option( 'init_plugin_suite_view_count_shape_sample_rate', INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_DEFAULT ), INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN, INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX ) ); ?>"
+									min="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN ); ?>"
+									max="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX ); ?>"
+									step="1" />
+						</p>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: 1: minimum sample rate, 2: maximum sample rate */
+								esc_html__( 'Minimum %1$d, maximum %2$d.', 'init-view-count' ),
+								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN,
+								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX
+							);
+							?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'The Traffic Shape Learner (used by Trending) updates a database option on every view request. Sampling cuts these writes by about N times. On busy sites the learned hourly and weekday pattern stays essentially the same, because sampled counts are unbiased and the learner only uses relative proportions smoothed over many days.', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Note:', 'init-view-count' ); ?></strong>
+							<?php esc_html_e( 'On low-traffic sites the learned pattern becomes noisier, so only enable this if your site receives a lot of views. Post view counts are never sampled and are not affected. Has no effect when Trending is disabled.', 'init-view-count' ); ?>
 						</p>
 					</td>
 				</tr>
