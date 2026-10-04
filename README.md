@@ -257,23 +257,6 @@ Full docs: [The Complete Guide to Init View Count](https://en.inithtml.com/serie
 3. Configure under **Settings → Init View Count**
 4. Add shortcodes/blocks or consume the REST API / Abilities API
 
-## Changelog
-
-### 2.0.3
-
-- New: **Reduce view count cache refreshes** option — throttles per-post meta cache refreshes on sites with a persistent object cache
-- New: **Sample Traffic Shape writes** option — cuts Traffic Shape database writes by about N times
-- New: `init_plugin_suite_view_count_meta_flush_interval` and `init_plugin_suite_view_count_shape_sample_rate` filters
-- Improvement: Strict IP check now explains its performance cost in settings
-- Docs: fixed outdated readme information (shortcode attributes, `/top` parameters, Trending weights)
-
-### 2.0.0
-
-- **Breaking change: requires WordPress 6.9+**
-- New: Abilities API support and native Block Editor blocks
-
-View full changelog (all versions): [Init View Count – Changelog](https://en.inithtml.com/plugin/init-view-count/)
-
 ## License
 
 GPLv2 or later — free, open source, developer-first.
