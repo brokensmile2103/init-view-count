@@ -20,9 +20,10 @@
  * Thiết kế chỉ dùng API object cache chuẩn của WordPress (add, incr, decr, set, get, delete)
  * để chạy được với mọi drop-in có incr/decr atomic:
  *
- * - Bộ đếm: 1 key cho mỗi cặp (post, meta key) trong mỗi "thế hệ" 1 giờ. Thế hệ cũ không
- *   bao giờ được cộng thêm nên có thể để key tự hết hạn (TTL 2 ngày) mà không mất view —
- *   bộ nhớ object cache luôn bị chặn trên, không phình theo thời gian.
+ * - Bộ đếm: 1 key cho mỗi cặp (post, meta key) trong mỗi "thế hệ" 1 giờ. Thế hệ đã qua không
+ *   bao giờ được cộng thêm, nên sau khi đã ghi hết vào DB, key của nó được XOÁ NGAY (v2.0.5)
+ *   thay vì nằm chờ hết hạn → object cache chỉ giữ bộ đếm của khoảng 1 giờ gần nhất. Mọi
+ *   key vẫn có thời hạn (1 ngày) làm lưới an toàn.
  * - Hàng đợi: lần đầu 1 cặp có view trong thế hệ (wp_cache_add() marker thành công), cặp đó
  *   được đẩy vào hàng đợi bằng 1 số thứ tự tăng dần (wp_cache_incr). Job flush đọc lần lượt
  *   các mục theo số thứ tự (con trỏ đã xử lý cũng nằm trong object cache).
@@ -41,9 +42,15 @@ const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GROUP     = 'init_plugin_suite_view_co
 const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CRON_HOOK = 'init_plugin_suite_view_count_buffer_flush';
 const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_SCHEDULE  = 'init_plugin_suite_view_count_buffer';
 
-// Độ dài 1 "thế hệ" bộ đếm (giây) và thời gian sống của key bộ đếm trong object cache.
+// Độ dài 1 "thế hệ" bộ đếm (giây) và thời gian sống tối đa của key bộ đếm trong object cache.
+// Từ v2.0.5, key của thế hệ đã qua được xoá ngay sau khi ghi xong; TTL chỉ còn là lưới an
+// toàn (VD: job flush ngừng chạy) nên được hạ từ 2 ngày xuống 1 ngày.
 const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GENERATION = HOUR_IN_SECONDS;
-const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_KEY_TTL    = 2 * DAY_IN_SECONDS;
+const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_KEY_TTL    = DAY_IN_SECONDS;
+
+// Thời gian chờ sau khi 1 thế hệ kết thúc rồi mới xoá key của nó: request đếm view đã tính
+// thế hệ ngay trước mốc giờ vẫn có thể đang cộng vào key đó trong vài giây.
+const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CLEANUP_GRACE = 5 * MINUTE_IN_SECONDS;
 
 // Số mục hàng đợi xử lý trong mỗi lượt đọc (1 lần get_multiple + 1 lần ghi DB/meta key).
 const INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CHUNK = 500;
@@ -489,6 +496,9 @@ function init_plugin_suite_view_count_buffer_release_lock() {
  *     @type bool  $blocked    True nếu dừng lại ở 1 mục có thể đang được ghi dở.
  *     @type int   $items      Số mục hợp lệ đã xử lý.
  *     @type array $increments Map meta_key => [ post_id => số lượt ].
+ *     @type array $cleanup    Map thế hệ => [ key bộ đếm đã rút về 0 ] — thế hệ chưa kết thúc,
+ *                             xoá sau (xem init_plugin_suite_view_count_buffer_cleanup()).
+ *     @type int   $deleted    Số key bộ đếm của thế hệ đã kết thúc vừa được xoá ngay.
  * }
  */
 function init_plugin_suite_view_count_buffer_drain_range( $from, $to, $last_seq ) {
@@ -498,6 +508,8 @@ function init_plugin_suite_view_count_buffer_drain_range( $from, $to, $last_seq 
 		'blocked'    => false,
 		'items'      => 0,
 		'increments' => array(),
+		'cleanup'    => array(),
+		'deleted'    => 0,
 	);
 
 	$queue_keys = array();
@@ -559,29 +571,162 @@ function init_plugin_suite_view_count_buffer_drain_range( $from, $to, $last_seq 
 	}
 
 	$values = (array) wp_cache_get_multiple( array_keys( $pairs ), $group, true );
+	$expire = array();
 
 	foreach ( $pairs as $counter_key => $pair ) {
-		$value = isset( $values[ $counter_key ] ) ? (int) $values[ $counter_key ] : 0;
+		if ( ! isset( $values[ $counter_key ] ) || false === $values[ $counter_key ] ) {
+			continue; // Key không còn (đã xoá/hết hạn) → không có gì để ghi hay dọn.
+		}
 
-		if ( $value <= 0 ) {
+		$value     = (int) $values[ $counter_key ];
+		$remaining = $value;
+
+		if ( $value > 0 ) {
+			// Trừ đúng phần vừa đọc (KHÔNG set về 0) để giữ lại view đến giữa chừng.
+			$remaining = wp_cache_decr( $counter_key, $value, $group );
+
+			if ( false === $remaining ) {
+				continue; // Không trừ được thì không ghi DB, để lần sau xử lý → không đếm trùng.
+			}
+
+			if ( ! isset( $result['increments'][ $pair['key'] ][ $pair['post_id'] ] ) ) {
+				$result['increments'][ $pair['key'] ][ $pair['post_id'] ] = 0;
+			}
+
+			$result['increments'][ $pair['key'] ][ $pair['post_id'] ] += $value;
+		}
+
+		// Còn lại > 0 nghĩa là có view vừa được cộng sau lúc đọc — view đó đã tự đăng ký lại
+		// hàng đợi (marker đã bị xoá ở trên), key sẽ được xử lý tiếp ở lần sau.
+		if ( 0 !== (int) $remaining ) {
 			continue;
 		}
 
-		// Trừ đúng phần vừa đọc (KHÔNG set về 0) để giữ lại view đến giữa chừng.
-		if ( false === wp_cache_decr( $counter_key, $value, $group ) ) {
-			continue; // Không trừ được thì không ghi DB, để lần sau xử lý → không đếm trùng.
+		if ( init_plugin_suite_view_count_buffer_generation_closed( $pair['generation'] ) ) {
+			$expire[] = $counter_key; // Thế hệ đã kết thúc → không ai cộng nữa → xoá ngay.
+		} else {
+			$result['cleanup'][ $pair['generation'] ][] = $counter_key; // Xoá khi thế hệ kết thúc.
 		}
+	}
 
-		if ( ! isset( $result['increments'][ $pair['key'] ][ $pair['post_id'] ] ) ) {
-			$result['increments'][ $pair['key'] ][ $pair['post_id'] ] = 0;
-		}
-
-		$result['increments'][ $pair['key'] ][ $pair['post_id'] ] += $value;
+	if ( ! empty( $expire ) ) {
+		wp_cache_delete_multiple( $expire, $group );
+		$result['deleted'] = count( $expire );
 	}
 
 	wp_cache_delete_multiple( $done, $group );
 
 	return $result;
+}
+
+/**
+ * Thế hệ bộ đếm đã kết thúc đủ lâu để không còn request nào cộng vào nó nữa hay chưa.
+ *
+ * @param int      $generation Thế hệ.
+ * @param int|null $now        Unix timestamp hiện tại (mặc định time()).
+ * @return bool
+ */
+function init_plugin_suite_view_count_buffer_generation_closed( $generation, $now = null ) {
+	$now = null === $now ? time() : (int) $now;
+	$end = ( (int) $generation + 1 ) * INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GENERATION;
+
+	return $now >= $end + INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CLEANUP_GRACE;
+}
+
+/**
+ * Ghi nhớ các key bộ đếm đã rút về 0 nhưng thuộc thế hệ CHƯA kết thúc, để xoá khi thế hệ
+ * đó kết thúc. Mỗi lần flush lưu 1 danh sách riêng ('cl_{thế hệ}_{n}') và 1 chỉ mục
+ * ('cl_idx' = thế hệ => số danh sách). Chỉ job flush (đang giữ khoá) đọc/ghi các key này,
+ * nên không có race.
+ *
+ * @param array $cleanup Map thế hệ => [ key bộ đếm ].
+ * @return void
+ */
+function init_plugin_suite_view_count_buffer_track_cleanup( array $cleanup ) {
+	if ( empty( $cleanup ) ) {
+		return;
+	}
+
+	$group = INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GROUP;
+	$index = wp_cache_get( 'cl_idx', $group, true );
+	$index = is_array( $index ) ? $index : array();
+
+	foreach ( $cleanup as $generation => $keys ) {
+		$keys = array_values( array_unique( array_filter( (array) $keys, 'is_string' ) ) );
+		if ( empty( $keys ) ) {
+			continue;
+		}
+
+		$generation           = (int) $generation;
+		$count                = isset( $index[ $generation ] ) ? (int) $index[ $generation ] + 1 : 1;
+		$index[ $generation ] = $count;
+
+		wp_cache_set( 'cl_' . $generation . '_' . $count, $keys, $group, INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_KEY_TTL );
+	}
+
+	wp_cache_set( 'cl_idx', $index, $group, INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_KEY_TTL );
+}
+
+/**
+ * Xoá key bộ đếm (đã rút về 0) của các thế hệ đã kết thúc, theo các danh sách đã ghi nhớ.
+ * Key nào lại có giá trị > 0 (view đến muộn ngay sát mốc giờ) thì giữ lại: nó đã tự vào
+ * hàng đợi và sẽ được ghi rồi xoá ở lượt flush sau. Gọi trong job flush (đang giữ khoá).
+ *
+ * @param int|null $now Unix timestamp hiện tại (mặc định time()).
+ * @return int Số key đã xoá.
+ */
+function init_plugin_suite_view_count_buffer_cleanup( $now = null ) {
+	$group = INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GROUP;
+	$index = wp_cache_get( 'cl_idx', $group, true );
+
+	if ( ! is_array( $index ) || empty( $index ) ) {
+		return 0;
+	}
+
+	$deleted = 0;
+	$changed = false;
+
+	foreach ( $index as $generation => $count ) {
+		if ( ! init_plugin_suite_view_count_buffer_generation_closed( (int) $generation, $now ) ) {
+			continue;
+		}
+
+		for ( $i = 1; $i <= (int) $count; $i++ ) {
+			$list_key = 'cl_' . (int) $generation . '_' . $i;
+			$keys     = wp_cache_get( $list_key, $group, true );
+
+			if ( is_array( $keys ) && ! empty( $keys ) ) {
+				$values = (array) wp_cache_get_multiple( $keys, $group, true );
+				$expire = array();
+
+				foreach ( $keys as $key ) {
+					if ( isset( $values[ $key ] ) && false !== $values[ $key ] && 0 === (int) $values[ $key ] ) {
+						$expire[] = $key;
+					}
+				}
+
+				if ( ! empty( $expire ) ) {
+					wp_cache_delete_multiple( $expire, $group );
+					$deleted += count( $expire );
+				}
+			}
+
+			wp_cache_delete( $list_key, $group );
+		}
+
+		unset( $index[ $generation ] );
+		$changed = true;
+	}
+
+	if ( $changed ) {
+		if ( empty( $index ) ) {
+			wp_cache_delete( 'cl_idx', $group );
+		} else {
+			wp_cache_set( 'cl_idx', $index, $group, INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_KEY_TTL );
+		}
+	}
+
+	return $deleted;
 }
 
 /**
@@ -748,6 +893,7 @@ function init_plugin_suite_view_count_buffer_flush( $args = array() ) {
 		'increments' => array(),
 		'requeued'   => 0,
 		'remaining'  => 0,
+		'cleaned'    => 0,
 		'duration'   => 0.0,
 	);
 
@@ -756,7 +902,10 @@ function init_plugin_suite_view_count_buffer_flush( $args = array() ) {
 		$to      = min( $seq, $state['cursor'] + INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CHUNK );
 		$drained = init_plugin_suite_view_count_buffer_drain_range( $from, $to, $state['last_seq'] );
 
-		$summary['items'] += $drained['items'];
+		$summary['items']   += $drained['items'];
+		$summary['cleaned'] += $drained['deleted'];
+
+		init_plugin_suite_view_count_buffer_track_cleanup( $drained['cleanup'] );
 
 		if ( ! empty( $drained['increments'] ) ) {
 			$written = init_plugin_suite_view_count_apply_increments( $drained['increments'] );
@@ -799,7 +948,10 @@ function init_plugin_suite_view_count_buffer_flush( $args = array() ) {
 	}
 
 	// Traffic Shape (biểu đồ traffic theo giờ của Trending) cũng được đệm khi bật chế độ này.
-	init_plugin_suite_view_count_shape_flush_buffer();
+	$summary['cleaned'] += (int) init_plugin_suite_view_count_shape_flush_buffer();
+
+	// Dọn key bộ đếm của các giờ đã kết thúc (giữ bộ nhớ object cache ở mức tối thiểu).
+	$summary['cleaned'] += init_plugin_suite_view_count_buffer_cleanup();
 
 	$summary['post_ids']  = array_values( array_unique( array_map( 'intval', $summary['post_ids'] ) ) );
 	$summary['remaining'] = max( 0, $seq - $state['cursor'] );
@@ -824,6 +976,7 @@ function init_plugin_suite_view_count_buffer_flush( $args = array() ) {
 	 *     @type array  $increments Map meta_key => [ post_id => số lượt vừa ghi ].
 	 *     @type int    $requeued   Số lượt ghi lỗi, đã được trả lại bộ đệm.
 	 *     @type int    $remaining  Số mục hàng đợi còn lại cho lần sau.
+	 *     @type int    $cleaned    Số key bộ đếm (của các giờ đã kết thúc) vừa được xoá khỏi object cache.
 	 *     @type float  $duration   Thời gian chạy (giây).
 	 * }
 	 */

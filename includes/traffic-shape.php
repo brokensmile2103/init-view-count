@@ -290,11 +290,14 @@ function init_plugin_suite_view_count_shape_buffer_add( $increment ) {
  * Ghi các thùng giờ Traffic Shape đang đệm (26 giờ gần nhất) vào option TODAY/PENDING.
  * Được gọi trong mỗi lần flush bộ đệm (đã giữ khoá flush).
  *
- * @return void
+ * Từ v2.0.5: thùng của các giờ đã qua (cũ hơn 2 giờ, không request nào còn cộng vào) được
+ * xoá khỏi object cache ngay sau khi ghi, thay vì nằm chờ hết hạn.
+ *
+ * @return int Số key thùng giờ đã xoá.
  */
 function init_plugin_suite_view_count_shape_flush_buffer() {
 	if ( ! init_view_count_trending_enabled() ) {
-		return; // Các key tự hết hạn.
+		return 0; // Các key tự hết hạn.
 	}
 
 	$group = INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GROUP;
@@ -307,21 +310,44 @@ function init_plugin_suite_view_count_shape_flush_buffer() {
 		$key       = init_plugin_suite_view_count_shape_buffer_key( $timestamp );
 
 		if ( ! isset( $slots[ $key ] ) ) {
-			$slots[ $key ] = $timestamp;
+			$slots[ $key ] = array(
+				'timestamp' => $timestamp,
+				'closed'    => $hours_ago >= 2,
+			);
 		}
 	}
 
 	$values = (array) wp_cache_get_multiple( array_keys( $slots ), $group, true );
+	$expire = array();
 
-	foreach ( $slots as $key => $timestamp ) {
-		$value = isset( $values[ $key ] ) ? (int) $values[ $key ] : 0;
-
-		if ( $value <= 0 || false === wp_cache_decr( $key, $value, $group ) ) {
+	foreach ( $slots as $key => $slot ) {
+		if ( ! isset( $values[ $key ] ) || false === $values[ $key ] ) {
 			continue;
 		}
 
-		init_plugin_suite_view_count_shape_record( $value, $timestamp );
+		$value     = (int) $values[ $key ];
+		$remaining = $value;
+
+		if ( $value > 0 ) {
+			$remaining = wp_cache_decr( $key, $value, $group );
+
+			if ( false === $remaining ) {
+				continue;
+			}
+
+			init_plugin_suite_view_count_shape_record( $value, $slot['timestamp'] );
+		}
+
+		if ( $slot['closed'] && 0 === (int) $remaining ) {
+			$expire[] = $key;
+		}
 	}
+
+	if ( ! empty( $expire ) ) {
+		wp_cache_delete_multiple( $expire, $group );
+	}
+
+	return count( $expire );
 }
 
 /**

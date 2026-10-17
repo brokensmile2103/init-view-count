@@ -2,9 +2,9 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 2.0.4\n"
+"Project-Id-Version: Init View Count 2.0.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
-"POT-Creation-Date: 2026-10-17T17:42:01+00:00\n"
+"POT-Creation-Date: 2026-10-17T19:14:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -778,11 +778,11 @@ msgstr ""
 msgid "Custom Class"
 msgstr ""
 
-#: includes/traffic-shape.php:501 includes/view-buffer.php:977
+#: includes/traffic-shape.php:527 includes/view-buffer.php:1130
 msgid "Sorry, you are not allowed to do that."
 msgstr ""
 
-#: includes/view-buffer.php:852
+#: includes/view-buffer.php:1005
 msgid "Init View Count: write buffered views"
 msgstr ""
 

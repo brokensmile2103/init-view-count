@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.4
+Stable tag: 2.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -213,7 +213,7 @@ Maximum seconds one buffer write may run (default `20`, capped at `240`). Anythi
 **`init_plugin_suite_view_count_buffer_flushed`** (action)  
 Runs after each write of buffered views to the database.  
 **Applies to:** Buffer flush job  
-**Params:** `array $summary` (`context`, `items`, `views`, `post_ids`, `increments` as `meta_key => [ post_id => views ]`, `requeued`, `remaining`, `duration`)
+**Params:** `array $summary` (`context`, `items`, `views`, `post_ids`, `increments` as `meta_key => [ post_id => views ]`, `requeued`, `remaining`, `cleaned`, `duration`)
 
 **`init_plugin_suite_view_count_top_post_types`**  
 Customize the list of post types returned by the `/top` endpoint.  
@@ -337,6 +337,8 @@ Only if your site gets a lot of traffic and runs a working persistent object cac
 
 Nothing changes for code that hooks into view counting: `init_plugin_suite_view_count_after_counted` still fires once per view with the same parameters, and its `total`/`day`/`week`/`month` values still increase by one per view. Numbers read from the database (shortcodes, blocks, rankings, Trending) may lag behind by up to the interval. Buffered views are always written before the daily reset, when the option is turned off, and when the plugin is deactivated, and you can write them at any time with **Write buffered views now**.
 
+Memory use is small: about 200 bytes per post/counter pair that received views in the current hour. Counters of past hours are deleted from the object cache a few minutes after the hour ends, so the object cache only ever holds roughly one hour's worth of counters.
+
 Requirements and trade-offs: the object cache must increment counters atomically (Redis Object Cache, Object Cache Pro and the common Memcached drop-ins do; the plugin runs a self-test before the option can be turned on, and automatically falls back to direct database writes while Redis is unreachable, when Redis Object Cache uses igbinary, or when the plugin's cache group is configured as non-persistent). If the object cache is restarted or flushed, views not yet written (at most about one interval) are lost. Configure Redis with `maxmemory-policy` `noeviction` or `volatile-lru` so buffered counters are never evicted, and make sure WP-Cron runs reliably. A real server cron is recommended; if WP-Cron stops running, the plugin writes overdue views itself during a view request.
 
 = Should I enable "Sample Traffic Shape writes"? =
@@ -358,6 +360,12 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 2.0.5 – October 18, 2026 =
+- Improvement: **Buffer view writes in the object cache** now keeps object cache memory to a minimum. Buffered counters are kept per post, per meta key and per hour; in 2.0.4, once written to the database, a counter stayed in the object cache until its 2-day expiry, so the object cache held up to 48 hours' worth of drained counters. Counters of an hour that has ended are now deleted as soon as they have been written (after a 5-minute grace period, so a view request that started right before the hour changed can still finish). Counters drained while their hour is still running are remembered in small per-hour cleanup lists that only the flush job reads and writes (under its lock), and deleted once that hour has ended. A counter that received a late view after being drained is never deleted: it is written and removed on the next run. Traffic Shape hourly buckets older than 2 hours are deleted right after being written as well. In testing with 4,000 views across 984 posts, the buffer held 3,936 counter keys (about 770 KB) while the hour was running; 5 minutes after the hour ended, 3 small keys remained (under 1 KB), where 2.0.4 kept all 3,936 keys for 48 hours. View counts were exact in every test
+- Improvement: the expiry of buffered keys is lowered from 2 days to 1 day. It is now only a safety net (e.g. if the flush job stopped running), since keys are deleted right after they are written
+- New: the `init_plugin_suite_view_count_buffer_flushed` action summary includes `cleaned`, the number of keys removed from the object cache in that run
+- New: helper `init_plugin_suite_view_count_buffer_cleanup()` (runs automatically in every flush)
 
 = 2.0.4 – October 18, 2026 =
 - New: **Buffer view writes in the object cache** option in Settings → Init View Count (off by default), with a configurable write interval (30–600 seconds, default 60). Until now every counted view ran an `UPDATE` on `wp_postmeta` (plus another one for any related post a theme counts, plus a Traffic Shape option update), so on very busy sites visitors of the same popular post queued up behind each other's row locks. With this option on, each view only increments a counter in the persistent object cache (`wp_cache_incr()`, atomic on Redis/Memcached), and a WP-Cron job writes all collected views to the database once per interval: one `UPDATE … CASE` per counter type for up to 500 posts, then one meta-cache refresh per post. Counters are kept per post, per meta key, per hour, and the queue only relies on `add`/`incr`/`decr`/`set`/`get`, so it works with any drop-in that increments atomically. When it drains a counter, the job deletes the queue marker first, then subtracts exactly the value it read (it never resets to 0), so views arriving at the same time are neither lost nor counted twice; a batch whose database write fails is put back into the buffer. Object cache memory stays bounded (every key expires; nothing grows over time). In a test with 2,000 views from 24 concurrent clients (MariaDB + Redis), the plugin's own database writes during traffic went from about 2 per view to 0, with 5 `UPDATE` queries in the following write; with the related-post counter switched to the new helper (see below), the whole request issued no database query besides the connection setup. Counts matched the number of views sent exactly in every test
