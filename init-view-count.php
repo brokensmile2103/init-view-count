@@ -3,7 +3,7 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 2.0.3
+ * Version: 2.0.4
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
@@ -18,7 +18,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // === Constants ===
-define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.3' );
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.4' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG', 'init-view-count' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_URL', plugin_dir_url( __FILE__ ) );
@@ -45,10 +45,18 @@ define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MIN', 2 );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_MAX', 100 );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_SAMPLE_DEFAULT', 10 );
 
+// Giới hạn cho chế độ "đệm lượt xem trong object cache" (đơn vị: giây) — khoảng thời gian
+// giữa 2 lần ghi phần đang chờ vào database. Dưới 30s thì WP-Cron (mặc định chỉ chạy tối đa
+// 1 lần/phút) cũng không theo kịp; trên 10 phút thì số hiển thị chậm quá xa thực tế.
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MIN', 30 );       // 30 giây
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MAX', 600 );      // 10 phút
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_DEFAULT', 60 );   // 1 phút
+
 // === Include core files ===
 // utils.php cần require TRƯỚC TIÊN vì rest-api.php, settings-page.php,
 // shortcodes.php, abilities-api.php... đều gọi trực tiếp các hàm helper trong đó.
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/utils.php';
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/view-buffer.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/rest-api.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/traffic-shape.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/reset-schedule.php';
@@ -163,9 +171,21 @@ register_deactivation_hook( __FILE__, 'init_plugin_suite_view_count_deactivate' 
  * Gỡ các cron event khi tắt plugin (bản cũ để lại trong cron array). Khi bật lại,
  * hook 'init' trong reset-schedule.php sẽ tự lên lịch lại như lần đầu.
  *
+ * Trước đó ghi hết lượt xem còn đang đệm trong object cache (nếu có) vào database,
+ * để không còn gì nằm lại trong bộ đệm khi plugin không chạy nữa.
+ *
  * @return void
  */
 function init_plugin_suite_view_count_deactivate() {
+	init_plugin_suite_view_count_buffer_flush(
+		array(
+			'wait'       => 10,
+			'time_limit' => 60,
+			'context'    => 'deactivate',
+		)
+	);
+
 	wp_clear_scheduled_hook( 'init_plugin_suite_view_count_reset_counts' );
 	wp_clear_scheduled_hook( 'init_plugin_suite_view_count_cron_update_trending' );
+	wp_clear_scheduled_hook( INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CRON_HOOK );
 }

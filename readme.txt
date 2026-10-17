@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.3
+Stable tag: 2.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,7 @@ Count post views accurately via REST API with customizable display. Lightweight,
 - Native Block Editor (Gutenberg) support with 3 dedicated blocks, no build step required
 - Abilities API support (WordPress 6.9+) — read-only abilities for AI agents and automation tools
 - Optional "Reduce view count cache refreshes" mode for busy sites running a persistent object cache (Redis, Memcached)
+- Optional "Buffer view writes in the object cache" mode for very busy sites: views are collected in Redis/Memcached and written to the database in batches, with zero database writes per view
 
 This plugin is part of the [Init Plugin Suite](https://en.inithtml.com/init-plugin-suite-minimalist-powerful-and-free-wordpress-plugins/) — a collection of minimalist, fast, and developer-focused tools for WordPress.
 
@@ -150,9 +151,14 @@ Change the meta key used to read or write view counts.
 **Params:** `string $meta_key`, `int|null $post_id`
 
 **`init_plugin_suite_view_count_after_counted`**  
-Run custom logic after view count has been incremented.  
+Run custom logic after view count has been incremented. Fires once per counted view in every mode. With **Buffer view writes in the object cache** on, the values in `$updated` (`total`, `day`, `week`, `month`) are "stored in the database + still buffered", so they keep increasing by one per view exactly as before.  
 **Applies to:** REST `/count`  
 **Params:** `int $post_id`, `array $updated`, `WP_REST_Request $request`
+
+**`init_plugin_suite_view_count_increment_keys`**  
+Change which counters are incremented for a post on each view, as a `field => meta key` map (default: `total`, plus `day`/`week`/`month` when enabled). Remove fields you don't need for a post type, or add custom `field => meta key` pairs to have them incremented in the same write. `total` is always kept. Only `total`, `day`, `week` and `month` appear in the response and in `$updated`.  
+**Applies to:** REST `/count`  
+**Params:** `array $fields`, `int $post_id`, `WP_REST_Request $request`
 
 **`init_plugin_suite_view_count_api_top_args`**  
 Customize WP_Query arguments used for `/top` endpoint.  
@@ -183,6 +189,31 @@ List of `$_SERVER` keys checked, in order, to detect the visitor IP for Strict I
 Minimum number of seconds between two refreshes of a post's meta cache after counting views, when **Reduce view count cache refreshes** is enabled and a persistent object cache is active. Return `0` to refresh after every view.  
 **Applies to:** REST `/count`  
 **Params:** `int $interval` (already clamped to the 10–600 range of the setting)
+
+**`init_plugin_suite_view_count_buffer_enabled`**  
+Turn off **Buffer view writes in the object cache** for the current request (return `false`). It cannot force buffering on when the setting is off or no working persistent object cache is available.  
+**Applies to:** View counting  
+**Params:** `bool $enabled`
+
+**`init_plugin_suite_view_count_buffer_backend_status`**  
+Status of the object cache for buffering: `ok`, `no_object_cache`, `unavailable` (e.g. Redis is down), `non_atomic` (e.g. Redis Object Cache with igbinary) or `non_persistent` (the plugin's cache group is ignored/non-persistent). Anything other than `ok` makes views go straight to the database. Useful if your drop-in has its own way of reporting a lost connection.  
+**Applies to:** View counting  
+**Params:** `string $status`
+
+**`init_plugin_suite_view_count_buffer_flush_interval`**  
+Seconds between two writes of buffered views to the database.  
+**Applies to:** Buffer flush job  
+**Params:** `int $interval` (already clamped to the 30–600 range of the setting)
+
+**`init_plugin_suite_view_count_buffer_flush_time_limit`**  
+Maximum seconds one buffer write may run (default `20`, capped at `240`). Anything left is written on the next run.  
+**Applies to:** Buffer flush job  
+**Params:** `int $time_limit`, `string $context`
+
+**`init_plugin_suite_view_count_buffer_flushed`** (action)  
+Runs after each write of buffered views to the database.  
+**Applies to:** Buffer flush job  
+**Params:** `array $summary` (`context`, `items`, `views`, `post_ids`, `increments` as `meta_key => [ post_id => views ]`, `requeued`, `remaining`, `duration`)
 
 **`init_plugin_suite_view_count_top_post_types`**  
 Customize the list of post types returned by the `/top` endpoint.  
@@ -234,6 +265,17 @@ Sample rate N used when **Sample Traffic Shape writes** is enabled: traffic shap
 **Applies to:** Traffic Shape Learner  
 **Params:** `int $rate` (already clamped to the 2–100 range of the setting)
 
+== Functions for Developers ==
+
+**`init_plugin_suite_view_count_increment_meta( $post_id, $meta_keys )`**  
+Add one view to several counters of a post. Uses the object cache buffer when **Buffer view writes in the object cache** is active, otherwise one atomic database `UPDATE` (exactly like the built-in counter). Use it when your theme or plugin counts views for a related post (e.g. a chapter also counting toward its series), so that it benefits from buffering too. Returns `array( 'buffered' => bool, 'pending' => array( meta_key => views still buffered ) )`.
+
+**`init_plugin_suite_view_count_get_pending_views( $post_id, $meta_key = '_init_view_count' )`**  
+Views of a post/counter still waiting in the buffer (0 when buffering is off). `get_post_meta()` + this value gives the live number.
+
+**`init_plugin_suite_view_count_buffer_flush( $args = array() )`**  
+Write all buffered views to the database now. Safe to call at any time; returns a summary array, or `false` when there is nothing it can do (no persistent object cache, or another write is running).
+
 == Template Override ==
 
 To customize output layout, copy any template file into your theme:
@@ -252,7 +294,7 @@ Yes. Just set `post_type="your_custom_type"` in the shortcode or REST query.
 Init View Count uses both **time delay** and **scroll detection** via JavaScript, and stores viewed post IDs in either sessionStorage or localStorage (your choice).
 
 = Is the view count updated immediately? =  
-Yes, by default. When the scroll+delay conditions are met, the count is sent via REST API and saved with a single atomic database update. If you enable **Reduce view count cache refreshes**, views are still written to the database immediately, but the numbers displayed on your site may lag behind by up to the configured interval (see below).
+Yes, by default. When the scroll+delay conditions are met, the count is sent via REST API and saved with a single atomic database update. If you enable **Reduce view count cache refreshes**, views are still written to the database immediately, but the numbers displayed on your site may lag behind by up to the configured interval (see below). If you enable **Buffer view writes in the object cache**, views are written to the database in batches once per interval; the number returned right after a view is counted is always up to date.
 
 = What meta key is used to store views? =  
 By default:  
@@ -290,6 +332,13 @@ Yes. You can enable batch view tracking in the plugin settings. Instead of sendi
 = Should I enable "Reduce view count cache refreshes"? =
 Only if your site uses a persistent object cache (Redis, Memcached, etc.) and gets a lot of traffic. By default, each counted view clears the cached metadata of that post, so a popular post has to reload all of its metadata from the database again and again. With this option on, each post's cache is refreshed at most once per interval (60 seconds by default, 10–600 allowed). Every view is still written to the database right away and nothing is lost — only displayed numbers (shortcodes, blocks, rankings, Trending, the number shown after counting) may be slightly behind. A post that stops receiving views may keep showing a slightly lower number until it gets another view, is updated, or the daily reset runs (when daily views are enabled). Without a persistent object cache the option has no effect, and the settings page tells you so.
 
+= Should I enable "Buffer view writes in the object cache"? =
+Only if your site gets a lot of traffic and runs a working persistent object cache (Redis, Memcached, etc.). It is off by default. By default every counted view runs an `UPDATE` on `wp_postmeta`; on a very busy site, many visitors reading the same popular post update the same rows at the same time and queue up behind each other's row locks. With this option on, each view only increments a counter in the object cache (an atomic in-memory operation), and a background WP-Cron job writes everything to the database once per interval (60 seconds by default, 30–600 allowed) using a single `UPDATE` per counter type for up to 500 posts, then refreshes each post's meta cache once. Traffic Shape data is buffered too, exactly, without sampling.
+
+Nothing changes for code that hooks into view counting: `init_plugin_suite_view_count_after_counted` still fires once per view with the same parameters, and its `total`/`day`/`week`/`month` values still increase by one per view. Numbers read from the database (shortcodes, blocks, rankings, Trending) may lag behind by up to the interval. Buffered views are always written before the daily reset, when the option is turned off, and when the plugin is deactivated, and you can write them at any time with **Write buffered views now**.
+
+Requirements and trade-offs: the object cache must increment counters atomically (Redis Object Cache, Object Cache Pro and the common Memcached drop-ins do; the plugin runs a self-test before the option can be turned on, and automatically falls back to direct database writes while Redis is unreachable, when Redis Object Cache uses igbinary, or when the plugin's cache group is configured as non-persistent). If the object cache is restarted or flushed, views not yet written (at most about one interval) are lost. Configure Redis with `maxmemory-policy` `noeviction` or `volatile-lru` so buffered counters are never evicted, and make sure WP-Cron runs reliably. A real server cron is recommended; if WP-Cron stops running, the plugin writes overdue views itself during a view request.
+
 = Should I enable "Sample Traffic Shape writes"? =
 Only on busy sites with Trending enabled. The Traffic Shape Learner (which teaches Trending your site's hourly and weekday rhythm) updates a database option on every view request. With sampling on, it records only 1 in every N requests (10 by default, 2–100 allowed) and counts each sample N times, so it writes about N times less often while the expected numbers stay the same. On low-traffic sites the learned pattern becomes noisier, so leave it off there. Post view counts are never sampled.
 
@@ -309,6 +358,21 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 2.0.4 – October 18, 2026 =
+- New: **Buffer view writes in the object cache** option in Settings → Init View Count (off by default), with a configurable write interval (30–600 seconds, default 60). Until now every counted view ran an `UPDATE` on `wp_postmeta` (plus another one for any related post a theme counts, plus a Traffic Shape option update), so on very busy sites visitors of the same popular post queued up behind each other's row locks. With this option on, each view only increments a counter in the persistent object cache (`wp_cache_incr()`, atomic on Redis/Memcached), and a WP-Cron job writes all collected views to the database once per interval: one `UPDATE … CASE` per counter type for up to 500 posts, then one meta-cache refresh per post. Counters are kept per post, per meta key, per hour, and the queue only relies on `add`/`incr`/`decr`/`set`/`get`, so it works with any drop-in that increments atomically. When it drains a counter, the job deletes the queue marker first, then subtracts exactly the value it read (it never resets to 0), so views arriving at the same time are neither lost nor counted twice; a batch whose database write fails is put back into the buffer. Object cache memory stays bounded (every key expires; nothing grows over time). In a test with 2,000 views from 24 concurrent clients (MariaDB + Redis), the plugin's own database writes during traffic went from about 2 per view to 0, with 5 `UPDATE` queries in the following write; with the related-post counter switched to the new helper (see below), the whole request issued no database query besides the connection setup. Counts matched the number of views sent exactly in every test
+- New: when buffering, the Traffic Shape Learner's hourly bins are buffered as well and written exactly (no sampling). In the same concurrent test with buffering off and sampling off, concurrent `get_option()`/`update_option()` calls on the shared option recorded only a small fraction of requests; buffered, every request was recorded
+- New: buffered views are always written to the database before the daily reset (so they never count toward the next day/week/month), when the option is turned off, and on plugin deactivation. A **Write buffered views now** button and a status line (counters waiting, last write) are shown in Settings while the option is on. If WP-Cron stops running, a view request writes the overdue views itself, at most once per minute
+- New: the option can only be turned on after a self-test of the object cache passes. Views automatically go straight to the database, exactly as before, when there is no persistent object cache, when Redis is unreachable (Redis Object Cache), when Redis Object Cache is configured with igbinary (its increments are then not atomic), or when the plugin's cache group is configured as ignored/non-persistent. The settings page explains each case
+- New: filter `init_plugin_suite_view_count_increment_keys` to choose which counters are incremented per post on each view (e.g. only the total for an auxiliary post type), or to add custom meta keys to the same write. `total` is always kept, so the response and the `init_plugin_suite_view_count_after_counted` hook are never missing it
+- New: helper functions `init_plugin_suite_view_count_increment_meta()` (count a view toward any post's counters, buffered when the option is active, otherwise a direct atomic update — for themes/plugins that also count a related post), `init_plugin_suite_view_count_get_pending_views()` and `init_plugin_suite_view_count_buffer_flush()`
+- New: filters `init_plugin_suite_view_count_buffer_enabled`, `init_plugin_suite_view_count_buffer_backend_status`, `init_plugin_suite_view_count_buffer_flush_interval`, `init_plugin_suite_view_count_buffer_flush_time_limit`, and action `init_plugin_suite_view_count_buffer_flushed`
+- Compatibility: `init_plugin_suite_view_count_after_counted` still fires once per view, with the same parameters and the same `$updated` keys, in every mode. The `POST /count` response format is unchanged. `init_plugin_suite_view_count_atomic_increment_many()` and the other existing helpers are unchanged and still write directly to the database
+- Bug fix: when the first views of a period reached a post at the same moment (typically a popular post right after the 00:01 daily reset), `add_post_meta( …, true )`, which checks and then inserts without atomicity, could create several rows for the same counter and lose a few views. The "first row" insert is now guarded by a MySQL named lock (`GET_LOCK()`) per post and meta key. The lock is only taken on that rare path, so the normal `UPDATE` path is unaffected. In a 3,000-view test with 24 concurrent clients, a hot post previously ended up with up to 5 duplicate rows per counter and lost 2 views; it now has none and loses none. `init_plugin_suite_view_count_insert_or_increment()` gained an optional `$offset` parameter (default `1`, backward compatible)
+- Bug fix (Traffic Shape): if a write for an earlier day arrived after the stored "today" had already moved to the next day (late buffered data, or clocks drifting between servers), the stored data for the new day was wiped and restarted. Data from the previous day now goes into the pending (yesterday) bucket, and anything older is ignored. The recording logic is now in `init_plugin_suite_view_count_shape_record()`; `init_plugin_suite_view_count_shape_flush_pending()` behaves as before
+- Improvement: deactivation and uninstall also remove the new cron event; uninstall removes the two new options and clears the buffer's cache group when the object cache supports it
+- i18n: `init-view-count.pot` regenerated with WP-CLI; the 22 new strings are translated in `init-view-count-vi.po`/`.mo`
+- Code quality: all PHP files pass WordPress Coding Standards (`WordPress-Extra`) with zero errors and warnings
 
 = 2.0.3 – October 4, 2026 =
 - New: **Reduce view count cache refreshes** option in Settings → Init View Count (off by default), with a configurable refresh interval (10–600 seconds, default 60). Until now, every counted view cleared the whole meta cache of that post (`wp_cache_delete( $post_id, 'post_meta' )`) — not just the view counters, but every meta value of the post. On sites with a persistent object cache, a popular post therefore had its cache wiped dozens of times per minute, and every page render right after had to reload all of the post's metadata from the database. With this option on, each post's meta cache is refreshed at most once per interval (a per-post lock via `wp_cache_add()`, atomic on Redis/Memcached). Views are still written to the database immediately with the same atomic `UPDATE`, so no view is ever lost or double-counted; only displayed numbers (shortcodes, blocks, rankings, Trending and the number returned after counting) may lag behind by up to the interval. A post that stops receiving views catches up on its next view, when it is updated, or at the daily reset (when daily views are enabled). The option only takes effect when a persistent object cache is active — on sites without one, cached metadata only lives for a single request, behavior stays exactly as before, and the settings page shows a notice explaining this

@@ -126,45 +126,56 @@ function init_plugin_suite_view_count_count_callback( $request ) {
 			continue;
 		}
 
-		$updated = array( 'post_id' => $post_id );
-		$keys    = array();
-
-		// Đọc giá trị hiện tại qua get_post_meta() (có object cache, rẻ — KHÔNG re-query sau khi ghi).
-		// Việc +1 thực tế trong DB được thực hiện atomic bằng SQL (gộp mọi key vào 1 câu UPDATE);
-		// giá trị trả về cho client là "giá trị đã đọc + 1".
-		$meta_total = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_count', $post_id );
-		$views      = (int) get_post_meta( $post_id, $meta_total, true ) + 1;
-		$keys[]     = $meta_total;
-
-		$updated['total']           = $views;
-		$updated['total_formatted'] = number_format_i18n( $views );
-		$updated['total_short']     = init_plugin_suite_view_count_format_thousands( $views );
+		// Danh sách meta key cần +1 cho post này, theo dạng field => meta key. Các field chuẩn
+		// ('total', 'day', 'week', 'month') được trả về trong response và trong $updated của
+		// hook 'init_plugin_suite_view_count_after_counted'.
+		$fields = array(
+			'total' => apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_count', $post_id ),
+		);
 
 		if ( $enable_day ) {
-			$meta_day       = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id );
-			$updated['day'] = (int) get_post_meta( $post_id, $meta_day, true ) + 1;
-			$keys[]         = $meta_day;
+			$fields['day'] = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_day_count', $post_id );
 		}
 
 		if ( $enable_week ) {
-			$meta_week       = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id );
-			$updated['week'] = (int) get_post_meta( $post_id, $meta_week, true ) + 1;
-			$keys[]          = $meta_week;
+			$fields['week'] = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_week_count', $post_id );
 		}
 
 		if ( $enable_month ) {
-			$meta_month       = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id );
-			$updated['month'] = (int) get_post_meta( $post_id, $meta_month, true ) + 1;
-			$keys[]           = $meta_month;
+			$fields['month'] = apply_filters( 'init_plugin_suite_view_count_meta_key', '_init_view_month_count', $post_id );
 		}
 
-		init_plugin_suite_view_count_atomic_increment_many( $post_id, $keys );
+		$fields = init_plugin_suite_view_count_filter_increment_keys( $fields, $post_id, $request );
 
-		// Toàn bộ meta key của post này vừa được ghi bằng SQL thuần (bypass cache) →
-		// chỉ cần xoá cache đúng 1 lần cho post này. Khi bật "giảm tần suất làm mới cache
-		// lượt xem" trong Settings, lần xoá này được giới hạn tối đa 1 lần/khoảng thời gian
-		// cho mỗi post (DB vẫn luôn chính xác, chỉ số hiển thị từ cache có thể chậm hơn).
-		init_plugin_suite_view_count_maybe_flush_meta_cache( $post_id );
+		// Đọc giá trị hiện tại qua get_post_meta() (có object cache, rẻ — KHÔNG re-query sau khi ghi).
+		$stored = array();
+		foreach ( $fields as $field => $meta_key ) {
+			$stored[ $field ] = (int) get_post_meta( $post_id, $meta_key, true );
+		}
+
+		// Ghi thẳng DB (1 câu UPDATE atomic cho mọi key + làm mới cache post meta), hoặc cộng
+		// vào bộ đệm object cache khi admin bật chế độ "Buffer view writes in the object cache".
+		$increment = init_plugin_suite_view_count_increment_meta( $post_id, array_values( $fields ) );
+
+		// Giá trị trả về = giá trị đang lưu trong DB + phần chưa ghi (ghi thẳng: luôn là +1;
+		// đệm: số lượt đang chờ trong bộ đệm, đã gồm lượt này).
+		$values = array();
+		foreach ( $fields as $field => $meta_key ) {
+			$values[ $field ] = $stored[ $field ] + ( isset( $increment['pending'][ $meta_key ] ) ? (int) $increment['pending'][ $meta_key ] : 1 );
+		}
+
+		$updated = array(
+			'post_id'         => $post_id,
+			'total'           => $values['total'],
+			'total_formatted' => number_format_i18n( $values['total'] ),
+			'total_short'     => init_plugin_suite_view_count_format_thousands( $values['total'] ),
+		);
+
+		foreach ( array( 'day', 'week', 'month' ) as $field ) {
+			if ( isset( $values[ $field ] ) ) {
+				$updated[ $field ] = $values[ $field ];
+			}
+		}
 
 		do_action( 'init_plugin_suite_view_count_after_counted', $post_id, $updated, $request );
 
@@ -172,6 +183,48 @@ function init_plugin_suite_view_count_count_callback( $request ) {
 	}
 
 	return rest_ensure_response( $results );
+}
+
+/**
+ * Áp filter 'init_plugin_suite_view_count_increment_keys' lên danh sách meta key cần +1
+ * cho 1 post trong POST /count, rồi chuẩn hoá kết quả.
+ *
+ * - Bỏ field có meta key rỗng/không phải chuỗi.
+ * - Field 'total' luôn được giữ (nếu filter bỏ đi thì khôi phục giá trị gốc): client và các
+ *   hook phía sau (VD: thông báo mốc lượt xem của Init Pulse for Discord) dựa vào nó.
+ *
+ * @param array           $fields  Map field => meta key (đã qua filter meta_key).
+ * @param int             $post_id Post ID.
+ * @param WP_REST_Request $request Request hiện tại.
+ * @return array
+ */
+function init_plugin_suite_view_count_filter_increment_keys( array $fields, $post_id, $request ) {
+	/**
+	 * Filter danh sách meta key được +1 cho 1 post khi đếm view qua POST /count.
+	 *
+	 * Bỏ bớt field để không ghi các bộ đếm không dùng tới (VD: chỉ cần tổng lượt xem cho
+	 * 1 post type phụ), hoặc thêm key tuỳ biến (field tuỳ ý => meta key) để được cộng chung
+	 * trong cùng lượt ghi. Chỉ các field 'total', 'day', 'week', 'month' xuất hiện trong
+	 * response và trong $updated của 'init_plugin_suite_view_count_after_counted'.
+	 *
+	 * @param array           $fields  Map field => meta key, VD array( 'total' => '_init_view_count', 'day' => '_init_view_day_count', ... ).
+	 * @param int             $post_id Post ID.
+	 * @param WP_REST_Request $request Request hiện tại.
+	 */
+	$filtered = apply_filters( 'init_plugin_suite_view_count_increment_keys', $fields, $post_id, $request );
+
+	$clean = array();
+	foreach ( (array) $filtered as $field => $meta_key ) {
+		if ( is_string( $meta_key ) && '' !== $meta_key ) {
+			$clean[ (string) $field ] = $meta_key;
+		}
+	}
+
+	if ( ! isset( $clean['total'] ) ) {
+		$clean = array( 'total' => $fields['total'] ) + $clean;
+	}
+
+	return $clean;
 }
 
 /**

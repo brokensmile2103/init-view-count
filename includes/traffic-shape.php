@@ -83,6 +83,12 @@ function init_plugin_suite_view_count_shape_on_after_counted( $post_id, $updated
 		add_action(
 			'shutdown',
 			function () use ( &$pending ) {
+				// Chế độ đệm lượt xem trong object cache (v2.0.4+): chỉ cộng dồn vào object
+				// cache, job flush mới ghi option. Object cache lỗi → ghi thẳng như cũ.
+				if ( init_plugin_suite_view_count_buffer_enabled() && init_plugin_suite_view_count_shape_buffer_add( $pending ) ) {
+					return;
+				}
+
 				init_plugin_suite_view_count_shape_flush_pending( $pending );
 			},
 			20
@@ -146,11 +152,58 @@ function init_plugin_suite_view_count_shape_flush_pending( $increment ) {
 		$increment *= $sample_rate;
 	}
 
-	$now_gmt   = time();
+	init_plugin_suite_view_count_shape_record( $increment, time() );
+}
+
+/**
+ * Ghi N lượt xem vào TODAY bins tại 1 thời điểm (giờ site của thời điểm đó).
+ *
+ * Tách ra từ init_plugin_suite_view_count_shape_flush_pending() (v2.0.4) để job flush của
+ * chế độ bộ đệm có thể ghi các thùng giờ đã đệm theo đúng thời điểm của chúng.
+ *
+ * Nếu thời điểm cần ghi thuộc ngày CŨ HƠN ngày TODAY đang lưu (bộ đệm được ghi muộn qua
+ * nửa đêm, hoặc đồng hồ giữa các server lệch nhau) thì KHÔNG khởi tạo lại TODAY (bản cũ sẽ
+ * xoá mất dữ liệu của ngày mới): dữ liệu của đúng ngày hôm trước được cộng vào PENDING,
+ * dữ liệu cũ hơn nữa bị bỏ qua.
+ *
+ * @param int $increment Số lượt xem.
+ * @param int $now_gmt   Unix timestamp của các lượt xem.
+ * @return void
+ */
+function init_plugin_suite_view_count_shape_record( $increment, $now_gmt ) {
+	$increment = (int) $increment;
+	$now_gmt   = (int) $now_gmt;
+
+	if ( $increment < 1 ) {
+		return;
+	}
+
 	$today     = wp_date( 'Y-m-d', $now_gmt );
 	$yesterday = wp_date( 'Y-m-d', $now_gmt - DAY_IN_SECONDS );
+	$hour      = (int) wp_date( 'G', $now_gmt );
 
 	$state = get_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_TODAY );
+
+	// --- Dữ liệu thuộc ngày cũ hơn TODAY đang lưu ---
+	if ( is_array( $state ) && ! empty( $state['date'] ) && strcmp( (string) $state['date'], $today ) > 0 ) {
+		if ( wp_date( 'Y-m-d', $now_gmt + DAY_IN_SECONDS ) === $state['date'] ) {
+			$pending = get_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_PENDING );
+
+			if ( ! is_array( $pending ) || ( $pending['date'] ?? '' ) !== $today ) {
+				$pending = array(
+					'date'      => $today,
+					'hour_bins' => array_fill( 0, 24, 0 ),
+					'total'     => 0,
+				);
+			}
+
+			$pending['hour_bins'][ $hour ] = (int) ( $pending['hour_bins'][ $hour ] ?? 0 ) + $increment;
+			$pending['total']              = (int) $pending['total'] + $increment;
+
+			update_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_PENDING, $pending, false );
+		}
+		return;
+	}
 
 	// --- Rotate sang PENDING nếu state đang là NGÀY KHÁC hôm nay ---
 	if ( is_array( $state ) && ( $state['date'] ?? '' ) && ( $state['date'] !== $today ) ) {
@@ -194,12 +247,81 @@ function init_plugin_suite_view_count_shape_flush_pending( $increment ) {
 		);
 	}
 
-	// Ghi nhận toàn bộ view đã gom được của request này vào đúng GIỜ SITE hiện tại.
-	$hour                        = (int) wp_date( 'G', $now_gmt );
+	// Ghi nhận toàn bộ view đã gom được vào đúng GIỜ SITE của thời điểm đó.
 	$state['hour_bins'][ $hour ] = (int) $state['hour_bins'][ $hour ] + $increment;
 	$state['total']              = (int) $state['total'] + $increment;
 
 	update_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_TODAY, $state, false );
+}
+
+/**
+ * Tên key trong object cache của thùng giờ Traffic Shape đang đệm (theo GIỜ SITE).
+ *
+ * @param int $timestamp Unix timestamp.
+ * @return string
+ */
+function init_plugin_suite_view_count_shape_buffer_key( $timestamp ) {
+	return 's_' . wp_date( 'Ymd_G', (int) $timestamp );
+}
+
+/**
+ * Chế độ đệm lượt xem (v2.0.4+): cộng dồn số lượt của request hiện tại vào thùng giờ
+ * tương ứng trong object cache, thay vì đọc + ghi option mỗi request. Không lấy mẫu —
+ * số liệu chính xác tuyệt đối mà vẫn không chạm DB.
+ *
+ * @param int $increment Số lượt xem.
+ * @return bool False nếu object cache lỗi (bên gọi ghi thẳng như cũ).
+ */
+function init_plugin_suite_view_count_shape_buffer_add( $increment ) {
+	$increment = (int) $increment;
+
+	if ( $increment < 1 ) {
+		return true;
+	}
+
+	return false !== init_plugin_suite_view_count_buffer_incr(
+		init_plugin_suite_view_count_shape_buffer_key( time() ),
+		$increment,
+		INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_KEY_TTL
+	);
+}
+
+/**
+ * Ghi các thùng giờ Traffic Shape đang đệm (26 giờ gần nhất) vào option TODAY/PENDING.
+ * Được gọi trong mỗi lần flush bộ đệm (đã giữ khoá flush).
+ *
+ * @return void
+ */
+function init_plugin_suite_view_count_shape_flush_buffer() {
+	if ( ! init_view_count_trending_enabled() ) {
+		return; // Các key tự hết hạn.
+	}
+
+	$group = INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_GROUP;
+	$now   = time();
+	$slots = array();
+
+	// Từ cũ đến mới, để ngày cũ được ghi trước khi TODAY chuyển sang ngày mới.
+	for ( $hours_ago = 26; $hours_ago >= 0; $hours_ago-- ) {
+		$timestamp = $now - $hours_ago * HOUR_IN_SECONDS;
+		$key       = init_plugin_suite_view_count_shape_buffer_key( $timestamp );
+
+		if ( ! isset( $slots[ $key ] ) ) {
+			$slots[ $key ] = $timestamp;
+		}
+	}
+
+	$values = (array) wp_cache_get_multiple( array_keys( $slots ), $group, true );
+
+	foreach ( $slots as $key => $timestamp ) {
+		$value = isset( $values[ $key ] ) ? (int) $values[ $key ] : 0;
+
+		if ( $value <= 0 || false === wp_cache_decr( $key, $value, $group ) ) {
+			continue;
+		}
+
+		init_plugin_suite_view_count_shape_record( $value, $timestamp );
+	}
 }
 
 /**

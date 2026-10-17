@@ -2,24 +2,21 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Init View Count 2.0.3\n"
+"Project-Id-Version: Init View Count 2.0.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/init-view-count\n"
+"POT-Creation-Date: 2026-10-17T17:42:01+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T07:33:18+00:00\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: init-view-count\n"
+"X-Generator: WP-CLI 2.12.0\n"
 
 #. Plugin Name of the plugin
-#: init-view-count.php
-#: includes/abilities-api.php:38
-#: includes/blocks.php:35
-#: includes/dashboard-widget.php:20
-#: includes/settings-page.php:11
+#: init-view-count.php includes/abilities-api.php:38 includes/blocks.php:35
+#: includes/dashboard-widget.php:20 includes/settings-page.php:11
 #: includes/shortcodes.php:374
 msgid "Init View Count"
 msgstr ""
@@ -31,7 +28,9 @@ msgstr ""
 
 #. Description of the plugin
 #: init-view-count.php
-msgid "Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes."
+msgid ""
+"Lightweight plugin to track real post views with scroll & delay detection, "
+"smart ranking, and flexible shortcodes."
 msgstr ""
 
 #. Author of the plugin
@@ -45,7 +44,8 @@ msgid "https://inithtml.com/"
 msgstr ""
 
 #: includes/abilities-api.php:39
-msgid "Read-only abilities for querying tracked post view counts and popular posts."
+msgid ""
+"Read-only abilities for querying tracked post view counts and popular posts."
 msgstr ""
 
 #: includes/abilities-api.php:58
@@ -53,7 +53,9 @@ msgid "Get Post Views"
 msgstr ""
 
 #: includes/abilities-api.php:59
-msgid "Returns the tracked view count for a single post (total, day, week, or month). Read-only, does not increment the counter."
+msgid ""
+"Returns the tracked view count for a single post (total, day, week, or "
+"month). Read-only, does not increment the counter."
 msgstr ""
 
 #: includes/abilities-api.php:66
@@ -89,7 +91,10 @@ msgid "Get Top Viewed Posts"
 msgstr ""
 
 #: includes/abilities-api.php:120
-msgid "Returns a ranked list of the most viewed posts for a given time range (total, day, week, month, or trending). Wraps the same data used by the [init_view_ranking] shortcode and the GET /top REST route."
+msgid ""
+"Returns a ranked list of the most viewed posts for a given time range "
+"(total, day, week, month, or trending). Wraps the same data used by the "
+"[init_view_ranking] shortcode and the GET /top REST route."
 msgstr ""
 
 #: includes/abilities-api.php:127
@@ -109,7 +114,9 @@ msgid "Time range to rank by."
 msgstr ""
 
 #: includes/abilities-api.php:152
-msgid "\"minimal\" returns only id/title/link; \"full\" includes excerpt, thumbnail, category, etc."
+msgid ""
+"\"minimal\" returns only id/title/link; \"full\" includes excerpt, "
+"thumbnail, category, etc."
 msgstr ""
 
 #: includes/abilities-api.php:158
@@ -160,287 +167,468 @@ msgstr ""
 msgid "Not enabled for view counting."
 msgstr ""
 
-#: includes/settings-page.php:10
-#: includes/settings-page.php:133
+#: includes/settings-page.php:10 includes/settings-page.php:208
 msgid "Init View Count Settings"
 msgstr ""
 
-#: includes/settings-page.php:120
+#: includes/settings-page.php:171
 msgid "Settings saved."
 msgstr ""
 
-#: includes/settings-page.php:125
-msgid "Traffic shape data has been reset."
-msgstr ""
-
-#: includes/settings-page.php:138
-msgid "Post types to track views"
-msgstr ""
-
-#: includes/settings-page.php:151
-msgid "Auto-insert shortcode into post content?"
-msgstr ""
-
-#: includes/settings-page.php:157
-msgid "Do not auto-insert (manual shortcode only)"
-msgstr ""
-
-#: includes/settings-page.php:162
-msgid "Insert before content"
-msgstr ""
-
-#: includes/settings-page.php:167
-msgid "Insert after content"
-msgstr ""
-
-#: includes/settings-page.php:171
-msgid "Only applies to post types where view count is enabled. Developers can always insert shortcode manually."
-msgstr ""
-
-#: includes/settings-page.php:176
-msgid "Enable daily views?"
+#: includes/settings-page.php:174
+msgid ""
+"Buffered view writes could not be enabled: the object cache did not pass the"
+" self-test (add, increment and decrement must work and persist). Views are "
+"still written to the database directly."
 msgstr ""
 
 #: includes/settings-page.php:180
+msgid "Traffic shape data has been reset."
+msgstr ""
+
+#. translators: %s: number of views written to the database
+#: includes/settings-page.php:192
+#, php-format
+msgid "Buffered views written to the database: %s."
+msgstr ""
+
+#: includes/settings-page.php:197
+msgid ""
+"Buffered views could not be written right now (no persistent object cache, "
+"or another write is already running). Please try again in a moment."
+msgstr ""
+
+#: includes/settings-page.php:213
+msgid "Post types to track views"
+msgstr ""
+
+#: includes/settings-page.php:226
+msgid "Auto-insert shortcode into post content?"
+msgstr ""
+
+#: includes/settings-page.php:232
+msgid "Do not auto-insert (manual shortcode only)"
+msgstr ""
+
+#: includes/settings-page.php:237
+msgid "Insert before content"
+msgstr ""
+
+#: includes/settings-page.php:242
+msgid "Insert after content"
+msgstr ""
+
+#: includes/settings-page.php:246
+msgid ""
+"Only applies to post types where view count is enabled. Developers can "
+"always insert shortcode manually."
+msgstr ""
+
+#: includes/settings-page.php:251
+msgid "Enable daily views?"
+msgstr ""
+
+#: includes/settings-page.php:255
 msgid "Count and store views per day"
 msgstr ""
 
-#: includes/settings-page.php:185
+#: includes/settings-page.php:260
 msgid "Enable weekly views?"
 msgstr ""
 
-#: includes/settings-page.php:189
+#: includes/settings-page.php:264
 msgid "Track total views by week"
 msgstr ""
 
-#: includes/settings-page.php:194
+#: includes/settings-page.php:269
 msgid "Enable monthly views?"
 msgstr ""
 
-#: includes/settings-page.php:198
+#: includes/settings-page.php:273
 msgid "Track total views by month"
 msgstr ""
 
-#: includes/settings-page.php:203
+#: includes/settings-page.php:278
 msgid "Delay before counting (ms)"
 msgstr ""
 
 #. translators: 1: minimum delay in ms, 2: maximum delay in ms
-#: includes/settings-page.php:214
+#: includes/settings-page.php:289
 #, php-format
-msgid "Minimum %1$dms, maximum %2$dms. 0 is not allowed to avoid counting views before the page has actually rendered."
+msgid ""
+"Minimum %1$dms, maximum %2$dms. 0 is not allowed to avoid counting views "
+"before the page has actually rendered."
 msgstr ""
 
-#: includes/settings-page.php:223
+#: includes/settings-page.php:298
 msgid "Scroll percent required"
 msgstr ""
 
 #. translators: 1: minimum scroll percent, 2: maximum scroll percent
-#: includes/settings-page.php:234
+#: includes/settings-page.php:309
 #, php-format
-msgid "Minimum %1$d%%, maximum %2$d%%. 0 is not allowed as it would bypass the scroll check entirely."
+msgid ""
+"Minimum %1$d%%, maximum %2$d%%. 0 is not allowed as it would bypass the "
+"scroll check entirely."
 msgstr ""
 
-#: includes/settings-page.php:243
+#: includes/settings-page.php:318
 msgid "Enable scroll check?"
 msgstr ""
 
-#: includes/settings-page.php:247
+#: includes/settings-page.php:322
 msgid "Only count views after user scrolls past required percent"
 msgstr ""
 
-#: includes/settings-page.php:252
+#: includes/settings-page.php:327
 msgid "Storage method"
 msgstr ""
 
-#: includes/settings-page.php:257
+#: includes/settings-page.php:332
 msgid "Session Storage"
 msgstr ""
 
-#: includes/settings-page.php:261
+#: includes/settings-page.php:336
 msgid "Local Storage"
 msgstr ""
 
-#: includes/settings-page.php:267
+#: includes/settings-page.php:342
 msgid "Batch view tracking"
 msgstr ""
 
-#: includes/settings-page.php:273
-msgid "Number of views to collect before sending to server. Set to 1 for real-time tracking. Higher values reduce server requests but may miss some views if user leaves early."
+#: includes/settings-page.php:348
+msgid ""
+"Number of views to collect before sending to server. Set to 1 for real-time "
+"tracking. Higher values reduce server requests but may miss some views if "
+"user leaves early."
 msgstr ""
 
-#: includes/settings-page.php:278
+#: includes/settings-page.php:353
 msgid "Reduce view count cache refreshes?"
 msgstr ""
 
-#: includes/settings-page.php:282
-msgid "Refresh the cached metadata of each post at most once per interval, instead of after every single view."
+#: includes/settings-page.php:357
+msgid ""
+"Refresh the cached metadata of each post at most once per interval, instead "
+"of after every single view."
 msgstr ""
 
-#: includes/settings-page.php:285
+#: includes/settings-page.php:360
 msgid "Refresh interval (seconds)"
 msgstr ""
 
 #. translators: 1: minimum interval in seconds, 2: maximum interval in seconds
-#: includes/settings-page.php:297
+#: includes/settings-page.php:372 includes/settings-page.php:415
 #, php-format
 msgid "Minimum %1$d seconds, maximum %2$d seconds."
 msgstr ""
 
-#: includes/settings-page.php:304
-msgid "On busy sites, refreshing the cache after every view forces popular posts to reload all of their metadata from the database over and over. With this option on, every view is still written to the database immediately and accurately; only the cached copy is refreshed less often."
+#: includes/settings-page.php:379
+msgid ""
+"On busy sites, refreshing the cache after every view forces popular posts to"
+" reload all of their metadata from the database over and over. With this "
+"option on, every view is still written to the database immediately and "
+"accurately; only the cached copy is refreshed less often."
 msgstr ""
 
-#: includes/settings-page.php:307
-#: includes/settings-page.php:420
+#: includes/settings-page.php:382 includes/settings-page.php:425
+#: includes/settings-page.php:550
 msgid "Note:"
 msgstr ""
 
-#: includes/settings-page.php:308
-msgid "Displayed view counts (shortcodes, blocks, rankings, Trending and the number shown right after a view is counted) may lag behind the real value by up to the interval above. A post that stops receiving views may keep showing a slightly lower number until it gets another view, is updated, or the daily reset runs (when daily views are enabled)."
+#: includes/settings-page.php:383
+msgid ""
+"Displayed view counts (shortcodes, blocks, rankings, Trending and the number"
+" shown right after a view is counted) may lag behind the real value by up to"
+" the interval above. A post that stops receiving views may keep showing a "
+"slightly lower number until it gets another view, is updated, or the daily "
+"reset runs (when daily views are enabled)."
 msgstr ""
 
-#: includes/settings-page.php:312
-msgid "A persistent object cache is active on this site, so this option takes effect when enabled."
+#: includes/settings-page.php:387 includes/settings-page.php:433
+msgid ""
+"A persistent object cache is active on this site, so this option takes "
+"effect when enabled."
 msgstr ""
 
-#: includes/settings-page.php:314
-msgid "No persistent object cache detected on this site, so this option currently has no effect."
+#: includes/settings-page.php:389 includes/settings-page.php:444
+msgid ""
+"No persistent object cache detected on this site, so this option currently "
+"has no effect."
 msgstr ""
 
-#: includes/settings-page.php:315
-msgid "It only applies when a persistent object cache (Redis, Memcached, etc.) is in use; without one, cached metadata only lives for a single request."
+#: includes/settings-page.php:390
+msgid ""
+"It only applies when a persistent object cache (Redis, Memcached, etc.) is "
+"in use; without one, cached metadata only lives for a single request."
 msgstr ""
 
-#: includes/settings-page.php:321
+#: includes/settings-page.php:396
+msgid "Buffer view writes in the object cache?"
+msgstr ""
+
+#: includes/settings-page.php:400
+msgid ""
+"Collect views in the persistent object cache (Redis, Memcached, etc.) and "
+"write them to the database in batches, instead of writing to the database on"
+" every view."
+msgstr ""
+
+#: includes/settings-page.php:403
+msgid "Write interval (seconds)"
+msgstr ""
+
+#: includes/settings-page.php:422
+msgid ""
+"Recommended for very busy sites. Each view only increments a counter in the "
+"object cache; a background job then writes all collected views to the "
+"database once per interval, with a single query per counter type for up to "
+"500 posts. Popular posts no longer lock the same database rows on every "
+"view, and their cached metadata is refreshed once per write instead of after"
+" every view. Hooks that run after a view is counted keep working exactly as "
+"before, once per view."
+msgstr ""
+
+#: includes/settings-page.php:426
+msgid ""
+"View counts read from the database (shortcodes, blocks, rankings, Trending) "
+"may lag behind by up to the interval above; the number shown right after a "
+"view is counted stays up to date. If the object cache is restarted or "
+"flushed, views not yet written (at most about one interval) are lost. Make "
+"sure your object cache does not evict keys under memory pressure (for "
+"example Redis maxmemory-policy noeviction or volatile-lru), and that WP-Cron"
+" runs reliably (a real server cron is recommended)."
+msgstr ""
+
+#: includes/settings-page.php:429
+msgid ""
+"With this option on, \"Reduce view count cache refreshes\" and \"Sample "
+"Traffic Shape writes\" are no longer needed: buffered views refresh the "
+"cache once per write, and Traffic Shape data is buffered too, without "
+"sampling."
+msgstr ""
+
+#: includes/settings-page.php:435
+msgid "The persistent object cache is currently unreachable."
+msgstr ""
+
+#: includes/settings-page.php:436
+msgid "Views are written to the database directly until it is back."
+msgstr ""
+
+#: includes/settings-page.php:438
+msgid ""
+"Your object cache drop-in does not increment counters atomically with its "
+"current configuration (Redis Object Cache with igbinary)."
+msgstr ""
+
+#: includes/settings-page.php:439
+msgid ""
+"Views are written to the database directly. Turn off igbinary in your object"
+" cache configuration to use this option."
+msgstr ""
+
+#: includes/settings-page.php:441
+msgid ""
+"Your object cache is configured not to store this plugin's cache group "
+"persistently (ignored or non-persistent group)."
+msgstr ""
+
+#: includes/settings-page.php:442
+msgid ""
+"Views are written to the database directly. Remove the group "
+"init_plugin_suite_view_count_buffer from that list to use this option."
+msgstr ""
+
+#: includes/settings-page.php:445
+msgid "Views are written to the database directly, as before."
+msgstr ""
+
+#: includes/settings-page.php:451
 msgid "Enable strict IP check?"
 msgstr ""
 
-#: includes/settings-page.php:325
-msgid "Stores a hashed list of recent IPs per post in a transient to prevent repeated views from the same IP within a short time window."
+#: includes/settings-page.php:455
+msgid ""
+"Stores a hashed list of recent IPs per post in a transient to prevent "
+"repeated views from the same IP within a short time window."
 msgstr ""
 
-#: includes/settings-page.php:328
-msgid "Adds extra protection against bots or fake requests directly posting to the tracking endpoint. Useful if you see unusual traffic not blocked by countdown or scroll check."
+#: includes/settings-page.php:458
+msgid ""
+"Adds extra protection against bots or fake requests directly posting to the "
+"tracking endpoint. Useful if you see unusual traffic not blocked by "
+"countdown or scroll check."
 msgstr ""
 
-#: includes/settings-page.php:331
+#: includes/settings-page.php:461
 msgid "Performance note:"
 msgstr ""
 
-#: includes/settings-page.php:332
-msgid "This check reads the transient on every view request and writes it back every time a view is counted. Without a persistent object cache (Redis, Memcached, etc.), transients are stored in the wp_options table, so each counted view adds up to two extra database writes. On busy sites without a persistent object cache, only enable it if you really need it."
+#: includes/settings-page.php:462
+msgid ""
+"This check reads the transient on every view request and writes it back "
+"every time a view is counted. Without a persistent object cache (Redis, "
+"Memcached, etc.), transients are stored in the wp_options table, so each "
+"counted view adds up to two extra database writes. On busy sites without a "
+"persistent object cache, only enable it if you really need it."
 msgstr ""
 
-#: includes/settings-page.php:337
+#: includes/settings-page.php:467
 msgid "Require REST nonce verification?"
 msgstr ""
 
-#: includes/settings-page.php:341
-msgid "Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the /count endpoint."
+#: includes/settings-page.php:471
+msgid ""
+"Require a valid WordPress REST nonce (X-WP-Nonce) on every request to the "
+"/count endpoint."
 msgstr ""
 
-#: includes/settings-page.php:344
-msgid "Blocks fake POST requests sent directly to the endpoint without loading the page first."
+#: includes/settings-page.php:474
+msgid ""
+"Blocks fake POST requests sent directly to the endpoint without loading the "
+"page first."
 msgstr ""
 
-#: includes/settings-page.php:347
+#: includes/settings-page.php:477
 msgid "Warning:"
 msgstr ""
 
-#: includes/settings-page.php:348
-msgid "A WordPress nonce expires after roughly 12-24 hours. If you use full-page caching with a long lifetime, cached pages will keep serving an old, expired nonce, and view counting will silently stop working on those pages until the cache is refreshed. Leave this off on sites with long-lived page caching, or make sure the cache is purged/refreshed at least once a day."
+#: includes/settings-page.php:478
+msgid ""
+"A WordPress nonce expires after roughly 12-24 hours. If you use full-page "
+"caching with a long lifetime, cached pages will keep serving an old, expired"
+" nonce, and view counting will silently stop working on those pages until "
+"the cache is refreshed. Leave this off on sites with long-lived page "
+"caching, or make sure the cache is purged/refreshed at least once a day."
 msgstr ""
 
-#: includes/settings-page.php:353
+#: includes/settings-page.php:483
 msgid "Enable dashboard widget?"
 msgstr ""
 
-#: includes/settings-page.php:357
+#: includes/settings-page.php:487
 msgid "Display top view ranking inside WordPress Dashboard."
 msgstr ""
 
-#: includes/settings-page.php:360
+#: includes/settings-page.php:490
 msgid "Uncheck to hide the widget for all users."
 msgstr ""
 
-#: includes/settings-page.php:365
+#: includes/settings-page.php:495
 msgid "Disable plugin CSS?"
 msgstr ""
 
-#: includes/settings-page.php:369
+#: includes/settings-page.php:499
 msgid "Disable built-in CSS output."
 msgstr ""
 
-#: includes/settings-page.php:372
-msgid "Check this if you want to fully control the styling yourself. The plugin will not enqueue any CSS."
+#: includes/settings-page.php:502
+msgid ""
+"Check this if you want to fully control the styling yourself. The plugin "
+"will not enqueue any CSS."
 msgstr ""
 
-#: includes/settings-page.php:377
+#: includes/settings-page.php:507
 msgid "Disable Trending?"
 msgstr ""
 
-#: includes/settings-page.php:383
+#: includes/settings-page.php:513
 msgid "Completely turn off trending calculations and outputs."
 msgstr ""
 
-#: includes/settings-page.php:386
+#: includes/settings-page.php:516
 msgid "Check this to hard-disable trending."
 msgstr ""
 
-#: includes/settings-page.php:391
+#: includes/settings-page.php:521
 msgid "Sample Traffic Shape writes?"
 msgstr ""
 
-#: includes/settings-page.php:395
-msgid "Record traffic shape data from only 1 in every N view requests (each sample counts N times), instead of on every request."
+#: includes/settings-page.php:525
+msgid ""
+"Record traffic shape data from only 1 in every N view requests (each sample "
+"counts N times), instead of on every request."
 msgstr ""
 
-#: includes/settings-page.php:398
+#: includes/settings-page.php:528
 msgid "Sample rate (1 in N requests)"
 msgstr ""
 
 #. translators: 1: minimum sample rate, 2: maximum sample rate
-#: includes/settings-page.php:410
+#: includes/settings-page.php:540
 #, php-format
 msgid "Minimum %1$d, maximum %2$d."
 msgstr ""
 
-#: includes/settings-page.php:417
-msgid "The Traffic Shape Learner (used by Trending) updates a database option on every view request. Sampling cuts these writes by about N times. On busy sites the learned hourly and weekday pattern stays essentially the same, because sampled counts are unbiased and the learner only uses relative proportions smoothed over many days."
+#: includes/settings-page.php:547
+msgid ""
+"The Traffic Shape Learner (used by Trending) updates a database option on "
+"every view request. Sampling cuts these writes by about N times. On busy "
+"sites the learned hourly and weekday pattern stays essentially the same, "
+"because sampled counts are unbiased and the learner only uses relative "
+"proportions smoothed over many days."
 msgstr ""
 
-#: includes/settings-page.php:421
-msgid "On low-traffic sites the learned pattern becomes noisier, so only enable this if your site receives a lot of views. Post view counts are never sampled and are not affected. Has no effect when Trending is disabled."
+#: includes/settings-page.php:551
+msgid ""
+"On low-traffic sites the learned pattern becomes noisier, so only enable "
+"this if your site receives a lot of views. Post view counts are never "
+"sampled and are not affected. Has no effect when Trending is disabled."
 msgstr ""
 
-#: includes/settings-page.php:426
+#: includes/settings-page.php:556
 msgid "Save Settings"
 msgstr ""
 
-#: includes/settings-page.php:429
+#: includes/settings-page.php:564
+msgid "View Buffer"
+msgstr ""
+
+#. translators: %s: number of post/counter pairs waiting to be written
+#: includes/settings-page.php:569
+#, php-format
+msgid "Counters waiting to be written: %s."
+msgstr ""
+
+#. translators: 1: human-readable time difference (e.g. "2 mins"), 2: number
+#. of views
+#: includes/settings-page.php:577
+#, php-format
+msgid "Last write to the database: %1$s ago (%2$s views)."
+msgstr ""
+
+#: includes/settings-page.php:583
+msgid "No buffered views have been written to the database yet."
+msgstr ""
+
+#: includes/settings-page.php:589
+msgid "Write buffered views now"
+msgstr ""
+
+#: includes/settings-page.php:593
 msgid "Traffic Shape Learner"
 msgstr ""
 
-#: includes/settings-page.php:431
-msgid "Clears the learned hourly and weekday traffic patterns used by the Trending engine. The patterns will be rebuilt automatically from new views."
+#: includes/settings-page.php:595
+msgid ""
+"Clears the learned hourly and weekday traffic patterns used by the Trending "
+"engine. The patterns will be rebuilt automatically from new views."
 msgstr ""
 
-#: includes/settings-page.php:433
+#: includes/settings-page.php:597
 msgid "Reset all learned traffic shape data?"
 msgstr ""
 
-#: includes/settings-page.php:436
+#: includes/settings-page.php:600
 msgid "Reset traffic shape data"
 msgstr ""
 
-#: includes/settings-page.php:439
-#: includes/shortcodes.php:373
+#: includes/settings-page.php:603 includes/shortcodes.php:373
 msgid "Shortcode Builder"
 msgstr ""
 
-#: includes/shortcodes.php:20
-#: includes/shortcodes.php:379
+#: includes/shortcodes.php:20 includes/shortcodes.php:379
 #: assets/js/blocks-editor.js:142
 msgid "Popular Posts"
 msgstr ""
@@ -463,25 +651,21 @@ msgstr ""
 msgid "views"
 msgstr ""
 
-#: includes/shortcodes.php:321
-#: assets/js/blocks-editor.js:183
+#: includes/shortcodes.php:321 assets/js/blocks-editor.js:183
 msgid "All Time"
 msgstr ""
 
-#: includes/shortcodes.php:322
-#: assets/js/blocks-editor.js:64
+#: includes/shortcodes.php:322 assets/js/blocks-editor.js:64
 #: assets/js/blocks-editor.js:184
 msgid "Today"
 msgstr ""
 
-#: includes/shortcodes.php:323
-#: assets/js/blocks-editor.js:65
+#: includes/shortcodes.php:323 assets/js/blocks-editor.js:65
 #: assets/js/blocks-editor.js:185
 msgid "This Week"
 msgstr ""
 
-#: includes/shortcodes.php:324
-#: assets/js/blocks-editor.js:66
+#: includes/shortcodes.php:324 assets/js/blocks-editor.js:66
 #: assets/js/blocks-editor.js:186
 msgid "This Month"
 msgstr ""
@@ -526,8 +710,7 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: includes/shortcodes.php:378
-#: assets/js/blocks-editor.js:141
+#: includes/shortcodes.php:378 assets/js/blocks-editor.js:141
 msgid "Title"
 msgstr ""
 
@@ -535,8 +718,7 @@ msgstr ""
 msgid "Number of Posts"
 msgstr ""
 
-#: includes/shortcodes.php:381
-#: assets/js/blocks-editor.js:167
+#: includes/shortcodes.php:381 assets/js/blocks-editor.js:167
 msgid "Template"
 msgstr ""
 
@@ -568,13 +750,11 @@ msgstr ""
 msgid "Order Direction"
 msgstr ""
 
-#: includes/shortcodes.php:389
-#: assets/js/blocks-editor.js:60
+#: includes/shortcodes.php:389 assets/js/blocks-editor.js:60
 msgid "Field"
 msgstr ""
 
-#: includes/shortcodes.php:390
-#: assets/js/blocks-editor.js:73
+#: includes/shortcodes.php:390 assets/js/blocks-editor.js:73
 msgid "Format"
 msgstr ""
 
@@ -582,8 +762,7 @@ msgstr ""
 msgid "Show Time Diff"
 msgstr ""
 
-#: includes/shortcodes.php:392
-#: assets/js/blocks-editor.js:250
+#: includes/shortcodes.php:392 assets/js/blocks-editor.js:250
 msgid "Tabs"
 msgstr ""
 
@@ -599,11 +778,15 @@ msgstr ""
 msgid "Custom Class"
 msgstr ""
 
-#: includes/traffic-shape.php:379
+#: includes/traffic-shape.php:501 includes/view-buffer.php:977
 msgid "Sorry, you are not allowed to do that."
 msgstr ""
 
-#: init-view-count.php:155
+#: includes/view-buffer.php:852
+msgid "Init View Count: write buffered views"
+msgstr ""
+
+#: init-view-count.php:163
 msgid "Settings"
 msgstr ""
 
@@ -616,7 +799,9 @@ msgid "Post ID (0 = current post)"
 msgstr ""
 
 #: assets/js/blocks-editor.js:51
-msgid "Leave as 0 to always show the view count of whichever post/page this block is on."
+msgid ""
+"Leave as 0 to always show the view count of whichever post/page this block "
+"is on."
 msgstr ""
 
 #: assets/js/blocks-editor.js:63
@@ -659,8 +844,7 @@ msgstr ""
 msgid "Number of posts"
 msgstr ""
 
-#: assets/js/blocks-editor.js:159
-#: assets/js/blocks-editor.js:267
+#: assets/js/blocks-editor.js:159 assets/js/blocks-editor.js:267
 msgid "Post type"
 msgstr ""
 
@@ -709,7 +893,8 @@ msgid "Ranking Settings"
 msgstr ""
 
 #: assets/js/blocks-editor.js:251
-msgid "Comma-separated: total, day, week, month, yesterday, last_week, last_month."
+msgid ""
+"Comma-separated: total, day, week, month, yesterday, last_week, last_month."
 msgstr ""
 
 #: assets/js/blocks-editor.js:258
@@ -730,8 +915,7 @@ msgctxt "block description"
 msgid "Display the tracked view count for the current (or a specific) post."
 msgstr ""
 
-#: blocks/view-count/block.json
-#: blocks/view-list/block.json
+#: blocks/view-count/block.json blocks/view-list/block.json
 #: blocks/view-ranking/block.json
 msgctxt "block keyword"
 msgid "views"
@@ -742,14 +926,12 @@ msgctxt "block keyword"
 msgid "count"
 msgstr ""
 
-#: blocks/view-count/block.json
-#: blocks/view-list/block.json
+#: blocks/view-count/block.json blocks/view-list/block.json
 msgctxt "block keyword"
 msgid "popular"
 msgstr ""
 
-#: blocks/view-count/block.json
-#: blocks/view-ranking/block.json
+#: blocks/view-count/block.json blocks/view-ranking/block.json
 msgctxt "block keyword"
 msgid "trending"
 msgstr ""
@@ -761,7 +943,9 @@ msgstr ""
 
 #: blocks/view-list/block.json
 msgctxt "block description"
-msgid "Display a list of the most viewed posts, with optional category/tag filtering."
+msgid ""
+"Display a list of the most viewed posts, with optional category/tag "
+"filtering."
 msgstr ""
 
 #: blocks/view-list/block.json
@@ -781,7 +965,9 @@ msgstr ""
 
 #: blocks/view-ranking/block.json
 msgctxt "block description"
-msgid "Display a tabbed ranking widget (All Time, Today, This Week, ...) of the most viewed posts."
+msgid ""
+"Display a tabbed ranking widget (All Time, Today, This Week, ...) of the "
+"most viewed posts."
 msgstr ""
 
 #: blocks/view-ranking/block.json

@@ -61,29 +61,50 @@ function init_plugin_suite_view_count_atomic_increment( $post_id, $meta_key ) {
 }
 
 /**
- * Tạo mới meta key với giá trị 1 (lượt view đầu tiên của kỳ). Nếu thua race
- * (request khác vừa insert xong) thì quay lại UPDATE +1 atomic như bình thường.
+ * Tạo mới meta key với giá trị $offset (lượt view đầu tiên của kỳ). Nếu row đã tồn tại
+ * (request khác vừa tạo xong) thì quay lại UPDATE cộng dồn atomic như bình thường.
+ *
+ * Từ v2.0.4: bước "kiểm tra rồi tạo" được bọc trong 1 khoá có tên của MySQL (GET_LOCK) theo
+ * từng cặp post + meta key. add_post_meta( ..., true ) tự nó KHÔNG atomic (SELECT rồi mới
+ * INSERT), nên khi nhiều lượt xem đầu tiên của 1 kỳ đến cùng lúc (VD: bài hot ngay sau
+ * reset 00:01) có thể tạo ra nhiều row trùng key và làm mất vài lượt xem. Khoá chỉ được
+ * dùng ở nhánh hiếm này (key chưa có row), không ảnh hưởng luồng UPDATE thông thường.
+ * Database không hỗ trợ GET_LOCK() → chạy như các bản trước.
  *
  * @param int    $post_id  Post ID.
  * @param string $meta_key Meta key.
+ * @param int    $offset   Số cần cộng (mặc định 1).
  * @return void
  */
-function init_plugin_suite_view_count_insert_or_increment( $post_id, $meta_key ) {
+function init_plugin_suite_view_count_insert_or_increment( $post_id, $meta_key, $offset = 1 ) {
 	global $wpdb;
 
+	$post_id = (int) $post_id;
+	$offset  = max( 1, (int) $offset );
+
+	// Tên khoá MySQL tối đa 64 ký tự → băm; thêm tiền tố bảng để không đụng site khác cùng DB.
+	$lock_name = 'ivc_' . md5( $wpdb->postmeta . '|' . $post_id . '|' . $meta_key );
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Khoá có tên của MySQL, không có gì để cache.
+	$locked = 1 === (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $lock_name, 3 ) );
+
 	// $unique = true để tránh insert trùng nếu có request khác vừa insert xong.
-	if ( false !== add_post_meta( $post_id, $meta_key, 1, true ) ) {
-		return;
+	if ( false === add_post_meta( $post_id, $meta_key, $offset, true ) ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Xem giải thích ở init_plugin_suite_view_count_atomic_increment().
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + %d WHERE post_id = %d AND meta_key = %s",
+				$offset,
+				$post_id,
+				$meta_key
+			)
+		);
 	}
 
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Xem giải thích ở init_plugin_suite_view_count_atomic_increment().
-	$wpdb->query(
-		$wpdb->prepare(
-			"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = %s",
-			$post_id,
-			$meta_key
-		)
-	);
+	if ( $locked ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Nhả khoá có tên của MySQL.
+		$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_name ) );
+	}
 }
 
 /**

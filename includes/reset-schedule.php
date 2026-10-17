@@ -137,6 +137,19 @@ function init_plugin_suite_view_count_reset_counts() {
 	);
 
 	/**
+	 * 0) Ghi hết lượt xem đang đệm trong object cache (nếu có) vào DB TRƯỚC khi rollover,
+	 * để lượt xem của kỳ cũ không bị cộng nhầm sang kỳ mới. Gọi cả khi chế độ bộ đệm đã tắt
+	 * để ghi nốt phần còn sót; không có persistent object cache thì hàm trả về ngay.
+	 */
+	init_plugin_suite_view_count_buffer_flush(
+		array(
+			'wait'       => 15,
+			'time_limit' => 120,
+			'context'    => 'reset',
+		)
+	);
+
+	/**
 	 * 1) BEFORE RESET (toàn cục).
 	 */
 	do_action( 'init_plugin_suite_view_count_before_reset_counts', $context );

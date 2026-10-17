@@ -84,6 +84,57 @@ function init_plugin_suite_view_count_render_settings_page() {
 		);
 		update_option( 'init_plugin_suite_view_count_meta_flush_interval', $meta_flush_interval );
 
+		// === Đệm lượt xem trong object cache (v2.0.4+) ===
+		$buffer_was_on   = init_plugin_suite_view_count_buffer_option_enabled();
+		$buffer_writes   = ! empty( $_POST['init_plugin_suite_view_count_buffer_writes'] ) ? 1 : 0;
+		$buffer_rejected = false;
+
+		// Chỉ cho bật khi object cache vượt qua bài tự kiểm tra (add/incr/decr atomic).
+		if ( 1 === $buffer_writes && ! $buffer_was_on && ! init_plugin_suite_view_count_buffer_self_test() ) {
+			$buffer_writes   = 0;
+			$buffer_rejected = true;
+		}
+
+		$buffer_interval         = isset( $_POST['init_plugin_suite_view_count_buffer_flush_interval'] )
+			? absint( $_POST['init_plugin_suite_view_count_buffer_flush_interval'] )
+			: INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_DEFAULT;
+		$buffer_interval         = init_plugin_suite_view_count_clamp_int(
+			$buffer_interval,
+			INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MIN,
+			INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MAX
+		);
+		$buffer_interval_changed = (int) get_option( 'init_plugin_suite_view_count_buffer_flush_interval', INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_DEFAULT ) !== $buffer_interval;
+
+		update_option( 'init_plugin_suite_view_count_buffer_writes', $buffer_writes );
+		update_option( 'init_plugin_suite_view_count_buffer_flush_interval', $buffer_interval );
+
+		if ( $buffer_was_on && 0 === $buffer_writes ) {
+			// Vừa tắt → ghi ngay phần còn đang đệm vào database.
+			init_plugin_suite_view_count_buffer_flush(
+				array(
+					'wait'       => 10,
+					'time_limit' => 60,
+					'context'    => 'disable',
+				)
+			);
+		}
+
+		if ( 1 === $buffer_writes && ! $buffer_was_on ) {
+			// Mốc bắt đầu cho cơ chế tự phục hồi khi WP-Cron không chạy.
+			$buffer_state = init_plugin_suite_view_count_buffer_get_state();
+			if ( 0 === $buffer_state['last_flush'] ) {
+				$buffer_state['last_flush'] = time();
+				init_plugin_suite_view_count_buffer_save_state( $buffer_state );
+			}
+		}
+
+		$buffer_now_on = ( 1 === $buffer_writes );
+
+		if ( $buffer_interval_changed || $buffer_now_on !== $buffer_was_on ) {
+			wp_clear_scheduled_hook( INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_CRON_HOOK );
+			init_plugin_suite_view_count_buffer_maybe_schedule();
+		}
+
 		$strict_ip_check = ! empty( $_POST['init_plugin_suite_view_count_strict_ip_check'] ) ? 1 : 0;
 		update_option( 'init_plugin_suite_view_count_strict_ip_check', $strict_ip_check );
 
@@ -118,12 +169,36 @@ function init_plugin_suite_view_count_render_settings_page() {
 		}
 
 		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'init-view-count' ) . '</p></div>';
+
+		if ( $buffer_rejected ) {
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'Buffered view writes could not be enabled: the object cache did not pass the self-test (add, increment and decrement must work and persist). Views are still written to the database directly.', 'init-view-count' ) . '</p></div>';
+		}
 	}
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Chỉ đọc cờ hiển thị thông báo sau redirect, không thay đổi dữ liệu.
 	if ( isset( $_GET['shape_reset'] ) && '1' === $_GET['shape_reset'] ) {
 		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Traffic shape data has been reset.', 'init-view-count' ) . '</p></div>';
 	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Chỉ đọc cờ hiển thị thông báo sau redirect, không thay đổi dữ liệu.
+	if ( isset( $_GET['buffer_flushed'] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Như trên.
+		$buffer_flushed = (int) sanitize_text_field( wp_unslash( $_GET['buffer_flushed'] ) );
+
+		if ( $buffer_flushed >= 0 ) {
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html(
+				sprintf(
+					/* translators: %s: number of views written to the database */
+					__( 'Buffered views written to the database: %s.', 'init-view-count' ),
+					number_format_i18n( $buffer_flushed )
+				)
+			) . '</p></div>';
+		} else {
+			echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__( 'Buffered views could not be written right now (no persistent object cache, or another write is already running). Please try again in a moment.', 'init-view-count' ) . '</p></div>';
+		}
+	}
+
+	$buffer_backend = init_plugin_suite_view_count_buffer_backend_status();
 
 	$selected_post_types = (array) get_option( 'init_plugin_suite_view_count_post_types', array( 'post' ) );
 	$all_post_types      = get_post_types( array( 'public' => true ), 'objects' );
@@ -318,6 +393,61 @@ function init_plugin_suite_view_count_render_settings_page() {
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'Buffer view writes in the object cache?', 'init-view-count' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="init_plugin_suite_view_count_buffer_writes" <?php checked( get_option( 'init_plugin_suite_view_count_buffer_writes', 0 ) ); ?> />
+							<?php esc_html_e( 'Collect views in the persistent object cache (Redis, Memcached, etc.) and write them to the database in batches, instead of writing to the database on every view.', 'init-view-count' ); ?>
+						</label>
+						<p>
+							<label for="init_plugin_suite_view_count_buffer_flush_interval"><?php esc_html_e( 'Write interval (seconds)', 'init-view-count' ); ?></label>
+							<input type="number" id="init_plugin_suite_view_count_buffer_flush_interval" name="init_plugin_suite_view_count_buffer_flush_interval"
+									class="small-text"
+									value="<?php echo esc_attr( init_plugin_suite_view_count_clamp_int( get_option( 'init_plugin_suite_view_count_buffer_flush_interval', INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_DEFAULT ), INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MIN, INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MAX ) ); ?>"
+									min="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MIN ); ?>"
+									max="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MAX ); ?>"
+									step="1" />
+						</p>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: 1: minimum interval in seconds, 2: maximum interval in seconds */
+								esc_html__( 'Minimum %1$d seconds, maximum %2$d seconds.', 'init-view-count' ),
+								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MIN,
+								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_BUFFER_FLUSH_MAX
+							);
+							?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'Recommended for very busy sites. Each view only increments a counter in the object cache; a background job then writes all collected views to the database once per interval, with a single query per counter type for up to 500 posts. Popular posts no longer lock the same database rows on every view, and their cached metadata is refreshed once per write instead of after every view. Hooks that run after a view is counted keep working exactly as before, once per view.', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Note:', 'init-view-count' ); ?></strong>
+							<?php esc_html_e( 'View counts read from the database (shortcodes, blocks, rankings, Trending) may lag behind by up to the interval above; the number shown right after a view is counted stays up to date. If the object cache is restarted or flushed, views not yet written (at most about one interval) are lost. Make sure your object cache does not evict keys under memory pressure (for example Redis maxmemory-policy noeviction or volatile-lru), and that WP-Cron runs reliably (a real server cron is recommended).', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'With this option on, "Reduce view count cache refreshes" and "Sample Traffic Shape writes" are no longer needed: buffered views refresh the cache once per write, and Traffic Shape data is buffered too, without sampling.', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<?php if ( 'ok' === $buffer_backend ) : ?>
+								<?php esc_html_e( 'A persistent object cache is active on this site, so this option takes effect when enabled.', 'init-view-count' ); ?>
+							<?php elseif ( 'unavailable' === $buffer_backend ) : ?>
+								<strong><?php esc_html_e( 'The persistent object cache is currently unreachable.', 'init-view-count' ); ?></strong>
+								<?php esc_html_e( 'Views are written to the database directly until it is back.', 'init-view-count' ); ?>
+							<?php elseif ( 'non_atomic' === $buffer_backend ) : ?>
+								<strong><?php esc_html_e( 'Your object cache drop-in does not increment counters atomically with its current configuration (Redis Object Cache with igbinary).', 'init-view-count' ); ?></strong>
+								<?php esc_html_e( 'Views are written to the database directly. Turn off igbinary in your object cache configuration to use this option.', 'init-view-count' ); ?>
+							<?php elseif ( 'non_persistent' === $buffer_backend ) : ?>
+								<strong><?php esc_html_e( 'Your object cache is configured not to store this plugin\'s cache group persistently (ignored or non-persistent group).', 'init-view-count' ); ?></strong>
+								<?php esc_html_e( 'Views are written to the database directly. Remove the group init_plugin_suite_view_count_buffer from that list to use this option.', 'init-view-count' ); ?>
+							<?php else : ?>
+								<strong><?php esc_html_e( 'No persistent object cache detected on this site, so this option currently has no effect.', 'init-view-count' ); ?></strong>
+								<?php esc_html_e( 'Views are written to the database directly, as before.', 'init-view-count' ); ?>
+							<?php endif; ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Enable strict IP check?', 'init-view-count' ); ?></th>
 					<td>
 						<label>
@@ -425,6 +555,40 @@ function init_plugin_suite_view_count_render_settings_page() {
 			</table>
 			<?php submit_button( __( 'Save Settings', 'init-view-count' ), 'primary', 'init_plugin_suite_view_count_save' ); ?>
 		</form>
+
+		<?php
+		$buffer_queue = init_plugin_suite_view_count_buffer_queue_length();
+		if ( init_plugin_suite_view_count_buffer_option_enabled() || $buffer_queue > 0 ) :
+			$buffer_state = init_plugin_suite_view_count_buffer_get_state();
+			?>
+			<h2><?php esc_html_e( 'View Buffer', 'init-view-count' ); ?></h2>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: %s: number of post/counter pairs waiting to be written */
+					esc_html__( 'Counters waiting to be written: %s.', 'init-view-count' ),
+					esc_html( number_format_i18n( $buffer_queue ) )
+				);
+				?>
+				<?php if ( $buffer_state['last_flush'] > 0 ) : ?>
+					<?php
+					printf(
+						/* translators: 1: human-readable time difference (e.g. "2 mins"), 2: number of views */
+						esc_html__( 'Last write to the database: %1$s ago (%2$s views).', 'init-view-count' ),
+						esc_html( human_time_diff( $buffer_state['last_flush'] ) ),
+						esc_html( number_format_i18n( $buffer_state['last_views'] ) )
+					);
+					?>
+				<?php else : ?>
+					<?php esc_html_e( 'No buffered views have been written to the database yet.', 'init-view-count' ); ?>
+				<?php endif; ?>
+			</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="init_plugin_suite_view_count_buffer_flush_now" />
+				<?php wp_nonce_field( 'init_plugin_suite_view_count_buffer_flush_now' ); ?>
+				<?php submit_button( __( 'Write buffered views now', 'init-view-count' ), 'secondary', 'submit', false ); ?>
+			</form>
+		<?php endif; ?>
 
 		<h2><?php esc_html_e( 'Traffic Shape Learner', 'init-view-count' ); ?></h2>
 		<p class="description">

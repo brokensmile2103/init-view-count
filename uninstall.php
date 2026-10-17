@@ -33,6 +33,8 @@ function init_plugin_suite_view_count_uninstall_site() {
 		'init_plugin_suite_view_count_meta_flush_interval',
 		'init_plugin_suite_view_count_shape_sampling',
 		'init_plugin_suite_view_count_shape_sample_rate',
+		'init_plugin_suite_view_count_buffer_writes',
+		'init_plugin_suite_view_count_buffer_flush_interval',
 		'init_plugin_suite_view_count_strict_ip_check',
 		'init_plugin_suite_view_count_require_nonce',
 		'init_plugin_suite_view_count_enable_widget',
@@ -103,9 +105,17 @@ function init_plugin_suite_view_count_uninstall_site() {
 	wp_cache_delete( 'alloptions', 'options' );
 	wp_cache_delete( 'notoptions', 'options' );
 
+	// === Bộ đệm lượt xem trong object cache ===
+	// Key trong object cache đều có thời hạn và sẽ tự hết hạn; nếu backend hỗ trợ xoá theo
+	// group thì dọn luôn cho sạch.
+	if ( function_exists( 'wp_cache_supports' ) && wp_cache_supports( 'flush_group' ) ) {
+		wp_cache_flush_group( 'init_plugin_suite_view_count_buffer' );
+	}
+
 	// === Cron ===
 	wp_clear_scheduled_hook( 'init_plugin_suite_view_count_reset_counts' );
 	wp_clear_scheduled_hook( 'init_plugin_suite_view_count_cron_update_trending' );
+	wp_clear_scheduled_hook( 'init_plugin_suite_view_count_buffer_flush' );
 }
 
 if ( is_multisite() ) {
