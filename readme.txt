@@ -4,7 +4,7 @@ Tags: post views, view counter, trending posts, REST API, shortcode
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.6
+Stable tag: 2.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -315,7 +315,7 @@ Yes. Just set `post_type="your_custom_type"` in the shortcode or REST query.
 Init View Count uses both **time delay** and **scroll detection** via JavaScript, and stores viewed post IDs in either sessionStorage or localStorage (your choice).
 
 = Why are very few (or no) views counted when "Scroll percent required" is high? =
-By default the percentage is measured on the whole page, comments and footer included. At 100%, a view only counts when the reader scrolls to the very last pixel of the page, which most readers never do. Before 2.0.6 it could even be impossible: on zoomed or high-density screens browsers often stop scrolling a fraction of a pixel before the end, so 100% was never reached. Since 2.0.6 the last 2 pixels count as the end, and you can set **Scroll area (CSS selector)**, for example `.entry-content`, so the percentage is measured on the article itself: 100% then means the end of the article has appeared on screen. If the selector matches nothing on a page, that page falls back to the whole page.
+By default the percentage is measured on the whole page, comments and footer included. At 100%, a view only counts when the reader scrolls to the very last pixel of the page, which most readers never do. Before 2.0.6 it could even be impossible: on zoomed or high-density screens browsers often stop scrolling a fraction of a pixel before the end, so 100% was never reached. Since 2.0.6 the last 2 pixels count as the end, and you can set **Scroll area (CSS selector)**, for example `.entry-content`, so the percentage is measured on the article itself: 100% then means the end of the article has appeared on screen. If the selector matches nothing on a page, that page falls back to the whole page. An area that already fits on screen only counts once the page has finished loading (since 2.0.7).
 
 = How is Trending calculated? =
 Every hour, Trending Engine v4 looks at today's top posts, yesterday's top posts and the current Trending list. For each post it estimates the views of the last 24 hours (today's views plus the matching part of yesterday's), how many views it really got in the last hour (from the change in its total views since the previous run, smoothed over a few hours), and its usual level from this and last week (or month). All rates are measured in "traffic-normalized hours", using the hourly and weekday pattern learned from your site, so a post published at 3 AM is not penalized against one published at 8 PM. The score is views per day, multiplied by the uplift over the post's own usual level, recent engagement (comments in the last 7 days, likes/shares), a small boost for new posts, a gentle age factor and topic momentum, followed by the existing anti-spike, fatigue and diversity steps. Everything can be tuned with the `init_plugin_suite_view_count_trending_tuning` and `init_plugin_suite_view_count_trending_component_weights` filters.
@@ -387,6 +387,10 @@ It's optional and off by default. Enabling it makes the `/count` endpoint reject
 6. Frontend view – ranking display (this week), dark mode interface.
 
 == Changelog ==
+
+= 2.0.7 – November 14, 2026 =
+- Fix: when the scroll area (or the whole page) fit on screen at first load – images not loaded yet, content still a loading placeholder or inserted later – the scroll check passed immediately, so a view counted after the delay without any scrolling. This case now only counts once the page has finished loading and the layout has been stable for 1 second, and it is checked again right before sending, so content that grows in the meantime requires real scrolling
+- Improvement: the script re-checks the scroll condition when images load or the measured area changes size (`ResizeObserver`)
 
 = 2.0.6 – November 14, 2026 =
 - New: **Scroll area (CSS selector)** setting to measure the scroll percent on an element (e.g. `.entry-content`) instead of the whole page. Empty = whole page, as before

@@ -62,6 +62,11 @@
     let timePassed = false;
     let alreadyTriggered = false;
 
+    // Điều kiện cuộn tại thời điểm gọi (mặc định: đã đạt / không yêu cầu cuộn).
+    let scrollOk = () => scrollPassed;
+    // Gỡ mọi listener theo dõi cuộn (gán lại bên dưới khi có yêu cầu cuộn).
+    let stopScrollTracking = () => {};
+
     setTimeout(() => {
         timePassed = true;
         checkAndSendView();
@@ -70,12 +75,14 @@
     if (scrollRequired) {
         let scrollTicking = false;
 
-        // Sai số làm tròn (px): trình duyệt có thể dừng scrollY ở số lẻ (VD 1999.5 thay vì 2000)
-        // trên màn hình zoom/HiDPI, khiến bản cũ không bao giờ đạt đúng 100%.
+        // Sai số làm tròn (px): trình duyệt có thể dừng scrollY ở số lẻ (VD 1999.5 thay vì 2000).
         const EDGE_TOLERANCE = 2;
+        // v2.0.7: khung đo nằm gọn trong màn hình chỉ được tính khi trang đã tải xong và layout
+        // đứng yên ít nhất chừng này (ms) — tránh đạt điều kiện khi ảnh/nội dung chưa tải.
+        const SETTLE_MS = 1000;
 
-        // v2.0.6+: vùng tính phần trăm cuộn theo CSS selector ('' = toàn trang như cũ).
-        // Selector sai cú pháp (querySelector ném lỗi) hoặc không khớp phần tử nào → toàn trang.
+        // v2.0.6+: vùng tính phần trăm cuộn theo CSS selector ('' = toàn trang).
+        // Selector sai cú pháp hoặc không khớp phần tử nào → toàn trang.
         const resolveTarget = (selector) => {
             if (typeof selector !== 'string' || !selector.trim()) return null;
             try {
@@ -91,57 +98,96 @@
         };
 
         let target = resolveTarget(config.scrollTarget);
+        let lastLayoutChange = Date.now();
+        let recheckTimer = null;
+        let resizeObserver = null;
 
-        // Toàn trang: phần đã cuộn / phần có thể cuộn.
-        const pagePercent = () => {
+        // Toàn trang. fit = không có gì để cuộn.
+        const measurePage = () => {
             const doc = document.documentElement;
             const maxScroll = doc.scrollHeight - window.innerHeight;
-            // Trang ngắn hơn viewport (không có gì để cuộn) coi như đã "cuộn" 100%.
-            if (maxScroll <= EDGE_TOLERANCE) return 100;
+            if (maxScroll <= EDGE_TOLERANCE) return { percent: 100, fit: true };
             const scrollY = window.scrollY || doc.scrollTop || 0;
-            if (scrollY >= maxScroll - EDGE_TOLERANCE) return 100;
-            return (scrollY / maxScroll) * 100;
+            if (scrollY >= maxScroll - EDGE_TOLERANCE) return { percent: 100, fit: false };
+            return { percent: (scrollY / maxScroll) * 100, fit: false };
         };
 
-        // Theo phần tử: bao nhiêu % chiều cao phần tử đã lọt vào màn hình
-        // (100% = mép dưới phần tử đã xuất hiện; phần tử vừa màn hình = 100% ngay).
-        const elementPercent = (el) => {
+        // Theo phần tử: % chiều cao đã lọt vào màn hình (100% = mép dưới đã xuất hiện).
+        // fit = cả phần tử đang nằm gọn trong màn hình. Phần tử ẩn/cao 0 → null (dùng toàn trang).
+        const measureElement = (el) => {
             const rect = el.getBoundingClientRect();
             const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
 
-            // Phần tử ẩn (display: none → rect toàn 0) hoặc cao 0: không đo được. Phải kiểm tra
-            // TRƯỚC mép dưới, nếu không phần tử ẩn sẽ bị coi là đã đọc hết (bottom = 0).
             if (rect.height <= 0) return null;
-            if (rect.bottom <= viewportHeight + EDGE_TOLERANCE) return 100;
-
-            return Math.max(0, Math.min(100, ((viewportHeight - rect.top) / rect.height) * 100));
+            if (rect.bottom <= viewportHeight + EDGE_TOLERANCE) {
+                return { percent: 100, fit: rect.top >= -EDGE_TOLERANCE };
+            }
+            return {
+                percent: Math.max(0, Math.min(100, ((viewportHeight - rect.top) / rect.height) * 100)),
+                fit: false
+            };
         };
 
-        const currentPercent = () => {
-            // Phần tử bị gỡ khỏi DOM (theme SPA/AJAX thay nội dung) → quay về toàn trang.
+        const measure = () => {
+            // Phần tử bị gỡ khỏi DOM (theme SPA/AJAX thay nội dung) → toàn trang.
             if (target && !target.isConnected) {
                 target = null;
             }
             if (target) {
-                const p = elementPercent(target);
-                // Phần tử ẩn (display: none, cao 0) → không đo được, dùng toàn trang.
-                if (p !== null) return p;
+                const m = measureElement(target);
+                if (m !== null) return m;
             }
-            return pagePercent();
+            return measurePage();
         };
 
+        let listening = true;
         const stopListening = () => {
+            if (!listening) return;
+            listening = false;
             window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onScroll);
+            window.removeEventListener('load', onLoad);
+            if (resizeObserver) resizeObserver.disconnect();
+            if (recheckTimer) clearTimeout(recheckTimer);
+            recheckTimer = null;
+        };
+
+        stopScrollTracking = stopListening;
+
+        const scheduleRecheck = (wait) => {
+            if (recheckTimer) return;
+            recheckTimer = setTimeout(() => {
+                recheckTimer = null;
+                evaluateScroll();
+            }, Math.max(50, wait));
+        };
+
+        scrollOk = () => {
+            if (scrollPassed) return true;
+
+            const m = measure();
+            if (!m.fit) {
+                if (m.percent < scrollPercent) return false;
+                // Người đọc đã cuộn thật → chốt luôn.
+                scrollPassed = true;
+                stopListening();
+                return true;
+            }
+
+            // Nằm gọn trong màn hình: chỉ tính khi trang tải xong và layout đã đứng yên. Không chốt —
+            // được đo lại đúng lúc gửi, nên nội dung lớn lên sau đó (ảnh, AJAX) sẽ cần cuộn thật.
+            if (document.readyState !== 'complete') return false;
+            const quiet = Date.now() - lastLayoutChange;
+            if (quiet < SETTLE_MS) {
+                scheduleRecheck(SETTLE_MS - quiet);
+                return false;
+            }
+            return true;
         };
 
         const evaluateScroll = () => {
-            if (scrollPassed) return;
-            if (currentPercent() >= scrollPercent) {
-                scrollPassed = true;
-                stopListening();
-                checkAndSendView();
-            }
+            if (alreadyTriggered) return;
+            if (scrollOk()) checkAndSendView();
         };
 
         const onScroll = () => {
@@ -154,19 +200,35 @@
             });
         };
 
-        // capture: true → bắt cả sự kiện cuộn của khung cuộn bên trong (theme dùng overflow: auto),
-        // vì sự kiện "scroll" không nổi bọt (bubble) lên window.
-        window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-        // Đổi kích thước/xoay màn hình làm thay đổi phần trăm mà không có sự kiện cuộn.
-        window.addEventListener('resize', onScroll, { passive: true });
+        const onLayoutChange = () => {
+            lastLayoutChange = Date.now();
+            onScroll();
+        };
 
-        // Check ngay 1 lần sau khi layout ổn định (trang quá ngắn, hoặc load ở vị trí cuộn sẵn).
+        const onLoad = () => onLayoutChange();
+
+        // capture: true → bắt cả sự kiện cuộn của khung cuộn bên trong (scroll không bubble).
+        window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        if (document.readyState !== 'complete') {
+            window.addEventListener('load', onLoad);
+        }
+
+        // Theo dõi kích thước khung đo (ảnh tải xong, nội dung chèn thêm...).
+        if (typeof ResizeObserver === 'function') {
+            resizeObserver = new ResizeObserver(onLayoutChange);
+            resizeObserver.observe(target || document.documentElement);
+        }
+
+        // Check ngay 1 lần (trang quá ngắn, hoặc load ở vị trí cuộn sẵn).
         requestAnimationFrame(evaluateScroll);
     }
 
     function checkAndSendView() {
-        if (!scrollPassed || !timePassed || alreadyTriggered) return;
+        if (!timePassed || alreadyTriggered || !scrollOk()) return;
         alreadyTriggered = true;
+        // Đã tính view → không cần theo dõi cuộn/kích thước nữa.
+        stopScrollTracking();
         storage.setItem(viewedKey, '1');
 
         if (batch === 1) {

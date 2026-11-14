@@ -3,7 +3,7 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 2.0.6
+ * Version: 2.0.7
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // === Constants ===
-define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.6' );
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.7' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG', 'init-view-count' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_URL', plugin_dir_url( __FILE__ ) );

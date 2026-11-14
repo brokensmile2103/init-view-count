@@ -352,7 +352,7 @@ function init_plugin_suite_view_count_render_settings_page() {
 							<?php esc_html_e( 'Optional. CSS selector of the element used to measure the scroll percent, for example .entry-content or article .post-content. Leave empty to use the whole page, as before.', 'init-view-count' ); ?>
 						</p>
 						<p class="description">
-							<?php esc_html_e( 'With a scroll area, the percentage is how much of that element has come into view: 100% means its bottom edge has appeared on screen, and an element that already fits on screen counts as 100% right away. If several elements match, the first one on the page is used. If the selector is invalid or matches nothing on a page, the whole page is used on that page.', 'init-view-count' ); ?>
+							<?php esc_html_e( 'With a scroll area, the percentage is how much of that element has come into view: 100% means its bottom edge has appeared on screen. An element that already fits on screen counts as 100% once the page has finished loading and its layout has stopped changing. If several elements match, the first one on the page is used. If the selector is invalid or matches nothing on a page, the whole page is used on that page.', 'init-view-count' ); ?>
 						</p>
 					</td>
 				</tr>
