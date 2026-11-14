@@ -3,13 +3,12 @@
  * Plugin Name: Init View Count
  * Description: Lightweight plugin to track real post views with scroll & delay detection, smart ranking, and flexible shortcodes.
  * Plugin URI: https://inithtml.com/plugin/init-view-count/
- * Version: 2.0.5
+ * Version: 2.0.6
  * Author: Init HTML
  * Author URI: https://inithtml.com/
  * Text Domain: init-view-count
  * Domain Path: /languages
  * Requires at least: 6.9
- * Tested up to: 7.1
  * Requires PHP: 7.4
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // === Constants ===
-define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.5' );
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION', '2.0.6' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SLUG', 'init-view-count' );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_URL', plugin_dir_url( __FILE__ ) );
@@ -31,6 +30,9 @@ define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MIN', 100 );      // 100ms
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_DELAY_MAX', 600000 );   // 10 phút
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MIN', 1 );       // 1%
 define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX', 100 );     // 100%
+
+// Độ dài tối đa của CSS selector "vùng tính phần trăm cuộn" (v2.0.6+).
+define( 'INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_TARGET_MAX_LENGTH', 255 );
 
 // Giới hạn cho chế độ "giảm tần suất làm mới cache lượt xem" (đơn vị: giây).
 // Dưới 10s gần như không giảm được gì cho bài hot; trên 10 phút thì số hiển thị
@@ -60,6 +62,8 @@ require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/view-buffer.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/rest-api.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/traffic-shape.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/reset-schedule.php';
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/trending.php';
+require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/trending-legacy.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/shortcodes.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/hooks.php';
 require_once INIT_PLUGIN_SUITE_VIEW_COUNT_DIR . 'includes/settings-page.php';
@@ -133,6 +137,8 @@ add_action(
 				INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX
 			),
 			'scrollEnabled' => ( (int) get_option( 'init_plugin_suite_view_count_scroll_enabled', 1 ) === 1 ),
+			// v2.0.6+: CSS selector của vùng tính phần trăm cuộn ('' = toàn trang như cũ).
+			'scrollTarget'  => init_plugin_suite_view_count_get_scroll_target(),
 			'storage'       => get_option( 'init_plugin_suite_view_count_storage', 'session' ),
 			'batch'         => max( 1, (int) get_option( 'init_plugin_suite_view_count_batch', 1 ) ),
 		);
@@ -163,6 +169,34 @@ function init_plugin_suite_view_count_add_settings_link( $links ) {
 	$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=init-view-count-settings' ) ) . '">' . esc_html__( 'Settings', 'init-view-count' ) . '</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
+}
+
+add_action( 'init', 'init_plugin_suite_view_count_maybe_upgrade', 5 );
+
+/**
+ * Chạy các bước nâng cấp dữ liệu 1 lần khi phiên bản plugin thay đổi (v2.0.6+).
+ *
+ * Option phiên bản là autoload nên phép kiểm tra không tốn query nào ở các request thường.
+ *
+ * @return void
+ */
+function init_plugin_suite_view_count_maybe_upgrade() {
+	$stored = (string) get_option( 'init_plugin_suite_view_count_version', '' );
+
+	if ( INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION === $stored ) {
+		return;
+	}
+
+	// < 2.0.6: shape theo thứ do bản cũ học bị sai (luôn kẹp ở mức trần, xem
+	// init_plugin_suite_view_count_shape_wday_from_totals()) → xoá để học lại từ đầu.
+	// Shape theo giờ vẫn đúng nên được giữ nguyên.
+	if ( '' === $stored || version_compare( $stored, '2.0.6', '<' ) ) {
+		delete_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY );
+		delete_transient( 'init_plugin_suite_view_count_site_traffic_shape_learned' );
+		delete_transient( 'init_plugin_suite_view_count_site_traffic_shape' );
+	}
+
+	update_option( 'init_plugin_suite_view_count_version', INIT_PLUGIN_SUITE_VIEW_COUNT_VERSION );
 }
 
 register_deactivation_hook( __FILE__, 'init_plugin_suite_view_count_deactivate' );

@@ -19,6 +19,40 @@ const INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_PENDING = 'init_plugin_suite_view_c
 const INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_LOCK_GROUP  = 'init_plugin_suite_view_count_shape';
 const INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_CACHE_TTL   = 2 * HOUR_IN_SECONDS;
 
+// v2.0.6+: EMA tổng lượt xem theo từng thứ (0 = Chủ nhật), dùng để suy ra shape theo thứ.
+const INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY_TOTALS = 'init_plugin_suite_view_count_shape_wday_totals';
+
+/**
+ * Suy ra shape theo thứ (mean = 1) từ EMA tổng lượt xem của từng thứ (v2.0.6).
+ *
+ * Thứ chưa có dữ liệu nhận giá trị trung tính (bằng trung bình các thứ đã có), nên trong
+ * tuần đầu sau khi nâng cấp/reset, shape chỉ lệch khỏi 1.0 ở những thứ đã thực sự học được.
+ * Mỗi hệ số được kẹp trong [0.2, 5.0] như shape theo giờ.
+ *
+ * @param array $totals Mảng thứ (0–6) => EMA tổng lượt xem.
+ * @return float[] 7 phần tử, mean = 1.
+ */
+function init_plugin_suite_view_count_shape_wday_from_totals( array $totals ) {
+	$known = array();
+	for ( $w = 0; $w < 7; $w++ ) {
+		if ( isset( $totals[ $w ] ) && (float) $totals[ $w ] > 0 ) {
+			$known[ $w ] = (float) $totals[ $w ];
+		}
+	}
+
+	if ( empty( $known ) ) {
+		return array_fill( 0, 7, 1.0 );
+	}
+
+	$mean  = array_sum( $known ) / count( $known );
+	$shape = array();
+	for ( $w = 0; $w < 7; $w++ ) {
+		$shape[ $w ] = isset( $known[ $w ] ) ? max( 0.2, min( 5.0, $known[ $w ] / $mean ) ) : 1.0;
+	}
+
+	return init_plugin_suite_view_count_shape_normalize_mean_one( $shape );
+}
+
 /**
  * Helper: normalize mean = 1
  */
@@ -437,23 +471,25 @@ function init_plugin_suite_view_count_shape_daily_rollup( $context ) {
 	update_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_HOUR, $hour_shape, false );
 
 	// === Weekday EMA update (site) ===
+	// v2.0.6: học EMA của TỔNG lượt xem theo từng thứ (option riêng), rồi suy ra shape =
+	// tổng của thứ đó / trung bình các thứ đã có dữ liệu.
+	// Bản cũ chia tổng lượt xem của ngày (hàng trăm, hàng nghìn) cho trung bình của chính
+	// shape (luôn ≈ 1 vì đã chuẩn hoá mean = 1) → hệ số luôn bị kẹp ở mức trần 5.0, nên thứ
+	// vừa cập nhật nào cũng thành "cao điểm" và shape theo thứ không phản ánh traffic thật.
 	$alpha_wday = (float) apply_filters( 'init_plugin_suite_view_count_shape_alpha_wday', 0.20 );
-	$kappa_wday = (int) apply_filters( 'init_plugin_suite_view_count_shape_kappa_wday', 14 );
-	$wday_shape = get_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY, array_fill( 0, 7, 1.0 ) );
+	$alpha_wday = max( 0.01, min( 1.0, $alpha_wday ) );
+	$wday_yday  = (int) wp_date( 'w', $ts_gmt - DAY_IN_SECONDS );
 
-	$wday_yday     = (int) wp_date( 'w', $ts_gmt - DAY_IN_SECONDS );
-	$avg_total_est = array_sum( $wday_shape ) / 7.0;
-	if ( $avg_total_est <= 0 ) {
-		$avg_total_est = 1.0;
-	}
+	$wday_totals = get_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY_TOTALS, array() );
+	$wday_totals = is_array( $wday_totals ) ? $wday_totals : array();
 
-	$total_stab = ( $total + $kappa_wday * 1.0 ) / ( 1.0 + $kappa_wday );
-	$mult_w     = max( 0.2, min( 5.0, $total_stab / $avg_total_est ) );
+	$prev_total                = isset( $wday_totals[ $wday_yday ] ) ? (float) $wday_totals[ $wday_yday ] : null;
+	$wday_totals[ $wday_yday ] = ( null === $prev_total || $prev_total <= 0 )
+		? (float) $total
+		: ( 1 - $alpha_wday ) * $prev_total + $alpha_wday * $total;
 
-	$prev_w                   = isset( $wday_shape[ $wday_yday ] ) ? (float) $wday_shape[ $wday_yday ] : 1.0;
-	$wday_shape[ $wday_yday ] = ( 1 - $alpha_wday ) * $prev_w + $alpha_wday * $mult_w;
-	$wday_shape               = init_plugin_suite_view_count_shape_normalize_mean_one( $wday_shape );
-	update_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY, $wday_shape, false );
+	update_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY_TOTALS, $wday_totals, false );
+	update_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY, init_plugin_suite_view_count_shape_wday_from_totals( $wday_totals ), false );
 
 	delete_transient( 'init_plugin_suite_view_count_site_traffic_shape_learned' );
 	wp_cache_delete( $lock_key, INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_LOCK_GROUP );
@@ -554,6 +590,7 @@ function init_plugin_suite_view_count_shape_reset_handler() {
 function init_plugin_suite_view_count_shape_reset_data() {
 	delete_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_HOUR );
 	delete_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY );
+	delete_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_WDAY_TOTALS );
 	delete_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_TODAY );
 	delete_option( INIT_PLUGIN_SUITE_VIEW_COUNT_SHAPE_OPT_PENDING );
 	delete_transient( 'init_plugin_suite_view_count_site_traffic_shape_learned' );

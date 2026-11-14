@@ -48,6 +48,17 @@ function init_plugin_suite_view_count_render_settings_page() {
 		);
 		$scroll_enabled = isset( $_POST['init_plugin_suite_view_count_scroll_enabled'] ) ? 1 : 0;
 
+		// v2.0.6+: vùng tính phần trăm cuộn (CSS selector, '' = toàn trang). Selector không hợp lệ
+		// → giữ nguyên giá trị đang lưu và báo lỗi, thay vì lưu 1 selector hỏng.
+		$scroll_target_rejected = false;
+		$scroll_target_raw      = isset( $_POST['init_plugin_suite_view_count_scroll_target'] ) ? sanitize_text_field( wp_unslash( $_POST['init_plugin_suite_view_count_scroll_target'] ) ) : '';
+		$scroll_target          = init_plugin_suite_view_count_sanitize_css_selector( $scroll_target_raw );
+		if ( false === $scroll_target ) {
+			$scroll_target_rejected = true;
+		} else {
+			update_option( 'init_plugin_suite_view_count_scroll_target', $scroll_target );
+		}
+
 		$storage = isset( $_POST['init_plugin_suite_view_count_storage'] ) ? sanitize_text_field( wp_unslash( $_POST['init_plugin_suite_view_count_storage'] ) ) : 'session';
 		$storage = in_array( $storage, array( 'local', 'session' ), true ) ? $storage : 'session';
 
@@ -169,6 +180,16 @@ function init_plugin_suite_view_count_render_settings_page() {
 		}
 
 		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'init-view-count' ) . '</p></div>';
+
+		if ( $scroll_target_rejected ) {
+			echo '<div class="notice notice-error"><p>' . esc_html(
+				sprintf(
+					/* translators: %d: maximum selector length in characters */
+					__( 'The scroll area selector was not saved: enter a single CSS selector (for example .entry-content), without "{", "}" or ";", and at most %d characters. The previous value was kept.', 'init-view-count' ),
+					(int) INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_TARGET_MAX_LENGTH
+				)
+			) . '</p></div>';
+		}
 
 		if ( $buffer_rejected ) {
 			echo '<div class="notice notice-error"><p>' . esc_html__( 'Buffered view writes could not be enabled: the object cache did not pass the self-test (add, increment and decrement must work and persist). Views are still written to the database directly.', 'init-view-count' ) . '</p></div>';
@@ -311,6 +332,27 @@ function init_plugin_suite_view_count_render_settings_page() {
 								(int) INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_MAX
 							);
 							?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'When no scroll area is set below, the percentage is measured on the whole page, including the comments and footer. A high value such as 100% then requires readers to reach the very bottom of the page, which most of them never do, so very few views get counted. Set a scroll area, or use a lower value.', 'init-view-count' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="init_plugin_suite_view_count_scroll_target"><?php esc_html_e( 'Scroll area (CSS selector)', 'init-view-count' ); ?></label></th>
+					<td>
+						<input type="text" id="init_plugin_suite_view_count_scroll_target" name="init_plugin_suite_view_count_scroll_target"
+								class="regular-text code"
+								value="<?php echo esc_attr( init_plugin_suite_view_count_get_scroll_target() ); ?>"
+								maxlength="<?php echo esc_attr( INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_TARGET_MAX_LENGTH ); ?>"
+								placeholder=".entry-content"
+								autocomplete="off"
+								spellcheck="false" />
+						<p class="description">
+							<?php esc_html_e( 'Optional. CSS selector of the element used to measure the scroll percent, for example .entry-content or article .post-content. Leave empty to use the whole page, as before.', 'init-view-count' ); ?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'With a scroll area, the percentage is how much of that element has come into view: 100% means its bottom edge has appeared on screen, and an element that already fits on screen counts as 100% right away. If several elements match, the first one on the page is used. If the selector is invalid or matches nothing on a page, the whole page is used on that page.', 'init-view-count' ); ?>
 						</p>
 					</td>
 				</tr>

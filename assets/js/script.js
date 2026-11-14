@@ -70,15 +70,76 @@
     if (scrollRequired) {
         let scrollTicking = false;
 
-        const evaluateScroll = () => {
-            const scrollY = window.scrollY;
-            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-            // Trang ngắn hơn viewport (không có gì để cuộn) coi như đã "cuộn" 100%.
-            const scrolledPercent = scrollHeight > 0 ? (scrollY / scrollHeight) * 100 : 100;
+        // Sai số làm tròn (px): trình duyệt có thể dừng scrollY ở số lẻ (VD 1999.5 thay vì 2000)
+        // trên màn hình zoom/HiDPI, khiến bản cũ không bao giờ đạt đúng 100%.
+        const EDGE_TOLERANCE = 2;
 
-            if (scrolledPercent >= scrollPercent) {
+        // v2.0.6+: vùng tính phần trăm cuộn theo CSS selector ('' = toàn trang như cũ).
+        // Selector sai cú pháp (querySelector ném lỗi) hoặc không khớp phần tử nào → toàn trang.
+        const resolveTarget = (selector) => {
+            if (typeof selector !== 'string' || !selector.trim()) return null;
+            try {
+                const el = document.querySelector(selector);
+                if (!el) {
+                    console.warn('[InitVC] Scroll area not found, using the whole page:', selector);
+                }
+                return el;
+            } catch (e) {
+                console.warn('[InitVC] Invalid scroll area selector, using the whole page:', selector);
+                return null;
+            }
+        };
+
+        let target = resolveTarget(config.scrollTarget);
+
+        // Toàn trang: phần đã cuộn / phần có thể cuộn.
+        const pagePercent = () => {
+            const doc = document.documentElement;
+            const maxScroll = doc.scrollHeight - window.innerHeight;
+            // Trang ngắn hơn viewport (không có gì để cuộn) coi như đã "cuộn" 100%.
+            if (maxScroll <= EDGE_TOLERANCE) return 100;
+            const scrollY = window.scrollY || doc.scrollTop || 0;
+            if (scrollY >= maxScroll - EDGE_TOLERANCE) return 100;
+            return (scrollY / maxScroll) * 100;
+        };
+
+        // Theo phần tử: bao nhiêu % chiều cao phần tử đã lọt vào màn hình
+        // (100% = mép dưới phần tử đã xuất hiện; phần tử vừa màn hình = 100% ngay).
+        const elementPercent = (el) => {
+            const rect = el.getBoundingClientRect();
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+            // Phần tử ẩn (display: none → rect toàn 0) hoặc cao 0: không đo được. Phải kiểm tra
+            // TRƯỚC mép dưới, nếu không phần tử ẩn sẽ bị coi là đã đọc hết (bottom = 0).
+            if (rect.height <= 0) return null;
+            if (rect.bottom <= viewportHeight + EDGE_TOLERANCE) return 100;
+
+            return Math.max(0, Math.min(100, ((viewportHeight - rect.top) / rect.height) * 100));
+        };
+
+        const currentPercent = () => {
+            // Phần tử bị gỡ khỏi DOM (theme SPA/AJAX thay nội dung) → quay về toàn trang.
+            if (target && !target.isConnected) {
+                target = null;
+            }
+            if (target) {
+                const p = elementPercent(target);
+                // Phần tử ẩn (display: none, cao 0) → không đo được, dùng toàn trang.
+                if (p !== null) return p;
+            }
+            return pagePercent();
+        };
+
+        const stopListening = () => {
+            window.removeEventListener('scroll', onScroll, true);
+            window.removeEventListener('resize', onScroll);
+        };
+
+        const evaluateScroll = () => {
+            if (scrollPassed) return;
+            if (currentPercent() >= scrollPercent) {
                 scrollPassed = true;
-                window.removeEventListener('scroll', onScroll);
+                stopListening();
                 checkAndSendView();
             }
         };
@@ -93,7 +154,11 @@
             });
         };
 
-        window.addEventListener('scroll', onScroll, { passive: true });
+        // capture: true → bắt cả sự kiện cuộn của khung cuộn bên trong (theme dùng overflow: auto),
+        // vì sự kiện "scroll" không nổi bọt (bubble) lên window.
+        window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+        // Đổi kích thước/xoay màn hình làm thay đổi phần trăm mà không có sự kiện cuộn.
+        window.addEventListener('resize', onScroll, { passive: true });
 
         // Check ngay 1 lần sau khi layout ổn định (trang quá ngắn, hoặc load ở vị trí cuộn sẵn).
         requestAnimationFrame(evaluateScroll);

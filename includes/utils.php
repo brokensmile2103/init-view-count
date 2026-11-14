@@ -25,6 +25,66 @@ function init_plugin_suite_view_count_clamp_int( $value, $min, $max ) {
 }
 
 /**
+ * Làm sạch CSS selector của "vùng tính phần trăm cuộn" (v2.0.6+).
+ *
+ * Selector chỉ được truyền xuống JS qua wp_localize_script() (JSON-encode) và in ra
+ * ô input qua esc_attr(), nên không có rủi ro chèn mã; phần kiểm tra ở đây chủ yếu để
+ * bắt lỗi nhập nhầm (dán cả khối CSS, xuống dòng...). Cú pháp selector được trình duyệt
+ * kiểm tra lần cuối: selector sai hoặc không khớp phần tử nào → JS tự quay về tính trên
+ * toàn trang như cũ.
+ *
+ * - Chuỗi rỗng → hợp lệ (nghĩa là dùng toàn trang).
+ * - Ký tự '{', '}', ';' → không hợp lệ (đó là cú pháp khối CSS, không phải selector).
+ * - Dài quá INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_TARGET_MAX_LENGTH ký tự → không hợp lệ
+ *   (cắt bớt sẽ tạo ra selector hỏng).
+ *
+ * @param mixed $selector Giá trị thô.
+ * @return string|false Selector đã làm sạch, hoặc false nếu không hợp lệ.
+ */
+function init_plugin_suite_view_count_sanitize_css_selector( $selector ) {
+	if ( ! is_string( $selector ) ) {
+		return '';
+	}
+
+	// Gộp khoảng trắng, bỏ tag, bỏ xuống dòng.
+	$selector = trim( sanitize_text_field( $selector ) );
+
+	if ( '' === $selector ) {
+		return '';
+	}
+
+	if ( strlen( $selector ) > INIT_PLUGIN_SUITE_VIEW_COUNT_SCROLL_TARGET_MAX_LENGTH ) {
+		return false;
+	}
+
+	if ( preg_match( '/[{};]/', $selector ) ) {
+		return false;
+	}
+
+	return $selector;
+}
+
+/**
+ * CSS selector của vùng tính phần trăm cuộn đang lưu (đã làm sạch lại khi đọc ra).
+ *
+ * @return string Chuỗi rỗng = toàn trang.
+ */
+function init_plugin_suite_view_count_get_scroll_target() {
+	$selector = init_plugin_suite_view_count_sanitize_css_selector( get_option( 'init_plugin_suite_view_count_scroll_target', '' ) );
+
+	/**
+	 * Filter CSS selector của vùng tính phần trăm cuộn.
+	 *
+	 * @since 2.0.6
+	 *
+	 * @param string $selector Selector đã lưu trong Settings ('' = toàn trang).
+	 */
+	$selector = apply_filters( 'init_plugin_suite_view_count_scroll_target', false === $selector ? '' : $selector );
+
+	return is_string( $selector ) ? $selector : '';
+}
+
+/**
  * Cộng dồn +1 vào một meta key dạng số bằng SQL thuần (atomic ở tầng DB),
  * thay vì đọc-rồi-ghi (get_post_meta + update_post_meta) vốn có thể mất
  * lượt view khi 2 request cùng lúc ghi đè lên nhau (race condition).
